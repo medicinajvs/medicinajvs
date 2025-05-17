@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Pediatria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Pediatria</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        // MODIFICADO: Links dos módulos 21-30 atualizados
+        const menuItemsData = [
+            {
+                title: "Puberdade",
+                description: "Aula sobre Puberdade.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Puberdade", driveVideoUrl: "https://drive.google.com/file/d/1R6o-S-MyWsdijU4mAJ5MxIHsLhzM3HH-/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Puberdade - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1I75QDfabVs0oqDK5zueQQdCHwoKhrA40/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Puberdade - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1ZmtnLXDiE6dy6mbbpBb7eAzvZUl-MJP_/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Puberdade - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1qrCa7JQ67rZNEHx99f_rWQYFTkXNBhjK/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Puberdade", downloadUrl: "https://drive.google.com/file/d/1Vqzhioc4YGB2TtaI961SDfW4DND7S3Yg/preview?usp=drive_link" },
+                    { title: "Flashcards - Puberdade", downloadUrl: "https://drive.google.com/file/d/1xVnx0ofiZes5YI24dlYbbpcL99XKcRBu/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Puberdade", downloadUrl: "https://drive.google.com/file/d/10ZDJtJPFnY2XiawOhveQoxBE1n9jg9Ue/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Puberdade", downloadUrl: "https://drive.google.com/file/d/1uFS1uOCoSk1sLe8Zzx57hRZZIaF2H0GI/preview?usp=drive_link" },
+                    { title: "Puberdade", downloadUrl: "https://drive.google.com/file/d/107amWL-DVNreObnkdBgHR55ilng3EBnu/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Puberdade", downloadUrl: "https://drive.google.com/file/d/1Fu5FMA0rKXqAGZdL9ysU63FUNrTXhT4x/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "BRUE/SMSL (Brief Resolved Unexplained Events/Síndrome da Morte Súbita do Lactente)",
+                description: "Aula sobre BRUE/SMSL.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "BRUE e SMSL", driveVideoUrl: "https://drive.google.com/file/d/1XNlU6WIcbSP7jlRLHhIKSOku1OfuKsdc/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "BRUE/SMSL", downloadUrl: "https://drive.google.com/file/d/1nKLTSVxiGUsXuTeo1hIVHF9lb1Sax0tH/preview?usp=drive_link" },
+                    { title: "Flashcards - BRUE/SMSL", downloadUrl: "https://drive.google.com/file/d/17TBX9j8RF7i8483XjjTRRqnVvf5lLTAu/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "BRUE/SMSL", downloadUrl: "https://drive.google.com/file/d/1w0MQ6R8xgqKcsooJrdcZFomnKEBmnnB6/preview?usp=drive_link" }
+                    ],
+                    'Slides': [],
+                    'Mapas Mentais': [
+                    { title: "BRUE/SMSL", downloadUrl: "https://drive.google.com/file/d/1uaMd1h0Dp9ffZQEdq3cwTI7uNpdGjRUB/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Infecção de Trato Urinário em Pediatria (ITU)",
+                description: "Aula sobre ITU Pediátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Infecção de Trato Urinário em Pediatria (ITU)", driveVideoUrl: "https://drive.google.com/file/d/155ZNgKWWrNgJtNAtRaGSSU1QqAE5QD2l/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Infecção de Trato Urinário em Pediatria (ITU)", driveVideoUrl: "https://drive.google.com/file/d/11RShwmsnSjCENWryXai-1z74HhQsxt2k/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/16Re31vWC1UoFsnUfmv2cRfJLF-1rhOn7/preview?usp=drive_link" },
+                    { title: "Flashcards - Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/1qSiLGiuwE_AjgZi5co1Uv7-2r-j-LSAt/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/1jRuHn5i087FkQE7qJmFDNoxh5UJGdTxQ/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/1T7GSHiliUEEnUoUFBpVFt8Hnt9u3WReH/preview?usp=drive_link" },
+                    { title: "Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/1gb7p0G1YI61BeyKrSYwTsU9ZQH5L5vvG/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Infecção de Trato Urinário em Pediatria (ITU)", downloadUrl: "https://drive.google.com/file/d/1nFi-h0O17-sDkY-QS-1kOh8y3Illmt5q/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Alergia Alimentar",
+                description: "Aula sobre Alergia Alimentar.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Alergia Alimentar", driveVideoUrl: "https://drive.google.com/file/d/1cs7egNQYatAptBSkIUqJ4jn1Ui-sZ7hu/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Alergia Alimentar - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1xJIWoBhyXAtsMkP9aIb42OMrlBQnzWb4/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Alergia Alimentar - Parte II", driveVideoUrl: "https://drive.google.com/file/d/17gpX39xWzuHvVhIA2i4oLNEYHOAWCWer/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Alergia Alimentar", downloadUrl: "https://drive.google.com/file/d/1R4XX5hpAt-XmgoSFY2aA2AXHLTst2wIg/preview?usp=drive_link" },
+                    { title: "Flashcards - Alergia Alimentar", downloadUrl: "https://drive.google.com/file/d/16nnhgPMiMNRk1_KCX7jag20414XVwO2F/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Alergia Alimentar", downloadUrl: "https://drive.google.com/file/d/1kqyEQOTFy5AfhuWlGOE2gESGr9EoLgHu/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Alergia Alimentar", downloadUrl: "https://drive.google.com/file/d/1jK3RJuYQ59ou-DEJIkf8JSJxVbgqEVr5/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Alergia Alimentar", downloadUrl: "https://drive.google.com/file/d/1ENWDtb6OwgQYFGXMr-xC0K7qBIlxsj5w/preview?usp=drive_link" },
+                    { title: "APLV", downloadUrl: "https://drive.google.com/file/d/1TwZgM-GWhjzDsDPT1fpDfxaPwbOLelnQ/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            { 
+                title: "Obesidade Infantil e na Adolescência",
+                description: "Aula sobre Obesidade Infantil.",
+                subItems: { 'Videoaulas': [
+                    { title: "Aula Resumo - Obesidade Infantil e na Adolescência", driveVideoUrl: "https://drive.google.com/file/d/1lFgQWUDdBYnINNwbS7X-RqQ6gOLEHeBj/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade Infantil e na Adolescência - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1bRBZu-USGPocVm2G-pHZlF3L6eU8nnwA/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade Infantil e na Adolescência - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1jOs-q_EjeBhLoePb7VenLE__O2xv8FA1/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade Infantil e na Adolescência - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1wz9qvdnt-sUBpQT6-eWHOLwmOX6wM15A/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Obesidade Infantil e na Adolescência", downloadUrl: "https://drive.google.com/file/d/1rY4nZ1t3nEAaGMU5ek89VwnWU735q_dt/preview?usp=drive_link" },
+                    { title: "Flashcards - Obesidade Infantil e na Adolescência", downloadUrl: "https://drive.google.com/file/d/1Pmwtzabx1jhF9HxBL5XhFKPXjfT7JtzB/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Obesidade Infantil e na Adolescência", downloadUrl: "https://drive.google.com/file/d/1FdNSfx_daIkLCJa2HPg-h2gzrKPJebaC/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Obesidade Infantil e na Adolescência", downloadUrl: "https://drive.google.com/file/d/1X3KuQ4lg75VUqfje8Ys-LK0D8DaYJd3X/preview?usp=drive_link" },
+                    { title: "Obesidade Infantil e na Adolescência", downloadUrl: "https://drive.google.com/file/d/1veOVQsA6wEig39AxtrvY7ZXic65elU0X/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Outros Distúrbios do Período Neonatal",
+                description: "Aula sobre Distúrbios Neonatais.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Hipoglicemia Neonatal", driveVideoUrl: "https://drive.google.com/file/d/1mepGMfRBoBX-4mEJdIztQfBYiBuDeTIu/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Distúrbios Metabólicos do Neonatal - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1rh6saPxfXzJyKrXPrpQrEICqeUZylXPy/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Distúrbios Metabólicos do Neonatal - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1mjGJjfZoc0eDefSu0L2etaS6vmzHWsYM/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Outros Distúrbios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1EKGino1UY72kYTWdenEl9NkVE7tYXdUy/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ 
+                    { title: "Outros Distúrbios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1ujMLFOJ_7Ev0ov0Gvqe331nldHMIlDeD/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipoglicemia Neonatal", downloadUrl: "https://drive.google.com/file/d/1eZirkBitRH1ZC-7YKvlJRNfM898-bjKh/preview?usp=drive_link" },
+                    { title: "Distúrbios Metabólicos do Neonatal", downloadUrl: "https://drive.google.com/file/d/1qZl1JyJJGfTocR-LsFvUt8rQq1wnCBzC/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Anafilaxia e Urticária",
+                description: "Aula sobre Anafilaxia/Urticária.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Anafilaxia e Urticária", driveVideoUrl: "https://drive.google.com/file/d/1l6LnpZ5AnVuttMhTasQCT-j5eOX-YBFu/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Anafilaxia", driveVideoUrl: "https://drive.google.com/file/d/16_ta-0gpNS8mbMx4hHF59aBCSXyU_ArD/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Urticária", driveVideoUrl: "https://drive.google.com/file/d/1k2FX0k69NA7tna9cfgmVmzZDg8ZA3URA/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Anafilaxia e Urticária", downloadUrl: "https://drive.google.com/file/d/1Q6YXZRIGSkKSEhAhbdLvJfXfuTmxMLyH/preview?usp=drive_link" },
+                    { title: "Flashcards - Anafilaxia e Urticária", downloadUrl: "https://drive.google.com/file/d/1pTzi_5iFuUZTjSWlaa5-Z9cvots3PCn8/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Anafilaxia e Urticária", downloadUrl: "https://drive.google.com/file/d/1X1vHWwhqLSYBKAsXWkY-iT8_2exaAtoz/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Anafilaxia e Urticária", downloadUrl: "https://drive.google.com/file/d/1Yh5CpfmOl04rLlW5pXyh5oqY0GtBk70O/preview?usp=drive_link" },
+                    { title: "Anafilaxia e Urticária", downloadUrl: "https://drive.google.com/file/d/1xzyXcOG3vWadXpwjpecJX1q0FfqJwjyY/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Crescimento",
+                description: "Aula sobre Crescimento.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Crescimento", driveVideoUrl: "https://drive.google.com/file/d/1wd0HcP6GPBUCdK1BQa4L2K4DxrX8uucp/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Crescimento - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1Wqzi-QsZ0WPw8MHgKDe8V2dNZz8O-jaA/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Crescimento - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1li6IY65d6vCfVWZHmlePFgSoT-EZZM1g/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Crescimento", downloadUrl: "https://drive.google.com/file/d/1U49yePC8KVMq5m5eXQR-N9e8ce3UW0g0/preview?usp=drive_link" },
+                    { title: "Flashcards - Crescimento", downloadUrl: "https://drive.google.com/file/d/1SoMDGgPVSSRQVbfWFw6PLXrVNKA_R76P/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Crescimento", downloadUrl: "https://drive.google.com/file/d/1EFDPqy541_qFrBEdFPTzXIMczrOCMnjJ/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Crescimento", downloadUrl: "https://drive.google.com/file/d/1t-acjndpLnX3lCFHGI-Ltj2GdORrWvJi/preview?usp=drive_link" },
+                    { title: "Crescimento", downloadUrl: "https://drive.google.com/file/d/1ZxeTujjynZ5GlUJaVQE517j7op-0VEOt/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Crescimento", downloadUrl: "https://drive.google.com/file/d/1gGtnDQ5IMsDf4GRRWtV-97AGxAFn3lBc/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Constipação Intestinal",
+                description: "Aula sobre Constipação Intestinal.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Constipação Intestinal", driveVideoUrl: "https://drive.google.com/file/d/1TLo8DXntaoTTSaSEDI5swBrTW2JwNXUM/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Constipação Intestinal - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1VI79moCuYfGxlOUvSeUPCSaU3YojRewx/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Constipação Intestinal - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1veN2Tzt2mvTiw7fu_2N3iJ9WVlEqYS38/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Constipação Intestinal", downloadUrl: "https://drive.google.com/file/d/1M7q2wN-QLZQLC0tbSUuF_E7mZDAsknbg/preview?usp=drive_link" },
+                    { title: "Flashcards - Constipação Intestinal", downloadUrl: "https://drive.google.com/file/d/10NTi6CRhpT079yvJTSjO6CIC0dxhL027/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Constipação Intestinal", downloadUrl: "https://drive.google.com/file/d/1NArprKOPR1wPAqSlWXZh_B1p3zqzo8qS/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Constipação Intestinal", downloadUrl: "https://drive.google.com/file/d/1M9G--oXf7m--PH4MXJVKX3qiic_8hkjm/preview?usp=drive_link" },
+                    { title: "Constipação Intestinal", downloadUrl: "https://drive.google.com/file/d/19QKA1nC94bxY8ntTEsbW-bpialz_Znzs/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hiperplasia Adrenal Congênita",
+                description: "Aula sobre Hiperplasia Adrenal.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Hiperplasia Adrenal Congênita", driveVideoUrl: "https://drive.google.com/file/d/1FKBimy0poCjs96bZHLIb78gVetMk15Vr/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hiperplasia Adrenal Congênita", downloadUrl: "https://drive.google.com/file/d/1nlGZns17ycGUZJd8tMK68Rs6GMQ5Q8wm/preview?usp=drive_link" },
+                    { title: "Flashcards - Hiperplasia Adrenal Congênita", downloadUrl: "https://drive.google.com/file/d/1B2USF1IOhVi9pqU1TxEpVHleRqUuEoNk/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hiperplasia Adrenal Congênita", downloadUrl: "https://drive.google.com/file/d/1s_37vZQRpd1xCJqSDA2gKfUe9_gQp339/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Hiperplasia Adrenal Congênita", downloadUrl: "https://drive.google.com/file/d/1yQjAwzS5W7YDyDpnngje9yuLI1kLCmmF/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Hiperplasia Adrenal Congênita", downloadUrl: "https://drive.google.com/file/d/1Gg10faFbwVZFO3zsaGHI2lEG56BLf6mG/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Distúrbios Respiratórios do Período Neonatal",
+                description: "Aula sobre Distúrbios Respiratórios do Período Neonatal.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Distúrbios Respiratórios do Período Neonatal - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1AwvE9-pbcKJ8wYcS1lFCrxc5qv_M2cy0/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Distúrbios Respiratórios do Período Neonatal - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1WjMz0xc2p_7cixKamgXgntEfTCQeK1dt/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Distúrbios Respiratórios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1l5XxccXs5Yxst0s-SivSOYKrHo3cADHH/preview?usp=drive_link" },
+                    { title: "Flashcards - Distúrbios Respiratórios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1goA4XB66uvkB6cSgR0fBAIH_htvJSrzP/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Distúrbios Respiratórios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1k0u13Qmd_e-MqFXwHWjmvzltnYNmHPi3/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Distúrbios Respiratórios do Período Neonatal", downloadUrl: "https://drive.google.com/file/d/1AkMtVVYN92duCCAoXbabqRpKRxALDTWd/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Distúrbios Respiratórios do Período Neonatal - Parte I", downloadUrl: "https://drive.google.com/file/d/1t5DZ2V3gJZ2xag4uI2ky3nMKJa9k0F2m/preview?usp=drive_link" },
+                    { title: "Distúrbios Respiratórios do Período Neonatal - Parte II", downloadUrl: "https://drive.google.com/file/d/1F4y6L-4704nY1YUctWyS8wjv2rhZsEK1/preview?usp=drive_link" },
+                    { title: "DRRN", downloadUrl: "https://drive.google.com/file/d/1HdBIAFHYA7ZkXeefPCnQ6hqH-QVIdvRa/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Febre Reumática",
+                description: "Aula sobre Febre Reumática.",
+                subItems: { 'Videoaulas': [
+                    { title: "Aula Resumo - Febre Reumática", driveVideoUrl: "https://drive.google.com/file/d/17WbnywjjNE0JAGTAe9B1OkMDgO1PMudc/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Febre Reumática", driveVideoUrl: "https://drive.google.com/file/d/1oGVRbdHEUXATlqJ4IEW2i4L2-LkZdfwI/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1z_CI0hk93HFaPUUoby21-8nTYke-ljy0/preview?usp=drive_link" },
+                    { title: "Flashcards - Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1T3ddR-UiSvOFW3BZdjkHOUkT7yKM9mmU/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1OhIgZpv4IzuKMaiepZGheF7XJaV55wzS/preview?usp=drive_link" }
+                    ], 'Slides': [
+                    { title: "Aula Resumo - Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1WZ3vCmPUMAQ49rPJf1hfCC6lHoFcdN-_/preview?usp=drive_link" },
+                    { title: "Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1Lzi21Pt_NK9l6O70To_PkCAvRjh1Rovc/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Febre Reumática", downloadUrl: "https://drive.google.com/file/d/1R_nGPTUroqEHzXp5qzlxV2bXYlXbLVXD/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Síndromes Genéticas, Erros Inatos do Metabolismo e da Imunidade",
+                description: "Aula sobre Síndromes Genéticas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Síndromes Genéticas", driveVideoUrl: "https://drive.google.com/file/d/17kTufOdCRYZ5GCWdCBmeDxaEOneLqLNa/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1DQ4g8xoE8ML29Bm82rL96zuG_CSvO3vP/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1RE5ca8nU_G25m30EoSdf-AzfzqR7k37I/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1aiJZvrOYQEKTfdyzoVFrcWTo891uS2AG/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1KiCjgb5yX3b8PQO-DQqOFHcAzrPRIRGl/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Aula Resumo - Erros Inatos do Metabolismo", driveVideoUrl: "https://drive.google.com/file/d/1FKxqAF8EwP-7Nwjpknk0KMVCmCCaP878/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Erros Inatos do Metabolismo", driveVideoUrl: "https://drive.google.com/file/d/1e-ThrEFVPvnNahHHK1vh_EAReK6k836s/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo", downloadUrl: "https://drive.google.com/file/d/1p5fB9XRjYXiEgAPEU1aO5800ubJNu9n7/preview?usp=drive_link" },
+                    { title: "Flashcards - Síndromes Genéticas e Erros Inatos do Metabolismo", downloadUrl: "https://drive.google.com/file/d/1s148m763nWZ_TQZIXN7i13QC8gAutp6W/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo", downloadUrl: "https://drive.google.com/file/d/1Mpue8cUZ0gak_fHMwHPh8yqTEB53UY8U/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Síndromes Genéticas e Erros Inatos do Metabolismo", downloadUrl: "https://drive.google.com/file/d/145qLVRstnIbme-yOuT4Ed_yTfZ5gRH5-/preview?usp=drive_link" },
+                    { title: "Síndromes Genéticas e Erros Inatos do Metabolismo", downloadUrl: "https://drive.google.com/file/d/1ux9usb0m4PGPJbm4dmlwrAQG4tOVieFR/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Enurese Noturna",
+                description: "Aula sobre Enurese Noturna.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Enurese Noturna", driveVideoUrl: "https://drive.google.com/file/d/1ML6hbwVoYT2WEZ-QI0GhA_9SaTKCOkSo/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Enurese Noturna", downloadUrl: "https://drive.google.com/file/d/1KDoHqK6U_P0qxK94Ja6qYylSKlCJUfBi/preview?usp=drive_link" },
+                    { title: "Flashcards - Enurese Noturna", downloadUrl: "https://drive.google.com/file/d/1ocm6-5KjVD7_DybsgaxZ4rPvjkUsLaZ7/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Enurese Noturna", downloadUrl: "https://drive.google.com/file/d/1D6SAV_IbQSuO2hE9FkrraCpV3vdvdGyD/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Enurese Noturna", downloadUrl: "https://drive.google.com/file/d/100IXR_HUPhqKS1pXgyBF7nx090k37iWq/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Enurese Noturna", downloadUrl: "https://drive.google.com/file/d/1gwQdUhjcwMoUyuyxYEJeA8VJDKfBglAl/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Infecções Congênitas",
+                description: "Aula sobre Infecções Congênitas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Infecções Congênitas", driveVideoUrl: "https://drive.google.com/file/d/1aDMbNTVk_XLmMu15b21MYrQRDDZDpA58/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Infecções Congênitas", driveVideoUrl: "https://drive.google.com/file/d/1n8lkCQlSglYh_zn1Ow-t3s52kMuDlz_d/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Citomegalovirose Congênita", driveVideoUrl: "https://drive.google.com/file/d/132WmTTB5BUncA693sql7T1vphAYOR6ib/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Infecções Congênitas", downloadUrl: "https://drive.google.com/file/d/1IjIpqDo9JmgPCKUbseI2LGl4F7BRENmm/preview?usp=drive_link" },
+                    { title: "Flashcards - Infecções Congênitas", downloadUrl: "https://drive.google.com/file/d/120K2CbXtq-Y2g-zGoiMnn-vbL5W1JHcg/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Infecções Congênitas", downloadUrl: "https://drive.google.com/file/d/1OZVesRBnCNmtQ5GA2r-mVo4UtwWiQmM0/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Infecções Congênitas", downloadUrl: "https://drive.google.com/file/d/1kEIINfYHjJxFP2DBnrfEpRLD0S2j85pU/preview?usp=drive_link" },
+                    { title: "Infecções Congênitas", downloadUrl: "https://drive.google.com/file/d/1luhzKFROSODVW1fGqu_busPoIW0YmxMC/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hipotireoidismo Congênito",
+                description: "Aula sobre Hipotireoidismo Congênito.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Hipotireoidismo Congênito", driveVideoUrl: "https://drive.google.com/file/d/1uDoL9mkHOGWsr1C-a78MoZqW4VSz8ZFY/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipotireoidismo Congênito", downloadUrl: "https://drive.google.com/file/d/1So2h2UQ7QVMtUYqiIThasKfn35bQday3/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipotireoidismo Congênito", downloadUrl: "https://drive.google.com/file/d/1kMNxkgOxJjLOc5WeM0ciqWblKK1bxedA/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipotireoidismo Congênito", downloadUrl: "https://drive.google.com/file/d/1UPyOZ88z3ugUPJbS_sWZqDXgpiMF4fPi/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Hipotireoidismo Congênito", downloadUrl: "https://drive.google.com/file/d/1nzs0hzXC9WzRsvIf6JxvYfjVlZMpB6Gu/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Hipotireoidismo Congênito", downloadUrl: "https://drive.google.com/file/d/17sZrUito1XhU0NJw5J7iyj8fvp6iivF3/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Aleitamento Materno",
+                description: "Aula sobre Aleitamento Materno.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Aleitamento Materno", driveVideoUrl: "https://drive.google.com/file/d/1cnNowG30MrEJoi2S8wS23ZsXYDrYHpBM/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Aleitamento Materno", driveVideoUrl: "https://drive.google.com/file/d/1ORqaUtaO0rman3VjjhVCQ5bDceK9tlSG/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Aleitamento Materno", downloadUrl: "https://drive.google.com/file/d/1D52xd_PN1P8FEDk8IWLf76H4N92FapX6/preview?usp=drive_link" },
+                    { title: "Flashcards - Aleitamento Materno", downloadUrl: "https://drive.google.com/file/d/1VyL9YKXC7H6Ql7ZDzBbsBNHuhhl4Ejg1/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Aleitamento Materno", downloadUrl: "https://drive.google.com/file/d/1yg4l4rjjCUxpzv1j0GmbnX_c4xr8hLtX/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Aleitamento Materno", downloadUrl: "https://drive.google.com/file/d/1kQCcVWmmD_UO6gPBPAHzgjRzqg0pDO1Z/preview?usp=drive_link" },
+                    { title: "Aleitamento Materno", downloadUrl: "https://drive.google.com/file/d/1mVhtIK-LNRuLJsh6Z4QW1VkRhfvqUsa2/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Pneumonias na Infância",
+                description: "Aula sobre Pneumonias Infância.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Pneumonias na Infância", driveVideoUrl: "https://drive.google.com/file/d/1SWni3flJ13NpxN7CSIP0-P7EaGKrI4Bh/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Pneumonias na Infância - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1YwKLlpnA0JZpDLJSzIY7010A--ofgJw-/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Pneumonias na Infância - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1ft3xB-rmDN4tCjTxYfVYa2-7-lBOT3fH/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Pneumonias na Infância", downloadUrl: "https://drive.google.com/file/d/1XHFjU7QD28BBhFUaKH0CLl9jc9u8KKX4/preview?usp=drive_link" },
+                    { title: "Flashcards - Pneumonias na Infância", downloadUrl: "https://drive.google.com/file/d/1g92BtNXWrk8-Hs6IGZUv0xZZ2S7kpUE_/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Pneumonias na Infância", downloadUrl: "https://drive.google.com/file/d/1GlByJGWb6dABArRQA_45OPr87YpanTXw/preview?usp=drive_link" }
+                    ], 'Slides': [
+                    { title: "Aula Resumo - Pneumonias na Infância", downloadUrl: "https://drive.google.com/file/d/1TsTe6HlRkm4Vr-ZG9GQhtLOPysio51y_/preview?usp=drive_link" },
+                    { title: "Pneumonias na Infância", downloadUrl: "https://drive.google.com/file/d/1avrbkK7ZJz4_msG-NvfvfcD-bPVy24p2/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Desnutrição na Infância",
+                description: "Aula sobre Desnutrição Infância.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Desnutrição na Infância", driveVideoUrl: "https://drive.google.com/file/d/164PgJVNRPzeuK2bPfTFQSAM-AqmxlvUw/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Desnutrição na Infância", driveVideoUrl: "https://drive.google.com/file/d/130t_NCJdr50e7ri4ch34s9Jo0qOBtFE0/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Desnutrição na Infância", downloadUrl: "https://drive.google.com/file/d/1iQ4FO9nhn9uSAy0tbCniR9NvWwyGBf1Z/preview?usp=drive_link" },
+                    { title: "Flashcards - Desnutrição na Infância", downloadUrl: "https://drive.google.com/file/d/1bMuuMz76hnSpSlpK7fUGDYvSwUJQhmgp/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Desnutrição na Infância", downloadUrl: "https://drive.google.com/file/d/1o5HZWQITtv9rz7EJNTXzhGRuMeIsb1TN/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Desnutrição na Infância", downloadUrl: "https://drive.google.com/file/d/1oEJF-bTMkwa3WUghCc1lk9NrXo6xYtNV/preview?usp=drive_link" },
+                    { title: "Desnutrição na Infância", downloadUrl: "https://drive.google.com/file/d/1mVYjwhL6si_Z7-oLJCrmqu2cBqgsHvUS/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Imunizações",
+                description: "Aula sobre Imunizações.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Imunizações", driveVideoUrl: "https://drive.google.com/file/d/1wGayu8Lrgls8N_FxvZcNSG8cARkK1cOD/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Imunizações - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1hrM0FAexe-GEYF8X-O2jW-z5LenAECK3/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Imunizações - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Cp-9subDv9PwZ16rZHweDpB_Sjefb44V/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Imunizações - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1bdTDDvqm9R7ORm70MhNvaQPeqlFs8JMZ/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Imunizações", downloadUrl: "https://drive.google.com/file/d/18-uRSTVh2J_5IOkS4nGGrQrGLXUZEgGO/preview?usp=drive_link" },
+                    { title: "Flashcards - Imunizações", downloadUrl: "https://drive.google.com/file/d/1E6VOxLGIdOksrwzAPZ44p-JZvVNtsOgf/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Imunizações", downloadUrl: "https://drive.google.com/file/d/1gBpyT-cz_eGBNccBljX9GahxqLOJmFhb/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Imunizações", downloadUrl: "https://drive.google.com/file/d/1pHLcM3XuaxTEE5zZJXgD0fHFgulX8775/preview?usp=drive_link" },
+                    { title: "Imunizações", downloadUrl: "https://drive.google.com/file/d/1S0j7sMel-XylZx4VV_BshEw9ZCWS3AkY/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Imunizações", downloadUrl: "https://drive.google.com/file/d/1PoqiIJaDROMbxFw1G_3MbWYvBl_dj1yZ/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Asma",
+                description: "Aula sobre Asma.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Asma", driveVideoUrl: "https://drive.google.com/file/d/1sqxFm9Hc_vbtEo6O1F4fABudSN5-zmyP/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Asma em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1MfRf3kGewZPIAk1ABI_upvx3lQq9on1z/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Asma", downloadUrl: "https://drive.google.com/file/d/1r6cx4e3U88Jrm-pLlXHOcD_8_zRBmD87/preview?usp=drive_link" },
+                    { title: "Flashcards - Asma", downloadUrl: "https://drive.google.com/file/d/1I1_slSwjpUgkG7ql_QmuiL7ILnf-2bTq/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Asma", downloadUrl: "https://drive.google.com/file/d/18N0koJnzIH722wujgBIRMkUkWtCiXG1P/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Asma", downloadUrl: "https://drive.google.com/file/d/10o5732ewe1n8LsQwu2cflGpPfWDvGQ40/preview?usp=drive_link" },
+                    { title: "Asma", downloadUrl: "https://drive.google.com/file/d/1H0Eo9z3bXPXF8pcL7TwySwgIFO77Iswf/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Asma", downloadUrl: "https://drive.google.com/file/d/1USfZSf0LbIMmx4cWevx1MPa4M82L1JMR/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Sífilis na Gestação e Sífilis Congênitas",
+                description: "Aula sobre Sífilis.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Sífilis Congênita", driveVideoUrl: "https://drive.google.com/file/d/1U7W3Fm8-ZFsSi5YzcVe2MD5LPU9_OiaI/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Sífilis Congênita", driveVideoUrl: "https://drive.google.com/file/d/1MSJiEKZ9gJhxIWsozIkzcIKsuc9NG6D_/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Sífilis Congênita", downloadUrl: "https://drive.google.com/file/d/1_GKk1TxNmFkV47eZvSyPHDYGAGNCTAeU/preview?usp=drive_link" },
+                    { title: "Flashcards - Sífilis Congênita", downloadUrl: "https://drive.google.com/file/d/1rpOdAzAISPFX8cm4mhV-KK7qAPMNY6c5/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Sífilis Congênita", downloadUrl: "https://drive.google.com/file/d/11pwLyySkcO3Qz6FDNLPNL3NwNCxXYX7J/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Sífilis Congênita", downloadUrl: "https://drive.google.com/file/d/1CPY6IYLYqp-1sqTCZGL5-RRNgZA2m69l/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Sífilis Congênita", downloadUrl: "https://drive.google.com/file/d/1QXI3YzAxvlMpFr0KbFKLHmp3_kkDe3az/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Cuidados Neonatais",
+                description: "Aula sobre Cuidados Neonatais.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Cuidados Neonatais", driveVideoUrl: "https://drive.google.com/file/d/1AfY4hiunyeQRCreXpQSbLgn_INUdmm77/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cuidados Neonatais", driveVideoUrl: "https://drive.google.com/file/d/191vFDRoKsZrg-pWatmZCpUYd-GJ_fVTP/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Cuidados Neonatais", downloadUrl: "https://drive.google.com/file/d/1M7T1iuTSJzYk3gcE7YqU8O8RQd1HhpeC/preview?usp=drive_link" },
+                    { title: "Flashcards - Cuidados Neonatais", downloadUrl: "https://drive.google.com/file/d/1FFaLfCEnu2x6W8LOTBfpohdsMIad6k2j/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Cuidados Neonatais", downloadUrl: "https://drive.google.com/file/d/1CgIvBPUaGtwOnQD5TMZ-1QuV2cez7NO6/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Cuidados Neonatais", downloadUrl: "https://drive.google.com/file/d/1wQSsaJ-9RYtBKdVHrHmw9nCvix1UaAXP/preview?usp=drive_link" },
+                    { title: "Cuidados Neonatais", downloadUrl: "https://drive.google.com/file/d/1WXtsDoLlZGS25-CMm1931660WAkMo4oG/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Choque em Pediatria",
+                description: "Aula sobre Choque Pediátrico.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Choque em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1nwch_5Bmpr8UzLN-4TBkVCeZlPdT6cRX/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Choque em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1P7poRaCic4yQZ-9P8Upq0eb5PYkwKPjg/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Choque em Pediatria", downloadUrl: "https://drive.google.com/file/d/1t6d7QdYMbwKrgNznSHwrv8TmulW3-Mkd/preview?usp=drive_link" },
+                    { title: "Flashcards - Choque em Pediatria", downloadUrl: "https://drive.google.com/file/d/1gHPg4JCC3uFwpWESY7Nuh9RUWysizYlX/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Choque em Pediatria", downloadUrl: "https://drive.google.com/file/d/1ElHylC8D6qJl_lTNT0_GyrIL-CvJizGM/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Choque em Pediatria", downloadUrl: "https://drive.google.com/file/d/15ZumxIN-CO1TGRx6bCAn5N5eMHAcIU7a/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Deficiências Vitamínicas e Profilaxias",
+                description: "Aula sobre Deficiências Vitamínicas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Deficiências Vitamínicas e Profilaxias", driveVideoUrl: "https://drive.google.com/file/d/1rrX1C-tjNnddPsF4ZGaCK3L-rwAsLsno/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Deficiências Vitamínicas e Profilaxias - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1qX7-acU03tJChZ6cp0ojJ1F39l5xocpE/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Deficiências Vitamínicas e Profilaxias - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1586gOg16KgSEPqTJxEPhyGvvWamijob4/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Deficiências Vitamínicas e Profilaxias - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1j__Yg4XJ86Xg0cBV88UNipN_2ubHsIWS/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Deficiências Vitamínicas e Profilaxias", downloadUrl: "https://drive.google.com/file/d/17G1q9KSDk7Ec-MKz2LEBAxGBh-0FC2M_/preview?usp=drive_link" },
+                    { title: "Flashcards - Deficiências Vitamínicas e Profilaxias", downloadUrl: "https://drive.google.com/file/d/1I9GFI2Lhv161tq5Uk8g0isao-loCJIOh/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Deficiências Vitamínicas e Profilaxias", downloadUrl: "https://drive.google.com/file/d/1eAFAbFmMX4szZfTJgE6wzS_jOBjxkEnn/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Deficiências Vitamínicas e Profilaxias", downloadUrl: "https://drive.google.com/file/d/1CXY-tIBNuNo1wYb9gQkHGrKAeqwYWD91/preview?usp=drive_link" },
+                    { title: "Deficiências Vitamínicas e Profilaxias", downloadUrl: "https://drive.google.com/file/d/1fKbtW1xgfHfxw4j5TLLFA2rQ5DYjk-0e/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Convulsão Febril",
+                description: "Aula sobre Convulsão Febril.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Convulsão Febril", driveVideoUrl: "https://drive.google.com/file/d/1tZNkzfPlWjmDrIyOu4exdOE2gNfkFj5w/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Convulsão Febril", downloadUrl: "https://drive.google.com/file/d/1J1412TuGP8FEm9-LmjF9RlAOG-uh5wqF/preview?usp=drive_link" },
+                    { title: "Flashcards - Convulsão Febril", downloadUrl: "https://drive.google.com/file/d/1Yk3ugsiBir1BPYn9XlLjVnQ06uNLKAgQ/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Convulsão Febril", downloadUrl: "https://drive.google.com/file/d/13VQjYv0_zwNtvGLzIblEFxkOhzPP-JyT/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Convulsão Febril", downloadUrl: "https://drive.google.com/file/d/1He6R2aGen9vwY2qNZ2xldveIFh2mUSZ_/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Reanimação Neonatal",
+                description: "Aula sobre Reanimação Neonatal.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Reanimação Neonatal", driveVideoUrl: "https://drive.google.com/file/d/1Yo6DppAu9x1lrJ9hGRLqrtzBll9NPupP/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Reanimação Neonatal", driveVideoUrl: "https://drive.google.com/file/d/1-6oRjio7ZpQHycicRBTmGSSIm_S2dhmY/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Reanimação Neonatal", downloadUrl: "https://drive.google.com/file/d/1YyHoVJc2tyvJYwK8H-lFj86PoXgoAhhR/preview?usp=drive_link" },
+                    { title: "Flashcards - Reanimação Neonatal", downloadUrl: "https://drive.google.com/file/d/1ESF4_zG2qM4H2EGmyvDExL1WIEM6doUc/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Reanimação Neonatal", downloadUrl: "https://drive.google.com/file/d/1iaX40ksg3xNcopOSfZSdEJRdsxYvmy2S/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Reanimação Neonatal", downloadUrl: "https://drive.google.com/file/d/1zxooCO5eDUbaA66kQtKBwY84eb2rV_t7/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Reanimação Neonatal", downloadUrl: "https://drive.google.com/file/d/1J2-lCXfjLva95ThDzSu9sTNirmuXUAYv/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Doença de Kawasaki",
+                description: "Aula sobre Doença de Kawasaki.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Doença de Kawasaki", driveVideoUrl: "https://drive.google.com/file/d/1Bq4d4rXcN1HxVUwSlSoQmSriU0DwkD8J/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Doença de Kawasaki - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1ZXYQ_JewU_d9DXqRCXnyBasTe2l2nl3L/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Doença de Kawasaki - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1BwAsfM4ApxQjxCiRooO4trs36_t17GNe/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1SKbhoyFaZU5Rlvs_jR5ATpCPK_0WeE4U/preview?usp=drive_link" },
+                    { title: "Flashcards - Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1Pvo_vcIPhfsNN_6cMCG38QrWnJ0_URcZ/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1yc1GlykifFXvNiX6Po-jiBsCIDqje1fR/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1ImMLcmjmOcKgiNMr4oMucV2-Y5KcxgJL/preview?usp=drive_link" },
+                    { title: "Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1_qmHP0fru84hlhkgEhLhvl7WS38wemG7/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Doença de Kawasaki", downloadUrl: "https://drive.google.com/file/d/1t0AaOLzQT6iEh6MkmHekMvzbh76yd99r/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Hipertensão Arterial na Criança e Adolescente",
+                description: "Aula sobre Hipertensão Pediátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Hipertensão Arterial na Criança e Adolescente", driveVideoUrl: "https://drive.google.com/file/d/1owFBbis0TblOjgAzXNkksuNZOLZp2PuE/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Hipertensão Arterial na Criança e Adolescente", driveVideoUrl: "https://drive.google.com/file/d/1VYZh2BFAl4vUV4BOyyT3Gwc6mJgfq4Z-/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipertensão Arterial na Criança e Adolescente", downloadUrl: "https://drive.google.com/file/d/1xiNUo43pW-c8kBQLQwCXXk-L1qc98M7w/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipertensão Arterial na Criança e Adolescente", downloadUrl: "https://drive.google.com/file/d/1zVeWaneuYpi8M83cz2vRZCBlePycmXf6/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipertensão Arterial na Criança e Adolescente", downloadUrl: "https://drive.google.com/file/d/1X9zkNl1PDZMStBQSLmuDc_hamSAZ7SuG/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipertensão Arterial na Criança e Adolescente", downloadUrl: "https://drive.google.com/file/d/1nHIFgR1q5EdH1JyF8vU0KodLTHqVx1mb/preview?usp=drive_link" },
+                    { title: "Hipertensão Arterial na Criança e Adolescente", downloadUrl: "https://drive.google.com/file/d/1lDs9tfDxQX8ZNIIh1AA9OTL0rI0LvhEf/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Púrpura de Hennoch Schonlein-Vasculite por IGA",
+                description: "Aula sobre Púrpura HS.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Púrpura de Hennoch Schonlein-Vasculite por IGA", driveVideoUrl: "https://drive.google.com/file/d/1lLn2XDc-BQ78QymegctIDaG7BncH_TWR/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Púrpura de Hennoch Schonlein-Vasculite por IGA", downloadUrl: "https://drive.google.com/file/d/1Zy2bd9wQ_lf4dxWyV3h_AOw8N86spzBu/preview?usp=drive_link" },
+                    { title: "Flashcards - Púrpura de Hennoch Schonlein-Vasculite por IGA", downloadUrl: "https://drive.google.com/file/d/1ZthfTbHdAhWwSByuqfxB8rsmWBDGTqXW/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Púrpura de Hennoch Schonlein-Vasculite por IGA", downloadUrl: "https://drive.google.com/file/d/1yVbeBwnjdeMPSO8ASVUn-nfoeX1l5s9M/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Púrpura de Hennoch Schonlein-Vasculite por IGA", downloadUrl: "https://drive.google.com/file/d/13FV0JXFLNxUpFxAyAYkUI5BNqCYPKd4T/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Púrpura de Hennoch Schonlein-Vasculite por IGA", downloadUrl: "https://drive.google.com/file/d/1X8vtGODFX69Pq5BArn1Q1DGTScK8LV0t/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Doenças Exantemáticas",
+                description: "Aula sobre Doenças Exantemáticas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Doenças Exantemáticas", driveVideoUrl: "https://drive.google.com/file/d/1xq5FLvyoYMljRCMJXBRdMBGJ6vCzoown/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Doenças Exantemáticas - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1vwFpY_c3qzJ6bk0zEC0_Jr0TMKQvuj_K/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Doenças Exantemáticas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1en-8XdA6DltPYa9taPQ_eMr5oT3xPfmI/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Doenças Exantemáticas", downloadUrl: "https://drive.google.com/file/d/1FpC3pUK9tWkARpaz5uu-iBjl2XDeznXI/preview?usp=drive_link" },
+                    { title: "Flashcards - Doenças Exantemáticas", downloadUrl: "https://drive.google.com/file/d/1Uk55B6FbpYjO4HSSBC9IDZU2Fjf6GxU7/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Doenças Exantemáticas", downloadUrl: "https://drive.google.com/file/d/14SC_akf-ACdzTdhO0lKVl0SOqI0eYUfh/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Doenças Exantemáticas", downloadUrl: "https://drive.google.com/file/d/1xwGQzPmjYxMhKVxbSvycLJazCo6TU1qR/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Doenças Exantemáticas", downloadUrl: "https://drive.google.com/file/d/14ZEaduTHiHHVr2Q9k_I2fUeJsmAN4Un1/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Cardiopatias Congênitas",
+                description: "Aula sobre Cardiopatias Congênitas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Cardiopatias Congênitas", driveVideoUrl: "https://drive.google.com/file/d/1VAJz6fa13ydOKE627VSbgPsZ4SuKmrU2/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cardiopatias Congênitas", driveVideoUrl: "https://drive.google.com/file/d/12yXdC49jm86oAF8eFM-2Zagxt5Z4VIKE/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/1lbXvqnQq6lWAibVWhZVE8r1DYCN1w2wq/preview?usp=drive_link" },
+                    { title: "Flashcards - Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/1TzJDvNCSXIQ9ojZXcG4M7CssWl6SoZc-/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/1Ude4vBrVCAfKA55J2cvV8IbHu4SxFUqc/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/1C73G_uxLJ6-qTF8Sye1hj_9Sw0bpnYPw/preview?usp=drive_link" },
+                    { title: "Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/17FZivgh3GjCocroWiqpNlDGVOkPTkH9D/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Cardiopatias Congênitas", downloadUrl: "https://drive.google.com/file/d/1DD3YlOm2p3HvXKRL7AutmRw2uElvphsd/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {  
+                title: "Doença Celíaca em Pediatria",
+                description: "Aula sobre Doença Celíaca.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Doença Celíaca em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/19Y09vbYTMUzxwWPpXxGwKqLME99rmH5W/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Doença Celíaca em Pediatria", downloadUrl: "https://drive.google.com/file/d/1J7G58qmtZVAj6yA7qcTZu5GaH0Dmv-KU/preview?usp=drive_link" },
+                    { title: "Flashcards - Doença Celíaca em Pediatria", downloadUrl: "https://drive.google.com/file/d/1GBFNT161LO6JGEMR_Ynj9QaN7pUU3mbI/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Doença Celíaca em Pediatria", downloadUrl: "https://drive.google.com/file/d/1FTB0YVa3cWcEyJsAJmY_5FSXeVUU1Qt7/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Doença Celíaca em Pediatria", downloadUrl: "https://drive.google.com/file/d/10WT5Dr4FUFyODRl9Dd6Hn1VdeYkyj_3u/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Icterícia e Sepse Neonatal",
+                description: "Aula sobre Icterícia/Sepse Neo.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Icterícia e Sepse Neonatal", driveVideoUrl: "https://drive.google.com/file/d/13sbhFCFJjrb2sSXgjYI4wAT3BV9G6i6C/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Icterícia e Sepse Neonatal - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1wPXPQhSGN5KTjov221WNsgl_llQGoWgb/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Icterícia e Sepse Neonatal - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1DYys0WhhQ4hJUINvvRu0L3lcgefDg-Y3/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Icterícia e Sepse Neonatal - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1qdFgvVtGioB8gnoy2HVXTW5Q2WY9AvzT/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Icterícia e Sepse Neonatal", downloadUrl: "https://drive.google.com/file/d/1R3Rb1TtYQdFoMASazon8R2H_vCTEoUhV/preview?usp=drive_link" },
+                    { title: "Flashcards - Icterícia e Sepse Neonatal", downloadUrl: "https://drive.google.com/file/d/1XVW9HDfvehXecp9sdldPS9cJEF7ATqRP/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Icterícia e Sepse Neonatal", downloadUrl: "https://drive.google.com/file/d/1QDGy2sQNjUKyFRuFscK4TJ2V_Nikscre/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Icterícia e Sepse Neonatal", downloadUrl: "https://drive.google.com/file/d/1cNwJnDgDDV16YvmK1RbSmHanRGb4d-Ob/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Diagnóstico Nutricional",
+                description: "Aula sobre Diagnóstico Nutricional.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diagnóstico Nutricional", driveVideoUrl: "https://drive.google.com/file/d/1FH2xxbdfe3Sq8de9ovWpMddal8L6nWKo/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diagnóstico Nutricional", driveVideoUrl: "https://drive.google.com/file/d/1bqakmDnrhKRA5qc-7xFZP1tn9uM7_K_q/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/1bY8CDGnAJ4ESKdiUr3Zbg8v7rKxborWp/preview?usp=drive_link" },
+                    { title: "Flashcards - Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/1xqVKZsJWmX22UELlBlnbzFSBfSH_zbXB/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/1OMHn8-Dv_w7TBAYUwCK3faz6S77z5Fzx/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/1_2BvbTpklsxUrL4Aot5ZA2yFDjoaghJ9/preview?usp=drive_link" },
+                    { title: "Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/1ySVmWbH03TmUdRKqyTUgq3HI8ogSBYlj/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Diagnóstico Nutricional", downloadUrl: "https://drive.google.com/file/d/11LsNTAMmCTwnZKflffupOxYvHy5ZQwGB/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Coqueluche",
+                description: "Aula sobre Coqueluche.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Coqueluche", driveVideoUrl: "https://drive.google.com/file/d/1g-YERpKWSIXkTOppPb9VC7_ulvD_AXg1/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Coqueluche", driveVideoUrl: "https://drive.google.com/file/d/1dLJprx13I4la3dTyMXAnoIiAfRTHKHcN/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Coqueluche", downloadUrl: "https://drive.google.com/file/d/14tF7gKkAKustNvpka-98oRp_BebQA9PD/preview?usp=drive_link" },
+                    { title: "Flashcards - Coqueluche", downloadUrl: "https://drive.google.com/file/d/1sPlDNjO_LRXIvyZkgmG8ivFerzoKZY4m/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Coqueluche", downloadUrl: "https://drive.google.com/file/d/1YSP2X6X1qRkMaTkDxetHChZAHX76j170/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Coqueluche", downloadUrl: "https://drive.google.com/file/d/1IbIu7qLwKdhEyVXKSYVUydd-fD9RImKM/preview?usp=drive_link" },
+                    { title: "Coqueluche", downloadUrl: "https://drive.google.com/file/d/1XG-eY3DPiVKfK7V7ZZuA0bSk0J_M--CZ/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Coqueluche", downloadUrl: "https://drive.google.com/file/d/1xyfgcUINAZ2ZU-seOGO9kXyE0vSSo3ER/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Cefaleias na Infância",
+                description: "Aula sobre Cefaleias Infância.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Cefaleias na Infância", driveVideoUrl: "https://drive.google.com/file/d/1MrgrOTmFArH59MV1qb_NulC7MUejo5S4/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cefaleias na Infância - Parte I", driveVideoUrl: "https://drive.google.com/file/d/12aNgrifvy0AZThcnv_o7kV4BMip1Sp7O/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cefaleias na Infância - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1GsmJGAVaDG1mM9tku7AXdOKro_ZExbp3/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Cefaleias na Infância", downloadUrl: "https://drive.google.com/file/d/1k5xKthfTaqDXTP327XuqtzeIfPMymS_r/preview?usp=drive_link" },
+                    { title: "Flashcards - Cefaleias na Infância", downloadUrl: "https://drive.google.com/file/d/15LSYHRx3XmbZSoE3JTTqUf3bXQFmwBw1/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Cefaleias na Infância", downloadUrl: "https://drive.google.com/file/d/1iydjwfYXeCILp0Z_NXYNF9QfaYzH8R8t/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Cefaleias na Infância", downloadUrl: "https://drive.google.com/file/d/17hw2kcTzWoLfk9dYF8oSyoGSU2UmWTNy/preview?usp=drive_link" },
+                    { title: "Cefaleias na Infância", downloadUrl: "https://drive.google.com/file/d/1De-AfU7llJBN_cpzFu1KPorVkmZ6U4AR/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Febre na Pediatria",
+                description: "Aula sobre Febre Pediátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Febre na Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1K8m7YKAqhdO5ndb-0ItOkX6cMTJtJizp/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Febre na Pediatria - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1DmM6tmm6vvYnVOwLVgJl2v9AMZs3ft7F/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Febre na Pediatria - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Ks-EIpFxSWPP5d1GTd3xbdLFBrfbQEu7/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Febre na Pediatria - Parte III", driveVideoUrl: "https://drive.google.com/file/d/19iGk1Nve_-fVGEVwzjaV8vo0AolQDGxw/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Febre na Pediatria", downloadUrl: "https://drive.google.com/file/d/1BNkJtmN8H1VDJLtjY-HTB7dbUgYmbiTH/preview?usp=drive_link" },
+                    { title: "Flashcards - Febre na Pediatria", downloadUrl: "https://drive.google.com/file/d/1JKw4zZ3b74kdodnYWSzr289aoQcDjOpA/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Febre na Pediatria", downloadUrl: "https://drive.google.com/file/d/1jqRJ7hjCad41AqoQovNkoBbQBmJEdenU/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Febre na Pediatria", downloadUrl: "https://drive.google.com/file/d/1ArTY5xmnEnlHszGob319fN3_UpDPm09T/preview?usp=drive_link" },
+                    { title: "Febre na Pediatria", downloadUrl: "https://drive.google.com/file/d/1AoDT9Km668syFefwQ5Ird7bcITEjQUs5/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Segurança em Pediatria",
+                description: "Aula sobre Segurança Pediátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Segurança Pediátrica", driveVideoUrl: "https://drive.google.com/file/d/1knWv3Efi5-9Ld07DKulci-6ZAsQJ3ruO/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Segurança Pediátrica", downloadUrl: "https://drive.google.com/file/d/1aDALcaOtg1IWis6-a11WK-GG0GQBKYO-/preview?usp=drive_link" },
+                    { title: "Flashcards - Segurança Pediátrica", downloadUrl: "https://drive.google.com/file/d/1p4xbUMsj6CTDcSy20z0nbl59phim8c3_/preview?usp=drive_link" }
+                    ],
+                    'Resumos':[
+                    { title: "Segurança Pediátrica", downloadUrl: "https://drive.google.com/file/d/1aeimjv7sQKZAG2IA4SsWWSjGUWe8FEab/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Segurança Pediátrica", downloadUrl: "https://drive.google.com/file/d/1liJN-_mV3Oe01i5DlzKky3RLx1QVTb5o/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Segurança Pediátrica", downloadUrl: "https://drive.google.com/file/d/1IB4l8pLqYroTIW7gG2rNiY_u0r1p064e/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Desenvolvimento Neuropsicomotor (DNPM)",
+                description: "Aula sobre DNPM.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Desenvolvimento Neuropsicomotor", driveVideoUrl: "https://drive.google.com/file/d/1JBAiERIS8EtpSnDJJD7HLNDAAyGQu5PP/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM) - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1UBrZCD62L9uNRUX775vQ1CQK72Tsdid3/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM) - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1TdJ3HQGnEZJfdi5G72CuIEbP-0JRHS27/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM) - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1s05gj4scJ3WyQRyePROt5--6-S062fs7/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM)", downloadUrl: "https://drive.google.com/file/d/1cm7jS4Y5tBCl1yMEGz-7F4g-u16H5v3H/preview?usp=drive_link" },
+                    { title: "Flashcards - Desenvolvimento Neuropsicomotor (DNPM)", downloadUrl: "https://drive.google.com/file/d/1Cdz2bixcSRrKMnddtUg1OYZDdLbairPw/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM)", downloadUrl: "https://drive.google.com/file/d/1W6yr7BlHzLQVZ-r8cjoonJG6mlOiScGV/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Desenvolvimento Neuropsicomotor (DNPM)", downloadUrl: "https://drive.google.com/file/d/1IQzAM5IbOfFs3gl-f2GiMyvtPFBFkIIK/preview?usp=drive_link" },
+                    { title: "Desenvolvimento Neuropsicomotor (DNPM)", downloadUrl: "https://drive.google.com/file/d/1MkppGIvLSOful6Qqwd5n0pjq7DLCxRJ3/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Doença do Refluxo Gastroesofágico em Pediatria",
+                description: "Aula sobre DRGE Pediátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Doença do Refluxo Gastroesofágico em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1S1s869jhAceUfSRu-_gvqCtbRiyl2w46/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Doença do Refluxo Gastroesofágico em Pediatria", downloadUrl: "https://drive.google.com/file/d/1YACdacdUe9ghl1GETx955iRmA1nGOTD_/preview?usp=drive_link" },
+                    { title: "Flashcards - Doença do Refluxo Gastroesofágico em Pediatria", downloadUrl: "https://drive.google.com/file/d/1nSDzpHVJTpNZWZTsahtBgp-S3pPJWVvM/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Doença do Refluxo Gastroesofágico em Pediatria", downloadUrl: "https://drive.google.com/file/d/163moiEeAqk5pz6ujR8Ww9QKlFEPy-Q1i/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Doença do Refluxo Gastroesofágico em Pediatria", downloadUrl: "https://drive.google.com/file/d/16foAr4l-mwb9Pi6cUm86LrUlBUl5wQNN/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Doença do Refluxo Gastroesofágico em Pediatria", downloadUrl: "https://drive.google.com/file/d/1qxb3JleMSkz17282AkoqHN1fvOUl_ZqE/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Bronquiolite",
+                description: "Aula sobre Bronquiolite.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Bronquiolite", driveVideoUrl: "https://drive.google.com/file/d/16xQfQbzMgcz7r4XVdUYTpuRD710kbpF2/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Bronquiolite", driveVideoUrl: "https://drive.google.com/file/d/1fAi-xsclLOcfzRWm9rlIKy8JyhlLTV-k/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Bronquiolite", downloadUrl: "https://drive.google.com/file/d/1681awRwWeFeMHorAoN9uqHVwWzA_cu_H/preview?usp=drive_link" },
+                    { title: "Flashcards - Bronquiolite", downloadUrl: "https://drive.google.com/file/d/1W4LOVpEHPedzNUjDt9Ib0pE1LMtnO9EB/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Bronquiolite", downloadUrl: "https://drive.google.com/file/d/1rXzFiGU5SsDa8db6bGlYJAFjrZR6z-1j/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Bronquiolite", downloadUrl: "https://drive.google.com/file/d/1y3zSbW2QLSN7G6rDn0p5qhHK4snNztNF/preview?usp=drive_link" },
+                    { title: "Bronquiolite", downloadUrl: "https://drive.google.com/file/d/14j6PBR376daQxZzttd5YevSfdmY2lUge/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Bronquiolite", downloadUrl: "https://drive.google.com/file/d/1_hw9-ZOEHrS-QrcE5Mk8VMnY1OnJvyD1/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Emergências Pediátricas",
+                description: "Aula sobre Emergências Pediátricas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Emergências Pediátricas", driveVideoUrl: "https://drive.google.com/file/d/1YgmHxG3ZpRWOP5mwm_EhggQnb0_MmcuK/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "PCR na Pediatria e Outras Emergências - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1Ak45-2VgUwitCGw3OamiDjxS32tLX3pc/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "PCR na Pediatria e Outras Emergências - Parte II", driveVideoUrl: "https://drive.google.com/file/d/14kXyZIDTRYEihrRFul5b67UZd7IkNm6W/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Arritmias na Infância - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1i1HQi9DpDthE4rjerj1rem94BfKL1DeZ/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Arritmias na Infância - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1qSFViAwHyR68986PCIA6o2wXJDD6YYV1/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Emergências Pediátricas", downloadUrl: "https://drive.google.com/file/d/1j98hXz7skWpF5Nbr0VXU3K02g6t0pVPm/preview?usp=drive_link" },
+                    { title: "Flashcards - Emergências Pediátricas", downloadUrl: "https://drive.google.com/file/d/1Vv3q4CNL12zq9GMkn4osNS15iYGsRXXP/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Emergências Pediátricas", downloadUrl: "https://drive.google.com/file/d/1A2gCfE17t5-BEr0-CJD8LCg6p7CCJV-8/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Emergências Pediátricas", downloadUrl: "https://drive.google.com/file/d/17EAFXhB6eqIz9vGXxxl2114-rM1noyak/preview?usp=drive_link" },
+                    { title: "Arritmias na Infância", downloadUrl: "https://drive.google.com/file/d/10UVqVOrZvJgdm5qPWyTy3SCBA6NPTUn2/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Tópicos em Pediatria",
+                description: "Aula sobre Tópicos Pediátricos.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Tópicos em Pediatria", driveVideoUrl: "https://drive.google.com/file/d/1rdi9S9xeQcxeKlie2w2H03sqcxQIWycR/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Tópicos em Pediatria", downloadUrl: "https://drive.google.com/file/d/1GGbSHZi2EjUHupdZE68Fmliuw4AKwu6o/preview?usp=drive_link" },
+                    { title: "Flahscards - Tópicos em Pediatria", downloadUrl: "https://drive.google.com/file/d/1yjf_HuZPrTETZ_hU74ZFNDge2yBngtUn/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Tópicos em Pediatria", downloadUrl: "https://drive.google.com/file/d/10tI2R05t53XthFmLu1N5RHYV5FLgX_ro/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Tópicos em Pediatria", downloadUrl: "https://drive.google.com/file/d/1et830sN64-xXpbdqBlG-FGR1CXsznXtN/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Tuberculose na Infância",
+                description: "Aula sobre Tuberculose Infância.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Tuberculose na Infância", driveVideoUrl: "https://drive.google.com/file/d/1T58Fx_d7cwE-R74_AV2DXWX2CsDEAZ11/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Tuberculose na Infância", driveVideoUrl: "https://drive.google.com/file/d/1yv6H3RA12ZtoOTOy-kDR1W7ogJYsrx6V/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Tuberculose na Infância", downloadUrl: "https://drive.google.com/file/d/13rCrboBPC4VIGtHs1klQ3tOGXgG7C_5G/preview?usp=drive_link" },
+                    { title: "Flashcards - Tuberculose na Infância", downloadUrl: "https://drive.google.com/file/d/1_9ELBjDoQ2HoOQrXvg0Gz7Zol3yshdwC/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Tuberculose na Infância", downloadUrl: "https://drive.google.com/file/d/1i8IapZAv2JDlCHr8UQ76rwSX1j5hwfEd/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Tuberculose na Infância", downloadUrl: "https://drive.google.com/file/d/10wrkZaKkotWqEKAzad2zu2HOlnsfTh-0/preview?usp=drive_link" },
+                    { title: "Tuberculose na Infância", downloadUrl: "https://drive.google.com/file/d/1YjaDfJsY58t2ovgcCzxfAGW2N6sagX8q/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Fibrose Cística",
+                description: "Aula sobre Fibrose Cística.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Fibrose Cística", driveVideoUrl: "https://drive.google.com/file/d/13AxsLirirJyRDXuJLWvwHvfdfdRFCVFd/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Fibrose Cística - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1qeSRspsYVcoOTJ3sn82WziD2auOwvY3v/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Fibrose Cística - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1iv-ByeGj9ftp1KOloimeEAyfra9No7vj/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Fibrose Cística", downloadUrl: "https://drive.google.com/file/d/1rz4h2kKqYfnb1kI2BC7nTy22aOstC1qT/preview?usp=drive_link" },
+                    { title: "Flashcards - Fibrose Cística", downloadUrl: "https://drive.google.com/file/d/128yHQbyurBcRZrkM_9vEvezoUs-GoF9Q/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Fibrose Cística", downloadUrl: "https://drive.google.com/file/d/1M9Rp1aL9wR7GWbi1_y0e1_vOvhXzbQEt/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Fibrose Cística", downloadUrl: "https://drive.google.com/file/d/1tGxDLcdWNqiwOnkAGWyMwth3o4bU81wg/preview?usp=drive_link" },
+                    { title: "Fibrose Cística", downloadUrl: "https://drive.google.com/file/d/15txC_izdcnFHRQAjimRGQ0KVLEASH5GK/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Artrite Idiopática Juvenil (AIJ)",
+                description: "Aula sobre AIJ.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Artrite Idiopática Juvenil (AIJ)", driveVideoUrl: "https://drive.google.com/file/d/1IbWNU4oQI6GlBEAQFveB2eJUIHRmTPYk/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Artrite Idiopática Juvenil (AIJ)", driveVideoUrl: "https://drive.google.com/file/d/1h9C4VXPYG88ObPQhScwYa-dpd9dkRP8R/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Artrite Idiopática Juvenil (AIJ)", downloadUrl: "https://drive.google.com/file/d/1VKrudOeK0c1MpcE4n_2RZJN8yV0V4o8r/preview?usp=drive_link" },
+                    { title: "Flashcards - Artrite Idiopática Juvenil (AIJ)", downloadUrl: "https://drive.google.com/file/d/1UoWUM0-L-nVC8JgxL3erSBEJsHwsH-o-/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Artrite Idiopática Juvenil (AIJ)", downloadUrl: "https://drive.google.com/file/d/1DMnDP_dCrW4qsf9TnBZI9egqr63hm4fK/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Artrite Idiopática Juvenil (AIJ)", downloadUrl: "https://drive.google.com/file/d/1KUAWzgoqFyW0UpBSZhCmigzUqR1YTaVc/preview?usp=drive_link" },
+                    { title: "Artrite Idiopática Juvenil (AIJ)", downloadUrl: "https://drive.google.com/file/d/1svKsSM92j1Ycb9bk_LErwDeE1zoQh1jC/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Diarreia",
+                description: "Aula sobre Diarreia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diarreia Aguda", driveVideoUrl: "https://drive.google.com/file/d/1sAkGNlzVMnDwTJslrIDoSUvpyXnlQdga/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Diarreia - Diarreia Aguda", driveVideoUrl: "https://drive.google.com/file/d/12YtPXdovUNXvp4wgJRr5iNp0BR6pyeY8/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Diarreia - Desidratação e Reidratação", driveVideoUrl: "https://drive.google.com/file/d/1qnSAr-5usPLMytmco2FQKoCNIfv2ZtBZ/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diarreia", downloadUrl: "https://drive.google.com/file/d/1nor7mC5T_7EdW86uj4nY7n8KztfcyJtt/preview?usp=drive_link" },
+                    { title: "Flashcards - Diarreia", downloadUrl: "https://drive.google.com/file/d/1aH8sa39AyubcsuoGe0rab8UmonGKGnqZ/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diarreia", downloadUrl: "https://drive.google.com/file/d/1kbZfhG4grM0ftry2xZNbeFfAh3pm0NH3/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Diarreia", downloadUrl: "https://drive.google.com/file/d/1jqEK_8djDvvMHTP96eRaOyyIOO7hhVqH/preview?usp=drive_link" },
+                    { title: "Diarreia", downloadUrl: "https://drive.google.com/file/d/13gsz3N-ME4ob1j1Agm9qb8LlZ9ySiqbA/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            }
+        ];
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros Digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas Mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros Digitais', 'Resumos', 'Slides', 'Mapas Mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num;
+             const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+             let roman = '', i;
+             for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+             return roman;
+        }
+
+        // CORRIGIDO: Função createSubItemDetail para adicionar ícones corretamente e tratar links
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link'); // Seleciona o link de download do template
+            const iconPathData = subItemIcons[subItemType]; // Pega o path do ícone
+
+            // Adiciona o ícone apropriado
+            if (iconPathData) {
+                 const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 // Define tamanho e margem (ícone de play é maior)
+                 const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                 iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                 // Define fill/stroke e viewBox baseado no tipo
+                 if (subItemType === 'Videoaulas') {
+                     iconContainer.setAttribute('fill', 'currentColor'); // Ícone de Play preenchido
+                     iconContainer.setAttribute('viewBox', '0 0 20 20');
+                 } else {
+                     iconContainer.setAttribute('fill', 'none'); // Outros ícones contornados
+                     iconContainer.setAttribute('stroke', 'currentColor');
+                     iconContainer.setAttribute('viewBox', '0 0 24 24');
+                 }
+
+                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                 path.setAttribute('d', iconPathData);
+                 // Define atributos específicos do path
+                 if (subItemType === 'Videoaulas') {
+                     path.setAttribute('fill-rule', 'evenodd');
+                     path.setAttribute('clip-rule', 'evenodd');
+                 } else { // Atributos para ícones contornados
+                     path.setAttribute('stroke-linecap', 'round');
+                     path.setAttribute('stroke-linejoin', 'round');
+                     path.setAttribute('stroke-width', '1.5'); // Ajuste a espessura se necessário
+                 }
+                 iconContainer.appendChild(path);
+                 itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild); // Insere o ícone
+            } else {
+                 // Se não houver ícone definido, garante que a margem do texto seja 0
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+
+            // Define o título
+            if (titleEl) {
+                if (subItemType === 'Videoaulas') {
+                    if (totalVideos === 1) {
+                        titleEl.textContent = mainTitle;
+                    } else {
+                        // Usa o título específico da videoaula se houver e não for genérico
+                        titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula"))
+                                               ? detailData.title
+                                               : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                    }
+                } else {
+                     titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                }
+            }
+
+            // Define o subtítulo (restaurado)
+            if (subtitleEl) {
+                 subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+
+            // CORRIGIDO: Configura o link de download ou remove o ícone
+            if (downloadLink) {
+                // Mostra link de download para QUALQUER item que tenha um downloadUrl válido (não #)
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    // Se for um link real (não #dl-), configura para abrir em nova aba
+                    if (!detailData.downloadUrl.startsWith('#dl-')) {
+                         downloadLink.href = detailData.downloadUrl;
+                         downloadLink.setAttribute('target', '_blank'); // Abrir em nova aba
+                         downloadLink.addEventListener('click', (e) => {
+                             e.stopPropagation(); // Evita que o clique no download carregue o item no iframe
+                         });
+                    } else {
+                         // Se for #dl-, mantém o href mas remove target e listener
+                         downloadLink.href = detailData.downloadUrl; // Mantém o href para identificação, se necessário
+                         downloadLink.removeAttribute('target');
+                    }
+                     downloadLink.title = `Baixar ${titleEl.textContent}`; // Define o title em ambos os casos
+                }
+                // Remove o ícone de download se não houver link válido
+                else {
+                    downloadLink.remove();
+                }
+            }
+
+             // CORRIGIDO: Adiciona atributos e classes para interatividade (carregar no iframe)
+             const itemDisplayTitle = titleEl.textContent; // Título que será mostrado na descrição
+             const videoUrl = detailData.driveVideoUrl;
+             const docUrl = detailData.downloadUrl; // Usar downloadUrl para documentos
+
+             // Verifica se é um vídeo clicável
+             if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                 detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Verifica se é um documento clicável (com link de preview, não só de download)
+             else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                 detailDiv.setAttribute('data-download-url', docUrl); // Usar data-download-url para carregar no iframe
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Se não for nenhum dos casos acima, não é clicável no iframe
+             else {
+                 // Remove cursor-pointer apenas se não for videoaula (videoaulas são sempre clicáveis para play)
+                 if (subItemType !== 'Videoaulas') {
+                    detailDiv.classList.remove('cursor-pointer');
+                 }
+             }
+
+
+             return detailDiv; // Retorna o elemento HTML do detalhe criado
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+             contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar."; // Mensagem inicial
+
+             // Limpa o menu existente antes de gerar o novo
+             menuListContainer.innerHTML = '';
+
+             // Itera sobre os dados de cada módulo para criar o menu
+             menuItemsData.forEach((itemData, mainIndex) => {
+                 const title = itemData.title; // Pega o título do módulo (já atualizado)
+                 const description = itemData.description; // Pega a descrição (atualizada ou placeholder)
+                 const subItems = itemData.subItems || {}; // Pega os subitens (atualizados para todos os módulos)
+                 // Cria um ID único para o conteúdo do acordeão principal
+                 const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                 // Cria o container principal para o item do acordeão
+                 const accordionItem = document.createElement('div');
+                 accordionItem.className = 'accordion-item';
+                 accordionItem.setAttribute('data-completed', 'false'); // Atributo para controle de status (concluído/não)
+                 accordionItem.setAttribute('data-main-description', description); // Guarda a descrição principal
+
+                 // Cria o botão do cabeçalho do acordeão principal
+                 const headerButton = document.createElement('button');
+                 headerButton.className = 'menu-item-header w-full accordion-header';
+                 headerButton.setAttribute('aria-expanded', 'false'); // Estado inicial: fechado
+                 headerButton.setAttribute('aria-controls', mainContentId); // Associa ao conteúdo
+
+                 // Cria o conteúdo interno do cabeçalho (título, subtítulo, botão de status)
+                 const headerContent = document.createElement('div');
+                 headerContent.className = 'text-left flex-grow mr-2 overflow-hidden'; // Layout flexível e esconde overflow
+                 headerContent.innerHTML = `
+                     <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3> <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                          <span>Estratégia Educacional</span> <button type="button" class="status-toggle flex-shrink-0"> <span>Concluído</span>
+                              <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                              <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                          </button>
+                      </div>`;
+
+                 // Cria o ícone de chevron (seta para baixo)
+                 const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                 chevronIcon.setAttribute('fill', 'none');
+                 chevronIcon.setAttribute('stroke', 'currentColor');
+                 chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                 chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                 // Adiciona o conteúdo e o ícone ao botão do cabeçalho
+                 headerButton.appendChild(headerContent);
+                 headerButton.appendChild(chevronIcon);
+
+                 // Cria a div que conterá os subitens (inicialmente escondida)
+                 const contentDiv = document.createElement('div');
+                 contentDiv.id = mainContentId;
+                 contentDiv.className = 'menu-item-content hidden'; // Classe 'hidden' para esconder
+
+                 // Gera os subitens (acordeões aninhados para cada tipo: Videoaulas, Livros, etc.)
+                 subItemOrder.forEach((subItemType, subIndex) => {
+                     const subItemArray = subItems[subItemType] || []; // Garante que seja um array
+                     const count = subItemArray.length; // Conta quantos itens existem
+                     // Cria um ID único para o conteúdo do acordeão aninhado
+                     const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                     // Cria o container para o subitem acordeão
+                     const subAccordionItem = document.createElement('div');
+                     subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`; // Adiciona margem superior se não for o primeiro
+
+                     // Cria o botão do cabeçalho do subitem acordeão
+                     const subHeaderButton = document.createElement('button');
+                     subHeaderButton.className = 'sub-accordion-header w-full';
+                     subHeaderButton.setAttribute('aria-expanded', 'false');
+                     subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                     if (count === 0) {
+                         subHeaderButton.disabled = true; // Desabilita se não houver itens
+                     }
+                     // Conteúdo do cabeçalho do subitem (Nome do tipo e contagem)
+                     subHeaderButton.innerHTML = `
+                         <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                         <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     `;
+
+                     // Cria a div que conterá os detalhes (vídeos, links de download)
+                     const subContentDiv = document.createElement('div');
+                     subContentDiv.id = nestedContentId;
+                     subContentDiv.className = 'sub-accordion-content hidden'; // Inicialmente escondida
+
+                     // Se houver detalhes, cria e adiciona cada um
+                     if (count > 0) {
+                         const totalVideos = (subItemType === 'Videoaulas') ? count : 0; // Para numerar corretamente as partes dos vídeos
+                         subItemArray.forEach((detailData, detailIndex) => {
+                             // Chama a função auxiliar para criar o elemento HTML do detalhe
+                             const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                             if (detailElement) {
+                                 subContentDiv.appendChild(detailElement); // Adiciona ao container de conteúdo do subitem
+                             }
+                         });
+                     }
+
+                     // Adiciona o cabeçalho e o conteúdo ao container do subitem acordeão
+                     subAccordionItem.appendChild(subHeaderButton);
+                     subAccordionItem.appendChild(subContentDiv);
+                     // Adiciona o subitem acordeão completo ao conteúdo do acordeão principal
+                     contentDiv.appendChild(subAccordionItem);
+                 });
+
+                 // Adiciona o cabeçalho e o conteúdo ao item principal do acordeão
+                 accordionItem.appendChild(headerButton);
+                 accordionItem.appendChild(contentDiv);
+                 // Adiciona o item principal completo à lista do menu
+                 menuListContainer.appendChild(accordionItem);
+             });
+
+             // --- Lógica dos Acordeões (Principal e Aninhado) ---
+             // RESTAURADO: Listeners individuais para permitir múltiplos abertos
+             const accordionHeaders = document.querySelectorAll('.accordion-header');
+             accordionHeaders.forEach(header => {
+                 header.addEventListener('click', (event) => {
+                     if (event.target.closest('.status-toggle')) return;
+                     const content = header.nextElementSibling; // Pega o div de conteúdo irmão
+                     if (!content || !content.classList.contains('menu-item-content')) return;
+                     const expanded = header.getAttribute('aria-expanded') === 'true';
+                     const chevronIcon = header.querySelector('.chevron-icon');
+                     header.setAttribute('aria-expanded', !expanded);
+                     content.classList.toggle('hidden');
+                     if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                 });
+             });
+
+
+             const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+             subAccordionHeaders.forEach(subHeader => {
+                 if (!subHeader.disabled) {
+                     subHeader.addEventListener('click', (event) => {
+                         event.stopPropagation();
+                         const content = subHeader.nextElementSibling;
+                         if (!content || !content.classList.contains('sub-accordion-content')) return;
+                         const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                         const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                         subHeader.setAttribute('aria-expanded', !expanded);
+                         content.classList.toggle('hidden');
+                         if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                     });
+                 }
+             });
+
+             // --- Lógica para Marcar/Desmarcar como Concluído ---
+             // RESTAURADO: Listener individual para cada botão
+             const statusToggles = document.querySelectorAll('.status-toggle');
+             statusToggles.forEach(toggle => {
+                 toggle.addEventListener('click', (event) => {
+                     event.stopPropagation(); // Impede que o clique acione o acordeão pai
+                     const accordionItem = toggle.closest('.accordion-item');
+                     if (!accordionItem) return;
+                     const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                     accordionItem.setAttribute('data-completed', !isCompleted);
+                     toggle.classList.toggle('is-completed', !isCompleted);
+                     console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                 });
+             });
+
+             // --- Lógica para Carregar Conteúdo (Vídeo ou PDF) ---
+             // RESTAURADO: Listener no container pai
+             menuListContainer.addEventListener('click', (event) => {
+                 const detailItem = event.target.closest('.sub-item-details');
+
+                 // Ignora cliques no link/ícone de download
+                 if (event.target.closest('.download-link')) {
+                     return;
+                 }
+
+                 if (detailItem && contentViewer && contentDescription) {
+                     const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                     const downloadUrl = detailItem.getAttribute('data-download-url');
+                     const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                     const parentAccordionItem = detailItem.closest('.accordion-item');
+                     const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo'; // Pega o título do módulo
+
+                     // Verifica se o item é clicável
+                     if (driveVideoUrl || downloadUrl) {
+                         document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                             activeItem.classList.remove('is-active');
+                         });
+                         detailItem.classList.add('is-active');
+
+                         if (driveVideoUrl) {
+                             contentViewer.src = driveVideoUrl;
+                             // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                             console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                         } else if (downloadUrl) {
+                             contentViewer.src = downloadUrl;
+                              // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                             console.log(`Carregando documento: ${downloadUrl}`);
+                         }
+                     }
+                 }
+             });
+
+
+             // --- Lógica para o botão de Like ---
+             // RESTAURADO: Listener individual
+             if(likeButton) {
+                 likeButton.addEventListener('click', () => {
+                     likeButton.classList.toggle('is-liked');
+                     const isLiked = likeButton.classList.contains('is-liked');
+                     console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                 });
+             }
+
+             // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+             const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+             if (firstClickableDetail) {
+                 setTimeout(() => {
+                     const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                     if (parentHeader) {
+                         const content = parentHeader.nextElementSibling;
+                         const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                         if (content && content.classList.contains('hidden')) {
+                             parentHeader.setAttribute('aria-expanded', 'true');
+                             content.classList.remove('hidden');
+                             if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                         }
+                         const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                         if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                             const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                             if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                                 parentSubHeader.click();
+                             }
+                         }
+                         firstClickableDetail.click();
+                     }
+                 }, 100);
+             } else {
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+             }
+
+
+        } else {
+            console.error("Elementos essenciais não encontrados.");
+        }
+    </script>
+
+</body>
+</html>

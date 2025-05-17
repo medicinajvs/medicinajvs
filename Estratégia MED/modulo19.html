@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Ortopedia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; } /* Define a fonte padrão e a cor de fundo */
+
+        /* Estilos para o cabeçalho de cada item principal do menu */
+        .menu-item-header {
+            border: 1px solid #e2e8f0; /* Borda cinza claro */
+            padding: 0.75rem 1rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            background-color: white; /* Fundo branco */
+            cursor: pointer; /* Cursor de ponteiro */
+            transition: background-color 0.2s ease-in-out; /* Transição suave da cor de fundo */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre o conteúdo e o ícone */
+            align-items: center; /* Alinha itens verticalmente */
+            margin-bottom: 0; /* Remove margem inferior padrão */
+            text-align: left; /* Alinha texto à esquerda */
+            width: 100%; /* Largura total */
+        }
+        .menu-item-header:hover { background-color: #f8fafc; } /* Cor de fundo ao passar o mouse */
+
+        /* Estilos para o conteúdo expansível de cada item principal */
+        .menu-item-content {
+            padding: 0.5rem 1rem 1rem 1rem; /* Espaçamento interno */
+            background-color: white; /* Fundo branco */
+            border-left: 1px solid #e2e8f0; /* Borda esquerda */
+            border-right: 1px solid #e2e8f0; /* Borda direita */
+            border-bottom: 1px solid #e2e8f0; /* Borda inferior */
+            border-bottom-left-radius: 0.375rem; /* Canto inferior esquerdo arredondado */
+            border-bottom-right-radius: 0.375rem; /* Canto inferior direito arredondado */
+            margin-bottom: 0.75rem; /* Margem inferior entre itens principais */
+        }
+
+        /* Estilos para o cabeçalho dos subitens (acordeão aninhado) */
+        .sub-accordion-header {
+            padding: 0.75rem 0.5rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            margin-top: 0.5rem; /* Margem superior */
+            background-color: #f8fafc; /* Fundo cinza muito claro */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre o título e o ícone */
+            align-items: center; /* Alinha itens verticalmente */
+            cursor: pointer; /* Cursor de ponteiro */
+            width: 100%; /* Largura total */
+            text-align: left; /* Alinha texto à esquerda */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        .sub-accordion-header:hover { background-color: #f1f5f9; } /* Cor de fundo ao passar o mouse */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; } /* Estilo para cabeçalho desabilitado */
+
+        /* Estilos para o conteúdo dos subitens */
+        .sub-accordion-content {
+            padding-left: 1rem; /* Recuo à esquerda */
+            margin-top: 0.25rem; /* Margem superior */
+        }
+
+        /* Estilos para os detalhes de cada subitem (vídeo, pdf, etc.) */
+        .sub-item-details {
+            padding: 0.75rem 0.5rem 0.75rem 1rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            margin-top: 0.25rem; /* Margem superior */
+            background-color: #e2e8f0; /* Fundo cinza claro */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre conteúdo e link de download */
+            align-items: center; /* Alinha itens verticalmente */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download que pode ser visualizado) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; } /* Cor de fundo ao passar o mouse em itens clicáveis */
+
+        /* Estilo para item ativo (o que está sendo visualizado) */
+        .sub-item-details.is-active { background-color: #bfdbfe; } /* Fundo azul claro */
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Cor do ícone ativo (azul) - aplicado apenas ao ícone */
+
+        /* Container para o conteúdo do detalhe (ícone + texto) */
+        .item-details-content {
+            display: flex; /* Layout flexível */
+            align-items: center; /* Alinha itens verticalmente */
+            flex-grow: 1; /* Ocupa o espaço disponível */
+            margin-right: 0.5rem; /* Margem direita para separar do botão de download */
+            overflow: hidden; /* Esconde texto que transborda */
+        }
+        /* Ajuste de margem quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes do texto */
+
+        /* Estilo para o link/ícone de download */
+        .download-link {
+            display: inline-flex; /* Layout flexível */
+            align-items: center; /* Alinha ícone verticalmente */
+            color: #6b7280; /* Cor cinza */
+            transition: color 0.2s ease-in-out; /* Transição suave */
+            flex-shrink: 0; /* Não encolhe */
+        }
+        .download-link:hover { color: #1f2937; } /* Cor mais escura ao passar o mouse */
+
+        /* Estilo para o botão de marcar/desmarcar como concluído */
+        .status-toggle {
+            cursor: pointer; /* Cursor de ponteiro */
+            display: flex; /* Layout flexível */
+            align-items: center; /* Alinha itens verticalmente */
+            gap: 0.25rem; /* Espaço entre texto e ícone */
+            padding: 0.25rem; /* Espaçamento interno */
+            border-radius: 0.25rem; /* Cantos arredondados */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        .status-toggle:hover { background-color: #e5e7eb; } /* Fundo cinza claro ao passar o mouse */
+        .status-toggle .icon-completed { display: none; } /* Ícone de concluído escondido por padrão */
+        .status-toggle .icon-not-completed { display: inline-block; } /* Ícone de não concluído visível por padrão */
+        .status-toggle.is-completed .icon-completed { display: inline-block; } /* Mostra ícone de concluído */
+        .status-toggle.is-completed .icon-not-completed { display: none; } /* Esconde ícone de não concluído */
+
+        /* Container do vídeo/iframe responsivo (proporção 16:9) */
+        .video-container-yt {
+            position: relative; /* Necessário para posicionamento absoluto do iframe */
+            padding-bottom: 56.25%; /* Proporção 16:9 (9 / 16 * 100) */
+            height: 0; /* Altura zero, padding-bottom define a altura */
+            overflow: hidden; /* Esconde conteúdo que transborda */
+            max-width: 100%; /* Largura máxima */
+            background: #ccc; /* Fundo cinza enquanto carrega */
+            border-radius: 0.5rem; /* Cantos arredondados */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Sombra */
+            margin-bottom: 1rem; /* Margem inferior */
+        }
+        .video-container-yt iframe {
+            position: absolute; /* Posicionamento absoluto dentro do container */
+            top: 0;
+            left: 0;
+            width: 100%; /* Largura total */
+            height: 100%; /* Altura total */
+            border: 0; /* Remove borda padrão do iframe */
+        }
+
+        /* Container do menu lateral com barra de rolagem */
+        .menu-container {
+            flex-shrink: 0; /* Não encolhe */
+            max-height: calc(100vh - 150px); /* Altura máxima calculada (altura da viewport - espaço estimado para header/padding) */
+            overflow-y: auto; /* Adiciona barra de rolagem vertical se necessário */
+        }
+        /* Estilização da barra de rolagem (apenas WebKit - Chrome, Safari) */
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+
+        /* Classe utilitária para esconder elementos */
+        .hidden { display: none; }
+
+        /* Classe utilitária para rotacionar ícones (chevron) */
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; } /* Transição suave da rotação */
+
+        /* Estilos para o botão de like/curtir */
+        .like-button .heart-outline { display: inline-block; } /* Ícone de coração vazio visível por padrão */
+        .like-button .heart-filled { display: none; } /* Ícone de coração preenchido escondido por padrão */
+        .like-button.is-liked .heart-outline { display: none; } /* Esconde coração vazio quando curtido */
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* Cor vermelha (red-500) */ } /* Mostra coração preenchido quando curtido */
+
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Ortopedia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                <div class="video-container-yt">
+                    <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+                <template id="subitem-details-template">
+                    <div class="sub-item-details">
+                        <div class="item-details-content">
+                            <div class="overflow-hidden">
+                                <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                            </div>
+                        </div>
+                        <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </a>
+                    </div>
+                </template>
+                <div id="menu-items-list">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Dados e Configurações ---
+
+        // Novos títulos para Ortopedia
+        const newOrthopedicsTitles = [
+            "Quadril Pediátrico", "Politrauma Ortopédico", "Doenças da Coluna Vertebral", "Complicações do Trauma Ortopédico", "Maus-Tratos",
+            "Oncologia Ortopédica e Osteomielite", "Fraturas e Luxações", "Fratura Exposta", "Ombro e Joelho Pediátrico",
+            "Conceitos Básicos do Trauma Ortopédico", "Conceitos Básicos de Anatomia e Semiologia", "Desenvolvimento Ortopédico da Criança",
+            "Doenças do Ombro e Cotovelo", "Doenças da Mão e Síndromes Compressivas", "Coluna Pediátrica", "Doenças Neuromusculares Pediátricas",
+            "Doenças de Partes Moles", "Miscelânea Ortopédica", "Estatísticas em Ortopedia"
+        ];
+
+        // Quantidades de subitens para cada módulo de Ortopedia
+        const orthopedicsSubItemCounts = [
+            { video: 3, livro: 2, resumo: 1, slide: 2, mapa: 1 }, // Quadril Pediátrico
+            { video: 5, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Politrauma Ortopédico
+            { video: 3, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Doenças da Coluna Vertebral
+            { video: 3, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Complicações do Trauma Ortopédico
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Maus-Tratos
+            { video: 4, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Oncologia Ortopédica e Osteomielite
+            { video: 4, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Fraturas e Luxações
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Fratura Exposta
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Ombro e Joelho Pediátrico
+            { video: 3, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Conceitos Básicos do Trauma Ortopédico
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 0 }, // Conceitos Básicos de Anatomia e Semiologia
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Desenvolvimento Ortopédico da Criança
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Doenças do Ombro e Cotovelo
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 1 }, // Doenças da Mão e Síndromes Compressivas
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 0 }, // Coluna Pediátrica
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 0 }, // Doenças Neuromusculares Pediátricas
+            { video: 2, livro: 1, resumo: 1, slide: 2, mapa: 0 }, // Doenças de Partes Moles
+            { video: 3, livro: 1, resumo: 1, slide: 2, mapa: 0 }, // Miscelânea Ortopédica
+            { video: 0, livro: 1, resumo: 0, slide: 0, mapa: 0 }  // Estatísticas em Ortopedia
+        ];
+
+        // Função para transformar links do Google Drive para o formato de preview
+        function transformDriveLink(url) {
+            if (typeof url !== 'string') return '';
+            return url.replace('/view?usp=sharing', '/preview').replace('/view?usp=drive_link', '/preview');
+        }
+
+        // Links reais para os módulos
+        const realLinksForModules = [
+            // Módulo 1: Quadril Pediátrico (Index 0)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1Gc72_eTIfeWWkzIKAo-sysghG5SUCDKi/view?usp=sharing",
+                    "https://drive.google.com/file/d/1Ie75YYKjHCtWo6ELpLYCJQCE1AcPsG1x/view?usp=sharing",
+                    "https://drive.google.com/file/d/1TLxZc6CLM1sHSsPaW18T227Qd0aWiZl1/view?usp=sharing"
+                ],
+                livrosDigitais: [
+                    "https://drive.google.com/file/d/1_9YDAKloDBjOl-hxVhjvJp-_hbN6BytB/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1ojX9lmdJiDNb7pNukL_6knmaGdY2OTkJ/view?usp=drive_link"
+                ],
+                resumos: ["https://drive.google.com/file/d/1z_atuX5nyyftAO91FmmALcJNXvcTGNbB/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1nDVspqcuKCB3mjzIP1-fc9QQ7TXOvteB/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1l5V0YWmL6jvkYNQxE3vzordjzn1L0ZOV/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1GrxPmOFxzjHboGOl4d_QnpLzqivDS729/view?usp=drive_link"]
+            },
+            // Módulo 2: Politrauma Ortopédico (Index 1)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1LA9ip2iWdYC-qkybY3Z_cWsuiZ_6hbCc/view?usp=sharing",
+                    "https://drive.google.com/file/d/1LV_pzmyGIzwctCgN1-f4ewtqxAoVopC1/view?usp=sharing",
+                    "https://drive.google.com/file/d/1fam-kq-T6ei0s03SUUqjl_rU1eBBMFGI/view?usp=sharing",
+                    "https://drive.google.com/file/d/1Ymr2G1nMwecDn4lgjSKQodNbrLA8voRB/view?usp=sharing",
+                    "https://drive.google.com/file/d/1FpEWn-t7wHKNXSxZvzRdk1ESkd8-Pgf2/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/15eWiQME1l8Peh8QZywL0x3gvPn1dY0z2/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1XERVk7e80eKqjBQgcvbjQb502t1M_3uQ/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1D_7ndetIdZ73OyQSJUVI9PHPm3fUdurW/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1C_qbRlQxqHP8W9zr7Pri671XrYXycyoV/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1f-vOND9U9iSk2CogZ_EfuIw8YK-6VBUn/view?usp=drive_link"]
+            },
+            // Módulo 3: Doenças da Coluna Vertebral (Index 2)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1PnOWYJoOvUn8ufx--psaaBjk-uTipj5l/view?usp=sharing",
+                    "https://drive.google.com/file/d/1ZCPIKfK-SKPRJnmu09L6SSNcYEOrR5Np/view?usp=sharing",
+                    "https://drive.google.com/file/d/1YJr0HMivGoY_T7nsjeYT2JqTFCNiizpn/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1NkCdHgA-kgQ711-bknBMvsvy7avSN2Uz/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1kFQ0uLHi0kpM1yGR3CUFwHN7LOm_feIC/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1Uy2BNG3A2nwDHlcvKnpvZMdDF2yT95jY/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1KO24IhxuP6xQQm02Ku7xjI0nvoHD0KNq/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1eDi9FIVGDPor6WgUwzQi577gqUPQF3Kc/view?usp=drive_link"]
+            },
+            // Módulo 4: Complicações do Trauma Ortopédico (Index 3)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/17V-mWKXoDCKtphvkVXPo8kpt3Yzdoz8n/view?usp=sharing",
+                    "https://drive.google.com/file/d/1wBt2ShQV5iixPxyFcWapVArVq6b5dw9H/view?usp=sharing",
+                    "https://drive.google.com/file/d/1WpaXSnwD7Bmjd99Kdkzb3SouaYPXps0d/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1l7Q8hZpTIcm_5P57MBEfKd3PC6w8panT/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/18cXIrF_Oy--o6POvfUySo_MFgB2-vQBC/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1ERgw_ibLKEhcGWNqrF6abYMwD6FNH2dG/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1e5SjQjKSSFgY6MjC6x1aROtvsImGhHxa/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1znz-lW59R1Hki3OtrL8xfzkzCGTC_ozF/view?usp=drive_link"]
+            },
+            // Módulo 5: Maus-Tratos (Index 4)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1hKOVuww_fp_QB31WdC7qKR1epXKNuDgc/view?usp=sharing",
+                    "https://drive.google.com/file/d/1TCSK-NWr5UyliyC874rnW8om7rNrhuu7/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1rwwzhD8tnRAmVy9bNBkAvemZWQnTy9h6/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1XoCKdX8hM3MS_wpreA2ryf7nJnRIt5n4/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1Ql2GGqY0d95mlJcVyhqDfpeOoD3kX2lw/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1gIXJNs1ZtsB-8H6aPgXwzHaJwPtsONx0/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1eLbEAfQ8BOVbZ_qADrpMqJfVki8Fv_Ds/view?usp=drive_link"]
+            },
+            // Módulo 6: Oncologia Ortopédica e Osteomielite (Index 5)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/14tt_6AKL4uoezQH2OZHEa_B0HuF0TE5x/view?usp=sharing",
+                    "https://drive.google.com/file/d/1yPzH1drCZy_HQdtO4Id1VtmUHU04O-k3/view?usp=sharing",
+                    "https://drive.google.com/file/d/1HmcMCxWtCrSBzO6LVJFPLdDGEzlFCfHe/view?usp=sharing",
+                    "https://drive.google.com/file/d/1MswrdtYZDkeoLS22zQa4HGOBS_YrYGIJ/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1fpOc_kvxRHrpa1iUM3ac6uapb7wnGaea/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1lO7kAAyjh9uVaKiaj5V2lKZANq6y8Dsp/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1UxsP-pSY04K_q4tNgPyVzXq7LkMQrr2v/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1h_QiN788Ryq8XueeiJal8-jg5YqK-vwY/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1-J1OCj5wn7e2wSNR9DqyRllsppO0xMQ3/view?usp=drive_link"]
+            },
+            // Módulo 7: Fraturas e Luxações (Index 6)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1JEGW13DAMF-5xOLAf0Kru9cZxJOMUlO7/view?usp=sharing",
+                    "https://drive.google.com/file/d/1HKNtHfvotHA543v5CndAn2T2EG8E6KCn/view?usp=sharing",
+                    "https://drive.google.com/file/d/1_Zy5mKrypjNyi5d37Fn4_rwRlpMEPMyf/view?usp=sharing",
+                    "https://drive.google.com/file/d/12UnigmAIvBbi-W5KrTW_ibOV0l7oPdLt/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1_7jqd6yj-lCdJk2zUj4tzRvjBv9WPOOD/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/17ZgNfHbjjZ-o4h02w_ra9rW5W_sBkw57/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/13iUX86mzX6a5tZkgVqHCR80my-JTa7Sa/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1fF1J01DGjkmQcS8dBIruwQP80ZDTY0V7/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1WcSfP1N81MtzMG-fjspWjact-fjYBr-h/view?usp=drive_link"]
+            },
+            // Módulo 8: Fratura Exposta (Index 7)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1SlX_JLoOyqE5XhhTOi4u9CrayrTHnJrz/view?usp=sharing",
+                    "https://drive.google.com/file/d/1ch-tKMqTXh_QjlqFDzwD7DpXzvw8Qbzd/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1m5JEj7imctP35VpN9M7J0gHyG_wuqSGU/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1d8MDjJztJsPgWb1G7ozB2LV5qzNhBXZS/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/10ZN_K4yf5CTnAlfJBpkkgHBlv7fd_Sq4/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1YwKLWG9x8powczTO-3E3AXabxn13xXDZ/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1Hv4VVPW7jC06ek4lDYGwr3VDrX8J00BA/view?usp=drive_link"]
+            },
+            // Módulo 9: Ombro e Joelho Pediátrico (Index 8)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1Xq_h7HZxj8PpvUdwGzRIXiBvabZcnGfn/view?usp=sharing",
+                    "https://drive.google.com/file/d/10YrRgtfR_zgOk9BAFHwB0QTLk0mqcFKF/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1DI5zKwFF3fn6XLKvE8XulQh1KoLbQtvb/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1BC7lSWPSHFJYtLPWCTh2d_bkgOpkJWK7/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1M_neinULXO7KXiq7UvKlhMjfxpPWnVrX/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1AU3SvLsziQjUXvMXRlDFIfC3OPlcpqFS/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1DNuzUm6L9fuBkwiL2uMU483JfOrRJ5-1/view?usp=drive_link"]
+            },
+            // Módulo 10: Conceitos Básicos do Trauma Ortopédico (Index 9)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/11-l3UrDqGLBeRagIAkjUcBScFPMYJlsr/view?usp=sharing",
+                    "https://drive.google.com/file/d/1n94rWkKqHwWE4kK_m5ueWN_9xUHnnRPh/view?usp=sharing",
+                    "https://drive.google.com/file/d/1tqJ08YWehSreamWKDpfr0S5MN3sTBm5f/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1oqdNUa2qPMyRP7wymb-wfKJY-qo3Zop3/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/18q8TelenCWvyhg8PLJdb510KXBuHnoo7/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1ga5c6yHcOD1LolxGRmTZYE0-gvUal4zQ/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1nrcHA0ZCizFI0Mvo-yEsem2a1QvvKG6o/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1V7zCiBaoPoo0TbaTXGv9mKoiIm6mBArH/view?usp=drive_link"]
+            },
+            // Módulo 11: Conceitos Básicos de Anatomia e Semiologia (Index 10)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/14ERRaLLKg7VJsiMMT4of5fRTEZ1zZBPe/view?usp=sharing",
+                    "https://drive.google.com/file/d/1KJx-ikUdaXECqSZOgzLdeI9XVhOaK97B/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/13u-bvdjNhnGa_a7cbZhmzOJsltX9Wjw6/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1DPKZM0ITpF0jIlyBe9zN7jRlhna1M0B8/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1wSV6WwebzMC3SyufzfkxG_H5vt5W7vr1/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1Gbtai9PwvSoYC_6smjIiNsooO_fTZEML/view?usp=drive_link"
+                ],
+                mapasMentais: [] // Count é 0
+            },
+            // Módulo 12: Desenvolvimento Ortopédico da Criança (Index 11)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1Y3Tm6JMtSZ2xYKZFZ82QJqCa1Blnfd3p/view?usp=sharing",
+                    "https://drive.google.com/file/d/1Z3C3vVnNKJM5cO8noYacOZhq_utGkrEJ/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1Ee34-chv9GYUzppKlkzksrARIkiJ3sKD/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1797tG8AAnWc3H7w8thcgOMgrAaoe1gYR/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1kBiXv50FLkxsCBu9iACJeD8u3EFRhTmd/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1t5bwQWGLKPGs5kurgtZP6RUBqWLfp0hB/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1CCwPp7IQ9s-ywfJQvJcFgVEOeii9VvTp/view?usp=drive_link"]
+            },
+            // Módulo 13: Doenças do Ombro e Cotovelo (Index 12)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1pppy8m87aq1J8jBYkjAOlidVao95sacZ/view?usp=sharing",
+                    "https://drive.google.com/file/d/1sO819Qsn6l1UF0o1wI8FgpRwLfs23XNe/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1NqhUY2kjDnjtzTqbS95bnm3pCqvcfz_p/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1J64U3oubgdDx3XGf7t5MZWdS3hOcSpmz/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1Iw5O2O51EKPzVzM3YwKLhqGKlnBqipVt/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1YzZGzClC2NGCElc0zTpTbjM82apfYu_N/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1sKa6nxO4gWBMwcdeasYV_Hv3KOsF3fgM/view?usp=drive_link"]
+            },
+            // Módulo 14: Doenças da Mão e Síndromes Compressivas (Index 13)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1zOwvEdHLhSr6EgdRzn35Mfl-hKCfM1cm/view?usp=sharing",
+                    "https://drive.google.com/file/d/17FG6iZfYCooXL5VNoMOf1eWjepGglzmD/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/13BxNCCCGkdyP4rWAOrZOR2zVrzF1UE5C/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1E9K5AWrKzOvN6eRcI_suJtI4xtAg0Qyn/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1T-OwSKBUwkPMtf4zt9n_uBoso-3unHWW/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1OFRLRdKlYaObg6T0tyyxKiP3i1ib9v7U/view?usp=drive_link"
+                ],
+                mapasMentais: ["https://drive.google.com/file/d/1K_6xvUZHKR7M1IqR9ZkWYLISgg_6fHMP/view?usp=drive_link"]
+            },
+            // Módulo 15: Coluna Pediátrica (Index 14)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1IXuxMkcRzZ_-kL96vIjH3lKMguznQWXU/view?usp=sharing",
+                    "https://drive.google.com/file/d/1EqD5Jd9g8WYf8LlFwRUahcncYF8QC514/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1alKZ5-YecA9RDZtM8zqocisjUqKLJe7Q/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1t1RQPYyAMmWKeQlqy5Ba_BHr0ZyaY3tE/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1OjuXz5e4OTq_WEvY6_j7ms1Qza0Rk1QN/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1rxmSSmRs7YNB3QX_PZMZTvmNcYLvH2mQ/view?usp=drive_link"
+                ],
+                mapasMentais: [] // Count é 0
+            },
+            // Módulo 16: Doenças Neuromusculares Pediátricas (Index 15)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/1x74YWExcUCcA61F3CdioY8cQm1H4j4r9/view?usp=sharing",
+                    "https://drive.google.com/file/d/1kyoxvxveachYbCwy_gEijPDYZZ9xCzbK/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1LRpA-EPvFW-VxaAwsbR1kZgwVdjY341v/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1VKVkDk709EkrQRbEgUrVNXLc1UR84rjc/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1jqfNNfK9WebNe4hqprhxJAsoCt8k83Uj/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1iVlFirJoAOhyH8DoUqliRb64mkWe7yyX/view?usp=drive_link"
+                ],
+                mapasMentais: [] // Count é 0
+            },
+            // Módulo 17: Doenças de Partes Moles (Index 16)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/128Df-ZpCo1sCHiIN6olvMfEkf80ZpMN9/view?usp=sharing",
+                    "https://drive.google.com/file/d/1emSHQA6ZWXXoUHmzSqGfGaVlU0K_cEEi/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1XakVHWYLf4AtoNL2o0KK-0qyxOBhSGG7/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1LRKnUNu44Q4evu4VaIG74_VNyElQ8v41/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1wtQTJZfYoo-fZGEpXUpgtKIubGqyl6Vh/view?usp=drive_link",
+                    "https://drive.google.com/file/d/1el4Ba7looB31MuGJy1_QqDBviFTiOYXU/view?usp=drive_link"
+                ],
+                mapasMentais: [] // Count é 0
+            },
+            // Módulo 18: Miscelânea Ortopédica (Index 17)
+            {
+                videoaulas: [
+                    "https://drive.google.com/file/d/15td-8sxi67TDYrgj-PVajn--vhUrlA4b/view?usp=sharing",
+                    "https://drive.google.com/file/d/1eVWX1DJn0NZRL5Z5K11BDkqdhmdYJHkK/view?usp=sharing",
+                    "https://drive.google.com/file/d/1oB5jbm_eBPZQLLqtU6piCuTesTSPIzck/view?usp=sharing"
+                ],
+                livrosDigitais: ["https://drive.google.com/file/d/1EgDjlwrAU9OsWBt4qC_55z1TZzzeRyab/view?usp=drive_link"],
+                resumos: ["https://drive.google.com/file/d/1L8XZ1Q8oY8iO2re4kYQ0aqXTyBsIFfjz/view?usp=drive_link"],
+                slides: [
+                    "https://drive.google.com/file/d/1W0caMPXuwzg8a1DQQA27KuAa4D5g_QI-/view?usp=drive_link",
+                    "https://drive.google.com/file/d/11Bj_S7kyaVXxT9szNmVb8pTYBBDBS6Pt/view?usp=drive_link"
+                ],
+                mapasMentais: [] // Count é 0
+            },
+            // Módulo 19: Estatísticas em Ortopedia (Index 18)
+            {
+                videoaulas: [], // Count é 0
+                livrosDigitais: ["https://drive.google.com/file/d/15JkQkcPQDT1CTJCbsn6G0KE3fHdFlhE7/view?usp=drive_link"],
+                resumos: [], // Count é 0
+                slides: [], // Count é 0
+                mapasMentais: [] // Count é 0
+            }
+        ];
+
+
+        // Função para gerar subitens com base na contagem (para placeholders)
+        function generatePlaceholderSubItems(moduleTitle, itemTypeName, count, moduleIndex, itemTypeKey) {
+            const items = [];
+            for (let i = 0; i < count; i++) {
+                let itemTitle = moduleTitle;
+                let driveVideoUrl = null;
+                let downloadUrl = `https://drive.google.com/file/d/placeholder_${itemTypeKey}_${moduleIndex}_${i}/preview?usp=drive_link`;
+
+                if (itemTypeName === 'Videoaulas') {
+                    itemTitle = `${moduleTitle} - Parte ${romanize(i + 1)}`;
+                    driveVideoUrl = `https://drive.google.com/file/d/placeholder_video_${moduleIndex}_${i}/preview?usp=drive_link`;
+                    downloadUrl = `#dl-mod${moduleIndex}-v${i}`;
+                } else if (itemTypeName === 'Livros digitais') {
+                    itemTitle = (count > 1 && i === 1) ? `${moduleTitle} - Flashcards` : moduleTitle;
+                } else if (itemTypeName === 'Slides') {
+                    itemTitle = (count > 1 && i === 1) ? `${moduleTitle} - Aula Resumo` : moduleTitle;
+                }
+                items.push({ title: itemTitle, driveVideoUrl: driveVideoUrl, downloadUrl: downloadUrl });
+            }
+            return items;
+        }
+
+        // Dados dos módulos construídos dinamicamente
+        const menuItemsData = newOrthopedicsTitles.map((title, index) => {
+            const counts = orthopedicsSubItemCounts[index];
+            let currentSubItems;
+
+            if (index < realLinksForModules.length && realLinksForModules[index]) { // Usa links reais se disponíveis
+                const moduleRealLinks = realLinksForModules[index];
+                currentSubItems = {
+                    'Videoaulas': (moduleRealLinks.videoaulas || []).slice(0, counts.video).map((link, i) => ({
+                        title: `${title} - Parte ${romanize(i + 1)}`,
+                        driveVideoUrl: transformDriveLink(link),
+                        downloadUrl: `#dl-mod${index}-v${i}`
+                    })),
+                    'Livros digitais': (moduleRealLinks.livrosDigitais || []).slice(0, counts.livro).map((link, i) => ({
+                        title: (counts.livro > 1 && i === 1) ? `${title} - Flashcards` : title,
+                        driveVideoUrl: null,
+                        downloadUrl: transformDriveLink(link)
+                    })),
+                    'Resumos': (moduleRealLinks.resumos || []).slice(0, counts.resumo).map((link, i) => ({
+                        title: title,
+                        driveVideoUrl: null,
+                        downloadUrl: transformDriveLink(link)
+                    })),
+                    'Slides': (moduleRealLinks.slides || []).slice(0, counts.slide).map((link, i) => ({
+                        title: (counts.slide > 1 && i === 1) ? `${title} - Aula Resumo` : title,
+                        driveVideoUrl: null,
+                        downloadUrl: transformDriveLink(link)
+                    })),
+                    'Mapas mentais': (moduleRealLinks.mapasMentais || []).slice(0, counts.mapa).map((link, i) => ({
+                        title: title,
+                        driveVideoUrl: null,
+                        downloadUrl: transformDriveLink(link)
+                    }))
+                };
+            } else {
+                // Fallback para geração de placeholders para módulos restantes (embora todos devam ter links agora)
+                currentSubItems = {
+                    'Videoaulas': generatePlaceholderSubItems(title, 'Videoaulas', counts.video, index, 'vid'),
+                    'Livros digitais': generatePlaceholderSubItems(title, 'Livros digitais', counts.livro, index, 'liv'),
+                    'Resumos': generatePlaceholderSubItems(title, 'Resumos', counts.resumo, index, 'res'),
+                    'Slides': generatePlaceholderSubItems(title, 'Slides', counts.slide, index, 'sld'),
+                    'Mapas mentais': generatePlaceholderSubItems(title, 'Mapas mentais', counts.mapa, index, 'map')
+                };
+            }
+
+            return {
+                title: title,
+                description: `Aula sobre ${title}.`,
+                subItems: currentSubItems
+            };
+        });
+
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+            if (isNaN(num) || num < 1) return String(num);
+            var digits = String(+num).split(""),
+                key = ["","I","II","III","IV","V","VI","VII","VIII","IX",
+                       "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC",
+                       "","C","CC","CCC","CD","D","DC","DCC","DCCC","CM"],
+                roman = "",
+                i = 3;
+            while (i--)
+                roman = (key[+digits.pop() + (i * 10)] || "") + roman;
+            return Array(+digits.join("") + 1).join("M") + roman;
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitleFromDataItem, videoIndex, totalVideos) {
+            if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                iconContainer.setAttribute('fill', (subItemType === 'Videoaulas') ? 'currentColor' : 'none');
+                iconContainer.setAttribute('stroke', (subItemType !== 'Videoaulas') ? 'currentColor' : 'none');
+                iconContainer.setAttribute('viewBox', (subItemType === 'Videoaulas') ? '0 0 20 20' : '0 0 24 24');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', iconPathData);
+                if (subItemType === 'Videoaulas') {
+                    path.setAttribute('fill-rule', 'evenodd');
+                    path.setAttribute('clip-rule', 'evenodd');
+                } else {
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.setAttribute('stroke-linejoin', 'round');
+                    path.setAttribute('stroke-width', '1.5');
+                }
+                iconContainer.appendChild(path);
+                itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+            if (titleEl) {
+                titleEl.textContent = detailData.title;
+            }
+
+            if (downloadLink) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#' && !detailData.downloadUrl.startsWith('#dl-')) {
+                    downloadLink.href = detailData.downloadUrl;
+                    downloadLink.title = `Baixar ${detailData.title}`;
+                    downloadLink.setAttribute('target', '_blank');
+                    downloadLink.addEventListener('click', (e) => e.stopPropagation());
+                } else {
+                    downloadLink.remove();
+                }
+            }
+
+            const itemDisplayTitle = detailData.title;
+            if (subItemType === 'Videoaulas' && detailData.driveVideoUrl && detailData.driveVideoUrl.includes('/d/')) {
+                detailDiv.setAttribute('data-drive-video-url', detailData.driveVideoUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            } else if (detailData.downloadUrl && detailData.downloadUrl !== '#' && detailData.downloadUrl.includes('/d/')) {
+                detailDiv.setAttribute('data-download-url', detailData.downloadUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            } else {
+                detailDiv.classList.remove('cursor-pointer');
+            }
+            return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+            contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+            menuListContainer.innerHTML = '';
+
+            menuItemsData.forEach((itemData, mainIndex) => {
+                const title = itemData.title;
+                const description = itemData.description;
+                const subItems = itemData.subItems || {};
+                const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 30)}`;
+
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.setAttribute('data-completed', 'false');
+                accordionItem.setAttribute('data-main-description', description);
+
+                const headerButton = document.createElement('button');
+                headerButton.className = 'menu-item-header w-full accordion-header';
+                headerButton.setAttribute('aria-expanded', 'false');
+                headerButton.setAttribute('aria-controls', mainContentId);
+
+                const headerContent = document.createElement('div');
+                headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                headerContent.innerHTML = `
+                    <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                    <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                        <span>Estratégia Educacional</span>
+                        <button type="button" class="status-toggle flex-shrink-0">
+                            <span>Concluído</span>
+                            <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                            <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>`;
+
+                const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                chevronIcon.setAttribute('fill', 'none');
+                chevronIcon.setAttribute('stroke', 'currentColor');
+                chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                headerButton.appendChild(headerContent);
+                headerButton.appendChild(chevronIcon);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = mainContentId;
+                contentDiv.className = 'menu-item-content hidden';
+
+                subItemOrder.forEach((subItemTypeKey, subIndex) => {
+                    const subItemArray = subItems[subItemTypeKey] || [];
+                    const count = subItemArray.length;
+                    const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                    const subAccordionItem = document.createElement('div');
+                    subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                    const subHeaderButton = document.createElement('button');
+                    subHeaderButton.className = 'sub-accordion-header w-full';
+                    subHeaderButton.setAttribute('aria-expanded', 'false');
+                    subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                    if (count === 0) {
+                        subHeaderButton.disabled = true;
+                    }
+                    subHeaderButton.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700">${subItemTypeKey} (${count})</span>
+                        <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    `;
+
+                    const subContentDiv = document.createElement('div');
+                    subContentDiv.id = nestedContentId;
+                    subContentDiv.className = 'sub-accordion-content hidden';
+
+                    if (count > 0) {
+                        const totalVideosForThisType = (subItemTypeKey === 'Videoaulas') ? count : 0;
+                        subItemArray.forEach((detailData, detailIndex) => {
+                            const detailElement = createSubItemDetail(subItemTypeKey, detailData, title, detailIndex, totalVideosForThisType);
+                            if (detailElement) {
+                                subContentDiv.appendChild(detailElement);
+                            }
+                        });
+                    }
+
+                    subAccordionItem.appendChild(subHeaderButton);
+                    subAccordionItem.appendChild(subContentDiv);
+                    contentDiv.appendChild(subAccordionItem);
+                });
+
+                accordionItem.appendChild(headerButton);
+                accordionItem.appendChild(contentDiv);
+                menuListContainer.appendChild(accordionItem);
+            });
+
+            const allAccordionHeaders = document.querySelectorAll('.accordion-header');
+            allAccordionHeaders.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    if (event.target.closest('.status-toggle')) return;
+                    const currentContentId = header.getAttribute('aria-controls');
+                    const currentContent = document.getElementById(currentContentId);
+                    const currentChevronIcon = header.querySelector('.chevron-icon');
+                    const isOpening = header.getAttribute('aria-expanded') === 'false';
+
+                    allAccordionHeaders.forEach(otherHeader => {
+                        if (otherHeader !== header) {
+                            const otherContentId = otherHeader.getAttribute('aria-controls');
+                            const otherContent = document.getElementById(otherContentId);
+                            const otherChevronIcon = otherHeader.querySelector('.chevron-icon');
+                            if (otherHeader.getAttribute('aria-expanded') === 'true') {
+                                otherHeader.setAttribute('aria-expanded', 'false');
+                                if (otherContent) otherContent.classList.add('hidden');
+                                if (otherChevronIcon) otherChevronIcon.classList.remove('rotate-180');
+                            }
+                        }
+                    });
+
+                    if (!currentContent) return;
+                    header.setAttribute('aria-expanded', isOpening);
+                    currentContent.classList.toggle('hidden', !isOpening);
+                    if (currentChevronIcon) currentChevronIcon.classList.toggle('rotate-180', isOpening);
+                });
+            });
+
+            const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+            subAccordionHeaders.forEach(subHeader => {
+                if (!subHeader.disabled) {
+                    subHeader.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const contentId = subHeader.getAttribute('aria-controls');
+                        const content = document.getElementById(contentId);
+                        if (!content) return;
+                        const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                        const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                        subHeader.setAttribute('aria-expanded', !expanded);
+                        content.classList.toggle('hidden');
+                        if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                    });
+                }
+            });
+
+            const statusToggles = document.querySelectorAll('.status-toggle');
+            statusToggles.forEach(toggle => {
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const accordionItem = toggle.closest('.accordion-item');
+                    if (!accordionItem) return;
+                    const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                    accordionItem.setAttribute('data-completed', !isCompleted);
+                    toggle.classList.toggle('is-completed', !isCompleted);
+                    console.log(`Item "${accordionItem.querySelector('h3').innerText}" marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                });
+            });
+
+            menuListContainer.addEventListener('click', (event) => {
+                const detailItem = event.target.closest('.sub-item-details');
+                if (event.target.closest('.download-link')) return;
+
+                if (detailItem && contentViewer && contentDescription) {
+                    const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                    const downloadUrl = detailItem.getAttribute('data-download-url');
+                    const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                    const parentAccordionItem = detailItem.closest('.accordion-item');
+                    const mainDescription = parentAccordionItem ? parentAccordionItem.getAttribute('data-main-description') : 'Descrição não disponível.';
+
+                    if (driveVideoUrl || downloadUrl) {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                            activeItem.classList.remove('is-active');
+                        });
+                        detailItem.classList.add('is-active');
+
+                        if (driveVideoUrl) {
+                            contentViewer.src = driveVideoUrl;
+                            contentDescription.textContent = `${mainDescription} - Assistindo: ${itemTitle}`;
+                        } else if (downloadUrl) {
+                            contentViewer.src = downloadUrl;
+                            contentDescription.textContent = `${mainDescription} - Visualizando: ${itemTitle}`;
+                        }
+                    }
+                }
+            });
+
+            if(likeButton) {
+                likeButton.addEventListener('click', () => {
+                    likeButton.classList.toggle('is-liked');
+                    const isLiked = likeButton.classList.contains('is-liked');
+                    console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                });
+            }
+
+            const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+            if (firstClickableDetail) {
+                const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                if (parentHeader) {
+                    const contentId = parentHeader.getAttribute('aria-controls');
+                    const content = document.getElementById(contentId);
+                    const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                    if (content && content.classList.contains('hidden')) {
+                        parentHeader.setAttribute('aria-expanded', 'true');
+                        content.classList.remove('hidden');
+                        if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                    }
+                    const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                    if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                        const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                        if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') parentSubHeader.click();
+                    }
+                    firstClickableDetail.click();
+                }
+            } else {
+                contentViewer.src = '';
+                contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+            }
+        } else {
+            console.error("Erro: Elementos essenciais do DOM não foram encontrados.");
+        }
+    </script>
+
+</body>
+</html>

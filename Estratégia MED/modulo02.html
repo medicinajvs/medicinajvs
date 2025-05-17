@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Cardiologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; } /* Define a fonte padrão e a cor de fundo */
+
+        /* Estilos para o cabeçalho de cada item principal do menu */
+        .menu-item-header {
+            border: 1px solid #e2e8f0; /* Borda cinza claro */
+            padding: 0.75rem 1rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            background-color: white; /* Fundo branco */
+            cursor: pointer; /* Cursor de ponteiro */
+            transition: background-color 0.2s ease-in-out; /* Transição suave da cor de fundo */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre o conteúdo e o ícone */
+            align-items: center; /* Alinha itens verticalmente */
+            margin-bottom: 0; /* Remove margem inferior padrão */
+            text-align: left; /* Alinha texto à esquerda */
+            width: 100%; /* Largura total */
+        }
+        .menu-item-header:hover { background-color: #f8fafc; } /* Cor de fundo ao passar o mouse */
+
+        /* Estilos para o conteúdo expansível de cada item principal */
+        .menu-item-content {
+            padding: 0.5rem 1rem 1rem 1rem; /* Espaçamento interno */
+            background-color: white; /* Fundo branco */
+            border-left: 1px solid #e2e8f0; /* Borda esquerda */
+            border-right: 1px solid #e2e8f0; /* Borda direita */
+            border-bottom: 1px solid #e2e8f0; /* Borda inferior */
+            border-bottom-left-radius: 0.375rem; /* Canto inferior esquerdo arredondado */
+            border-bottom-right-radius: 0.375rem; /* Canto inferior direito arredondado */
+            margin-bottom: 0.75rem; /* Margem inferior entre itens principais */
+        }
+
+        /* Estilos para o cabeçalho dos subitens (acordeão aninhado) */
+        .sub-accordion-header {
+            padding: 0.75rem 0.5rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            margin-top: 0.5rem; /* Margem superior */
+            background-color: #f8fafc; /* Fundo cinza muito claro */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre o título e o ícone */
+            align-items: center; /* Alinha itens verticalmente */
+            cursor: pointer; /* Cursor de ponteiro */
+            width: 100%; /* Largura total */
+            text-align: left; /* Alinha texto à esquerda */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        .sub-accordion-header:hover { background-color: #f1f5f9; } /* Cor de fundo ao passar o mouse */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; } /* Estilo para cabeçalho desabilitado */
+
+        /* Estilos para o conteúdo dos subitens */
+        .sub-accordion-content {
+            padding-left: 1rem; /* Recuo à esquerda */
+            margin-top: 0.25rem; /* Margem superior */
+        }
+
+        /* Estilos para os detalhes de cada subitem (vídeo, pdf, etc.) */
+        .sub-item-details {
+            padding: 0.75rem 0.5rem 0.75rem 1rem; /* Espaçamento interno */
+            border-radius: 0.375rem; /* Cantos arredondados */
+            margin-top: 0.25rem; /* Margem superior */
+            background-color: #e2e8f0; /* Fundo cinza claro */
+            display: flex; /* Layout flexível */
+            justify-content: space-between; /* Espaço entre conteúdo e link de download */
+            align-items: center; /* Alinha itens verticalmente */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download que pode ser visualizado) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; } /* Cor de fundo ao passar o mouse em itens clicáveis */
+
+        /* Estilo para item ativo (o que está sendo visualizado) */
+        .sub-item-details.is-active { background-color: #bfdbfe; } /* Fundo azul claro */
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Cor do ícone ativo (azul) - aplicado apenas ao ícone */
+
+        /* Container para o conteúdo do detalhe (ícone + texto) */
+        .item-details-content {
+            display: flex; /* Layout flexível */
+            align-items: center; /* Alinha itens verticalmente */
+            flex-grow: 1; /* Ocupa o espaço disponível */
+            margin-right: 0.5rem; /* Margem direita para separar do botão de download */
+            overflow: hidden; /* Esconde texto que transborda */
+        }
+        /* Ajuste de margem quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes do texto */
+
+        /* Estilo para o link/ícone de download */
+        .download-link {
+            display: inline-flex; /* Layout flexível */
+            align-items: center; /* Alinha ícone verticalmente */
+            color: #6b7280; /* Cor cinza */
+            transition: color 0.2s ease-in-out; /* Transição suave */
+            flex-shrink: 0; /* Não encolhe */
+        }
+        .download-link:hover { color: #1f2937; } /* Cor mais escura ao passar o mouse */
+
+        /* Estilo para o botão de marcar/desmarcar como concluído */
+        .status-toggle {
+            cursor: pointer; /* Cursor de ponteiro */
+            display: flex; /* Layout flexível */
+            align-items: center; /* Alinha itens verticalmente */
+            gap: 0.25rem; /* Espaço entre texto e ícone */
+            padding: 0.25rem; /* Espaçamento interno */
+            border-radius: 0.25rem; /* Cantos arredondados */
+            transition: background-color 0.2s ease-in-out; /* Transição suave */
+        }
+        .status-toggle:hover { background-color: #e5e7eb; } /* Fundo cinza claro ao passar o mouse */
+        .status-toggle .icon-completed { display: none; } /* Ícone de concluído escondido por padrão */
+        .status-toggle .icon-not-completed { display: inline-block; } /* Ícone de não concluído visível por padrão */
+        .status-toggle.is-completed .icon-completed { display: inline-block; } /* Mostra ícone de concluído */
+        .status-toggle.is-completed .icon-not-completed { display: none; } /* Esconde ícone de não concluído */
+
+        /* Container do vídeo/iframe responsivo (proporção 16:9) */
+        .video-container-yt {
+            position: relative; /* Necessário para posicionamento absoluto do iframe */
+            padding-bottom: 56.25%; /* Proporção 16:9 (9 / 16 * 100) */
+            height: 0; /* Altura zero, padding-bottom define a altura */
+            overflow: hidden; /* Esconde conteúdo que transborda */
+            max-width: 100%; /* Largura máxima */
+            background: #ccc; /* Fundo cinza enquanto carrega */
+            border-radius: 0.5rem; /* Cantos arredondados */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Sombra */
+            margin-bottom: 1rem; /* Margem inferior */
+        }
+        .video-container-yt iframe {
+            position: absolute; /* Posicionamento absoluto dentro do container */
+            top: 0;
+            left: 0;
+            width: 100%; /* Largura total */
+            height: 100%; /* Altura total */
+            border: 0; /* Remove borda padrão do iframe */
+        }
+
+        /* Container do menu lateral com barra de rolagem */
+        .menu-container {
+            flex-shrink: 0; /* Não encolhe */
+            max-height: calc(100vh - 150px); /* Altura máxima calculada (altura da viewport - espaço estimado para header/padding) */
+            overflow-y: auto; /* Adiciona barra de rolagem vertical se necessário */
+        }
+        /* Estilização da barra de rolagem (apenas WebKit - Chrome, Safari) */
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+
+        /* Classe utilitária para esconder elementos */
+        .hidden { display: none; }
+
+        /* Classe utilitária para rotacionar ícones (chevron) */
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; } /* Transição suave da rotação */
+
+        /* Estilos para o botão de like/curtir */
+        .like-button .heart-outline { display: inline-block; } /* Ícone de coração vazio visível por padrão */
+        .like-button .heart-filled { display: none; } /* Ícone de coração preenchido escondido por padrão */
+        .like-button.is-liked .heart-outline { display: none; } /* Esconde coração vazio quando curtido */
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* Cor vermelha (red-500) */ } /* Mostra coração preenchido quando curtido */
+
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Cardiologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8"> <div class="w-full md:flex-1 min-w-[300px]"> <div class="video-container-yt">
+                     <iframe
+                         id="content-viewer" src="" title="Visualizador de Conteúdo"
+                         frameborder="0"
+                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                         referrerpolicy="strict-origin-when-cross-origin"
+                         allowfullscreen>
+                     </iframe>
+                 </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                     Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2"> <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden">
+                                 <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                     </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        // Lista com os novos títulos fornecidos
+        const newTitles = [
+            "Parada Cardiorrespiratória (PCR)",
+            "Bradiarritmias",
+            "Taquiarritmias",
+            "Fibrilação e Flutter Atrial",
+            "Síncope",
+            "Dislipidemia e Estratificação de Risco Cardiovascular",
+            "Doença Arterial Coronariana Estável (DAC Estável)",
+            "SCASSST - Síndrome Coronária Aguda Sem Supra do Segmento ST",
+            "IAMCSSST (Infarto Agudo do Miocárdio com Supradesnivelamento de Segmento ST)",
+            "Síndromes Aórticas Agudas",
+            "Hipertensão Arterial Sistêmica (Parte I) - Diagnóstico, Classificação, Avaliação Clinico-Laboratorial e Estratificação de Risco Cardiovascular",
+            "Hipertensão Arterial Sistêmica (Parte II) - Tratamento",
+            "Hipertensão Arterial Sistêmica (Parte III) - Secundária e Crise Hipertensiva",
+            "Insuficiência Cardíaca (Parte I) - Classificação, Fisiopatologia, Diagnóstico e Exames Complementares",
+            "Insuficiência Cardíaca (Parte II) - Tratamento",
+            "Insuficiência Cardíaca Aguda",
+            "Choque",
+            "Semiologia Cardíaca",
+            "Valvopatias",
+            "Cardiomiopatias",
+            "Pericardiopatias",
+            "Avaliação Perioperatória",
+            "Eletrocardiograma"
+        ];
+
+        // Dados dos módulos (serão atualizados com títulos e subitens)
+        // URLs e títulos específicos dos subitens são placeholders e precisam ser preenchidos
+        const menuItemsData = [
+            // Módulo 1: PCR
+            {
+                title: "Parada Cardiorrespiratória (PCR)",
+                description: "Aula sobre Parada Cardiorrespiratória (PCR).",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "PCR - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1jCZfRKYgg88ogkjjwtx31kM1oB-5CTer/preview?usp=drive_link", downloadUrl: "#dl-pcr-v1" },
+                        { title: "PCR - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1OsEardsA-MqHVb6TTqj0ceEU2bCTWPbw/preview?usp=drive_link", downloadUrl: "#dl-pcr-v2" },
+                        { title: "PCR - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1DAQ3M5iJ63dXllwC5fvx6lieia13Rzl_/preview?usp=drive_link", downloadUrl: "#dl-pcr-v3" },
+                        { title: "PCR - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1dOcHM3l87jdFaP15B__2wnG3oR2xDRUZ/preview?usp=drive_link", downloadUrl: "#dl-pcr-v4" }
+                    ],
+                    'Livros digitais': [
+                        { title: "PCR", downloadUrl: "https://drive.google.com/file/d/1-8qpF6hMsUx8WQ4wjIvplqZgy_rP5sDW/preview?usp=drive_link" },
+                        { title: "PCR - Flashcards", downloadUrl: "https://drive.google.com/file/d/1Gu5N4pSv8sIIyCA8ogzpsVX3HjjeGUFL/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "PCR", downloadUrl: "https://drive.google.com/file/d/1hoNjSbpUyL9HWabWoU_tbR388nFT1OrV/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "PCR - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/14hkftvD06Lq8auhRAnuS4KE1p4elN6qM/preview?usp=drive_link" },
+                        { title: "PCR - Slides", downloadUrl: "https://drive.google.com/file/d/1PYdfo67doJEQT2Fq7BD3QRr2Ryl0HCT9/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "PCR", downloadUrl: "https://drive.google.com/file/d/1pIqJz1I-Du8w-UGG_kGPLx69QM5pSEcE/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 2: Bradiarritmias
+            {
+                title: "Bradiarritmias",
+                description: "Aula sobre Bradiarritmias.",
+                 subItems: {
+                    'Videoaulas': [
+                        { title: "Bradiarritmias", driveVideoUrl: "https://drive.google.com/file/d/15g4zrpwZ4tVXYmNW4n6uI9hEsR0hsSf_/preview?usp=drive_link", downloadUrl: "#dl-bradi-v1" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Bradiarritmias", downloadUrl: "https://drive.google.com/file/d/1C-knBxu2iCbF7qfprUiP24Dyu6d9nefe/preview?usp=drive_link" },
+                        { title: "Bradiarritmias - Flashcards", downloadUrl: "https://drive.google.com/file/d/19otmQ1IjyCWfFIUC61-LVjBQwIpM77Iw/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Bradiarritmias", downloadUrl: "https://drive.google.com/file/d/1uOmeX2YpWvidAz2kT999n-3a4BKaHaMu/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Bradiarritmias", downloadUrl: "https://drive.google.com/file/d/1jFLxCG99IGpn9t3o0WVzDhECAzfv4lU-/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Bradiarritmias", downloadUrl: "https://drive.google.com/file/d/1uNQdg0vDFJXvTA3JU-mVbYKVFZk_r43_/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 3: Taquiarritmias
+            {
+                title: "Taquiarritmias",
+                description: "Aula sobre Taquiarritmias.",
+                 subItems: {
+                    'Videoaulas': [
+                        { title: "Taquiarritmias - Parte I", driveVideoUrl: "https://drive.google.com/file/d/169yuVRZ4mpQeAVgwg65ugraW54SxARk9/preview?usp=drive_link", downloadUrl: "#dl-taqui-v1" },
+                        { title: "Taquiarritmias - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1lKL1gr8PgxHKs1cOfsi4P5Qx_6f0dsfH/preview?usp=drive_link", downloadUrl: "#dl-taqui-v2" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Taquiarritmias", downloadUrl: "https://drive.google.com/file/d/186i0RZz6_9KHykQkuEcTGj7aICCyc4-I/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "Taquiarritmias", downloadUrl: "https://drive.google.com/file/d/150jnVYX4TD_pY2dc1vpHa7SH1C1331UY/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Taquiarritmias", downloadUrl: "https://drive.google.com/file/d/1WrLGMXviAOk5QUd9dteXy8YB6a2Pa79T/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Taquiarritmias", downloadUrl: "https://drive.google.com/file/d/1plZORLVoE7P90_GcVeAXp1-66DA5wxQX/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 4: Fibrilação e Flutter Atrial
+            {
+                title: "Fibrilação e Flutter Atrial",
+                description: "Aula sobre Fibrilação e Flutter Atrial.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "FA/Flutter - Parte I", driveVideoUrl: "https://drive.google.com/file/d/13idFeJ-nX8tvGdJa5eKmfpAVF9Efv1bV/preview?usp=drive_link", downloadUrl: "#dl-faflutter-v1" },
+                        { title: "FA/Flutter - Parte II", driveVideoUrl: "https://drive.google.com/file/d/18ucvGJ2KYQlrJgi-q-xb_JUovvR-FZjQ/preview?usp=drive_link", downloadUrl: "#dl-faflutter-v2" },
+                        { title: "FA/Flutter - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1ZNvZg6XwQxYcXz9Ur9-aQdYINoPxPZgy/preview?usp=drive_link", downloadUrl: "#dl-faflutter-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "FA/Flutter", downloadUrl: "https://drive.google.com/file/d/14146cxhQcfNNcaQORboLyMsE9tLB-M0f/preview?usp=drive_link" },
+                        { title: "FA/Flutter - Flashcards", downloadUrl: "https://drive.google.com/file/d/1n1j1uv4xmIBRUhEk5fXU0ya16TcgeRa3/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "FA/Flutter", downloadUrl: "https://drive.google.com/file/d/1kObj38KBLET0lnhaBBKtcZnZ061EWbcE/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "FA/Flutter - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/18tC5yXTbdNvc0d_xWDQ0-x7zaiJOaMF1/preview?usp=drive_link" },
+                        { title: "FA/Flutter - Slides", downloadUrl: "https://drive.google.com/file/d/1pKiBSNEizIbHLbxkll1dA3Fa4s5BxwWL/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "FA/Flutter", downloadUrl: "https://drive.google.com/file/d/133BzP273k0iF4RqBRv9Ma8ikeC3xPTDd/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 5: Síncope
+            {
+                title: "Síncope",
+                description: "Aula sobre Síncope.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Síncope - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1lyxnXU8sU4TgCtR1ALSTSwB_MrJL4BHI/preview?usp=drive_link", downloadUrl: "#dl-sincope-v1" },
+                        { title: "Síncope - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1aJHf8WR5pJr27B27ly-BaGsOJlAPY3UA/preview?usp=drive_link", downloadUrl: "#dl-sincope-v2" },
+                        { title: "Síncope - Parte III", driveVideoUrl: "https://drive.google.com/file/d/19Z6N8-JRpJ2e2scEtvSraAjw4WKNk1Lc/preview?usp=drive_link", downloadUrl: "#dl-sincope-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Síncope", downloadUrl: "https://drive.google.com/file/d/1wo6O2ghIA__tOx7GxuKNfDnE8q6hfN9N/preview?usp=drive_link" },
+                        { title: "Síncope - Flashcards", downloadUrl: "https://drive.google.com/file/d/1NLrGoczf2fCrTVVMNTuxsICFSCZWP2nC/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Síncope", downloadUrl: "https://drive.google.com/file/d/13IstUYK9s5Xg923rqoJHrf76J7VtVHSc/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Síncope", downloadUrl: "https://drive.google.com/file/d/1IgiJALaosGcykvcfnoRoh97rUCeWeEOF/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Síncope", downloadUrl: "https://drive.google.com/file/d/1-vyEcpwcE5-jv9t9NiFkuCex_GZW89k1/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 6: Dislipidemia e Estratificação de Risco C
+            {
+                title: "Dislipidemia e Estratificação de Risco Cardiovascular",
+                description: "Aula sobre Dislipidemia e Estratificação de Risco Cardiovascular.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Dislipidemia - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1DryNTXB2Wn3z0jIUfvpB9ra32PMY-O6q/preview?usp=drive_link", downloadUrl: "#dl-dislip-v1" },
+                        { title: "Dislipidemia - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1j3T5KmssWQidWhCbs2c5GiusXf27S9UV/preview?usp=drive_link", downloadUrl: "#dl-dislip-v2" },
+                        { title: "Dislipidemia - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1tWxImPGSFUWOIUP7SUtdgRnXFQ4xJmIh/preview?usp=drive_link", downloadUrl: "#dl-dislip-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Dislipidemia", downloadUrl: "https://drive.google.com/file/d/1FSS7X71PBpxggrQUyMqZs8j0V0fWiYl9/preview?usp=drive_link" },
+                        { title: "Dislipidemia - Flashcards", downloadUrl: "https://drive.google.com/file/d/16vqLyl5AtAdcRaGk1ZYdfCA4FBUYDjGK/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Dislipidemia", downloadUrl: "https://drive.google.com/file/d/1y3S6OIk1Fh9Ru0lsFndK248e98M2U26w/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Dislipidemia - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1GGcSj-k9DszA7iyOUMRynjJJlQUctnhe/preview?usp=drive_link" },
+                        { title: "Dislipidemia - Slides", downloadUrl: "https://drive.google.com/file/d/1LeYRZinQs8ZtrNRVH2KBqgVZQPHghGED/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Dislipidemia", downloadUrl: "https://drive.google.com/file/d/11VieJoWuyPJJxsjxa2IE3PH2tTgHCavs/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 7: Doença Arterial Coronariana Estável (DAC Estável)
+            {
+                title: "Doença Arterial Coronariana Estável (DAC Estável)",
+                description: "Aula sobre Doença Arterial Coronariana Estável (DAC Estável).",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "DAC Estável - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1NbPURdEGl5lOV-rA8WWCsT32yK5sdmD5/preview?usp=drive_link", downloadUrl: "#dl-dac-v1" },
+                        { title: "DAC Estável - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1T-Y8cjVB5V1jAuJ86gydS5uy7xK5kHWN/preview?usp=drive_link", downloadUrl: "#dl-dac-v2" },
+                        { title: "DAC Estável - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1WBWFjjA8I3iSal9t-0_CR9NGa1sQDOBd/preview?usp=drive_link", downloadUrl: "#dl-dac-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "DAC Estável", downloadUrl: "https://drive.google.com/file/d/1iAHlDMUwmoetzzoH4HyypAe3S4enoqYu/preview?usp=drive_link" },
+                        { title: "DAC Estável - Flashcards", downloadUrl: "https://drive.google.com/file/d/1ePe6SQB3COGCueHuqu1LLbiohCv23gS3/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "DAC Estável", downloadUrl: "https://drive.google.com/file/d/1cXC6Ug_Fbo2YVNqURpsObb94EM3KF2-z/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "DAC Estável - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1ZTdqEbPX_IIBfMYEm8Av72__VU5XQRv1/preview?usp=drive_link" },
+                        { title: "DAC Estável - Slides", downloadUrl: "https://drive.google.com/file/d/1efPGApy5tTH0Ey6KuPuD-63n3wmryB_f/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "DAC Estável", downloadUrl: "https://drive.google.com/file/d/1mzdq8Yg26ltDZoYtIayPBlTRclSALaOA/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 8: SCASSST - Síndrome Coronária Aguda Sem Supra do Segmento ST
+            {
+                title: "SCASSST - Síndrome Coronária Aguda Sem Supra do Segmento ST",
+                description: "Aula sobre SCASSST - Síndrome Coronária Aguda Sem Supra do Segmento ST.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "SCASSST - Parte I", driveVideoUrl: "https://drive.google.com/file/d/10thoyjYEzuCG0wDTNY-UUY_gw9O-Daww/preview?usp=drive_link", downloadUrl: "#dl-scassst-v1" },
+                        { title: "SCASSST - Parte II", driveVideoUrl: "https://drive.google.com/file/d/19FERz7qjRCuQDIDqV0SxIg1JFAqKoAKd/preview?usp=drive_link", downloadUrl: "#dl-scassst-v2" },
+                        { title: "SCASSST - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1NyhukEsL_0mWhsB3KJQ658F8eVqX62Lz/preview?usp=drive_link", downloadUrl: "#dl-scassst-v3" },
+                        { title: "SCASSST - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1GK6ngV2qc2BL8iUaBrEn2PbA40hTQLNt/preview?usp=drive_link", downloadUrl: "#dl-scassst-v4" }
+                    ],
+                    'Livros digitais': [
+                        { title: "SCASSST", downloadUrl: "https://drive.google.com/file/d/1LPrC0aSqwYJRhdUdzCeWZqecEunUe-B5/preview?usp=drive_link" },
+                        { title: "SCASSST - Flashcards", downloadUrl: "https://drive.google.com/file/d/1zCJqLpwhiOF22Sy90xYz4dl66Q8r4SR3/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "SCASSST", downloadUrl: "https://drive.google.com/file/d/1OQJrp5hLc4kmoOJJvC7OO4gGTMI3owQU/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "SCASSST - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1DeC5Mx-okvTc9EUlHcF7wgWi34jq5cEP/preview?usp=drive_link" },
+                        { title: "SCASSST - Slides", downloadUrl: "https://drive.google.com/file/d/1evJnaqE5E1eFHeW5eeCdgrKjUwLJxomb/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "SCASSST", downloadUrl: "https://drive.google.com/file/d/10TQnboeT290XtCmAxrsoIwwc-QqjeZEq/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 9: IAMCSSST (Infarto Agudo do Miocárdio com Supradesnivelamento de Segmento ST)
+            {
+                title: "IAMCSSST (Infarto Agudo do Miocárdio com Supradesnivelamento de Segmento ST)",
+                description: "Aula sobre IAMCSSST (Infarto Agudo do Miocárdio com Supradesnivelamento de Segmento ST).",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "IAMCSSST - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1ezCfef0PAlANttgHs2J4Gl2N5Bn5Bmui/preview?usp=drive_link", downloadUrl: "#dl-iamcsst-v1" },
+                        { title: "IAMCSSST - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1wEXMymCwVbRQXBJ5st22Ty6TGB4Z2T8X/preview?usp=drive_link", downloadUrl: "#dl-iamcsst-v2" },
+                        { title: "IAMCSSST - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1JNQvoo_I-eswpMJUtkolg_0OYJnaIuEA/preview?usp=drive_link", downloadUrl: "#dl-iamcsst-v3" },
+                        { title: "IAMCSSST - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1VrVcWw__nNUfMSF4QBuicq1Brct7OUIs/preview?usp=drive_link", downloadUrl: "#dl-iamcsst-v4" }
+                    ],
+                    'Livros digitais': [
+                        { title: "IAMCSSST", downloadUrl: "https://drive.google.com/file/d/1kgCdUf9-rzKqmDlsA-_kGSZxz5oPNfaa/preview?usp=drive_link" },
+                        { title: "IAMCSSST - Flashcards", downloadUrl: "https://drive.google.com/file/d/1qChb_26qt8TU0PxmDK4yx6JSYP3iPBXq/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "IAMCSSST", downloadUrl: "https://drive.google.com/file/d/1jYmtb4ji9Vz9Pzx0rZSWnQzNIFjAzbFH/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "IAMCSSST - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1N3PWxq-OEx2HV5rUHaAUyxtb0NJSX-_q/preview?usp=drive_link" },
+                        { title: "IAMCSSST - Slides", downloadUrl: "https://drive.google.com/file/d/1SmHC8R-TQtSTAts6b0HGx_f3oTf8mQZK/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "IAMCSSST", downloadUrl: "https://drive.google.com/file/d/1n4Qgu5HRUtApK0tTXvlhOw1HzznWCfpL/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 10: Síndromes Aórticas Agudas
+            {
+                title: "Síndromes Aórticas Agudas",
+                description: "Aula sobre Síndromes Aórticas Agudas.",
+                 subItems: {
+                    'Videoaulas': [
+                        { title: "Síndromes Aórticas Agudas - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1iDyMbhxSt-pWIbPmzCHuYFR67qMsFrrg/preview?usp=drive_link", downloadUrl: "#dl-saa-v1" },
+                        { title: "Síndromes Aórticas Agudas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1QYmK-smFpkSbFrFSMU_VKvSCd_H1Vhba/preview?usp=drive_link", downloadUrl: "#dl-saa-v2" },
+                        { title: "Síndromes Aórticas Agudas - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1lQZEfUtorqLSYTm0NuGcIhitLMWDAyb6/preview?usp=drive_link", downloadUrl: "#dl-saa-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Síndromes Aórticas Agudas", downloadUrl: "https://drive.google.com/file/d/1Ee20v8FaCkxeWcAL6A1iLK5xfYmZXJGx/preview?usp=drive_link" },
+                        { title: "Síndromes Aórticas Agudas - Flashcards", downloadUrl: "https://drive.google.com/file/d/1UVUN9e2RJOlDJfP5ypaQqxS-ghFPaKHS/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Síndromes Aórticas Agudas", downloadUrl: "https://drive.google.com/file/d/1fImyOC73VLN4D4XCwtozDfAfIR5Z0RyD/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Síndromes Aórticas Agudas - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1LsuyGFPZiOWEt_rRGQZpy1mBLVSnG0Tb/preview?usp=drive_link" },
+                        { title: "Síndromes Aórticas Agudas - Slides", downloadUrl: "https://drive.google.com/file/d/1NUVu0_o6a0v8Sf0FfUM0xMJH0_vk3K4U/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Síndromes Aórticas Agudas", downloadUrl: "https://drive.google.com/file/d/1bvEUIrA30sBZFg9vC7sIMDDQZ0PCpK8Y/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 11: Hipertensão Arterial Sistêmica (Parte I) - ...
+            {
+                title: "Hipertensão Arterial Sistêmica (Parte I) - Diagnóstico, Classificação, Avaliação Clinico-Laboratorial e Estratificação de Risco Cardiovascular",
+                description: "Aula sobre Hipertensão Arterial Sistêmica (Parte I) - Diagnóstico, Classificação, Avaliação Clinico-Laboratorial e Estratificação de Risco Cardiovascular.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "HAS - Parte I: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1qnggeaS4sbb-TGwPtqXZv9rVAKssb6Y-/preview?usp=drive_link", downloadUrl: "#dl-has1-v1" },
+                        { title: "HAS - Parte I: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Dg2RxS1lsuMefa_ilJMwBP8Pw5xM7Kmo/preview?usp=drive_link", downloadUrl: "#dl-has1-v2" },
+                        { title: "HAS - Parte I: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1c4_WW6oj6H49918KEhRq6dZwJLQ9jXiW/preview?usp=drive_link", downloadUrl: "#dl-has1-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "HAS - Parte I", downloadUrl: "https://drive.google.com/file/d/1uHTPx1iB9WlH3TOSrRQZLud6j-cCVqsF/preview?usp=drive_link" },
+                        { title: "HAS - Parte I: Flashcards", downloadUrl: "https://drive.google.com/file/d/19wXU5C5wKOtvz6lBxNnaQbcxmx9-IDKk/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "HAS - Parte I", downloadUrl: "https://drive.google.com/file/d/1IxioYF9dl3eK9U3D4GbFyVvF2RK_9gcF/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "HAS - Parte I", downloadUrl: "https://drive.google.com/file/d/1dTUfLwTfvOzM8MmkCoXBJWtwWrKzFe4W/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "HAS - Parte I", downloadUrl: "https://drive.google.com/file/d/1JURaor6mikPISAXBorUMRMt6zw0kWiVK/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 12: Hipertensão Arterial Sistêmica (Parte II) - Tratamento
+            {
+                title: "Hipertensão Arterial Sistêmica (Parte II) - Tratamento",
+                description: "Aula sobre Hipertensão Arterial Sistêmica (Parte II) - Tratamento.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "HAS - Parte II: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1GYHY2qQVXG8cr3J3FnxzOX0_1CsOfOyi/preview?usp=drive_link", downloadUrl: "#dl-has2-v1" },
+                        { title: "HAS - Parte II: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1snedWu1Gsm8aT2R9S5EtYvnyXeRCgUrT/preview?usp=drive_link", downloadUrl: "#dl-has2-v2" },
+                        { title: "HAS - Parte II: Parte III", driveVideoUrl: "https://drive.google.com/file/d/13afXCYTHJr8j7GCzQJsziS_n-IHxD2fc/preview?usp=drive_link", downloadUrl: "#dl-has2-v3" },
+                        { title: "HAS - Parte II: Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1n-uAVxVA_TYqbZEnfGuY47-6oFVS5bMS/preview?usp=drive_link", downloadUrl: "#dl-has2-v4" },
+                        { title: "HAS - Parte II: Parte V", driveVideoUrl: "https://drive.google.com/file/d/1UpVwGD_flxAGXSwFY2_baVw5OUtTX0-7/preview?usp=drive_link", downloadUrl: "#dl-has2-v5" }
+                    ],
+                    'Livros digitais': [
+                        { title: "HAS - Parte II", downloadUrl: "https://drive.google.com/file/d/1H3d1LR1kF_hyGMA4o1EzSCOpd9IHYeWR/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "HAS - Parte II", downloadUrl: "https://drive.google.com/file/d/1tlp0jDpMytc345uRCXme6QO2hCFEaUoO/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "HAS - Parte II", downloadUrl: "https://drive.google.com/file/d/1EIjAh0A6yQczS-kMxqFSre-YHqgXjIR-/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "HAS - Parte II", downloadUrl: "https://drive.google.com/file/d/1LmVeNM-GDNKqj_68AtFOPqFUOExFjXO1/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 13: Hipertensão Arterial Sistêmica (Parte III) - Secundária e Crise Hipertensiva
+            {
+                title: "Hipertensão Arterial Sistêmica (Parte III) - Secundária e Crise Hipertensiva",
+                description: "Aula sobre Hipertensão Arterial Sistêmica (Parte III) - Secundária e Crise Hipertensiva.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "HAS - Parte III: Parte I", driveVideoUrl: "https://drive.google.com/file/d/15naNHP2bA50sTHNaPEzb9v3pCzsV9WXE/preview?usp=drive_link", downloadUrl: "#dl-has3-v1" },
+                        { title: "HAS - Parte III: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1xTpyvpr27qWlAc-YPFFTEZd8yAuVhWxy/preview?usp=drive_link", downloadUrl: "#dl-has3-v2" },
+                        { title: "HAS - Parte III: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1miYuJUqbFBs_WgeZF_EKcnZFPLXEmT4i/preview?usp=drive_link", downloadUrl: "#dl-has3-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "HAS - Parte III", downloadUrl: "https://drive.google.com/file/d/1WjctH-dJrRuJsjMTzgiDJck8rjOOrhlO/preview?usp=drive_link" },
+                        { title: "HAS - Parte III: Flashcards", downloadUrl: "https://drive.google.com/file/d/1KOjdJvpMKfNSqY_pGEAwVnw9qJSXV0qp/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "HAS - Parte III", downloadUrl: "https://drive.google.com/file/d/1cCVlnWjjPyyTzeClnelxLFQmImmvkNhf/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "HAS - Parte III: Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1uJsvj2NP3o4OsJg_L2Ga9HfOaNDZyX3H/preview?usp=drive_link" },
+                        { title: "HAS - Parte III: Slides", downloadUrl: "https://drive.google.com/file/d/1NQ0VAx2azCzrv9BJ4fgGvuTJvgK74axS/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "HAS - Parte III", downloadUrl: "https://drive.google.com/file/d/165fHeMLeRfAaYWS7q1bK-283QJCPC-8i/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 14: Insuficiência Cardíaca (Parte I) - ...
+            {
+                title: "Insuficiência Cardíaca (Parte I) - Classificação, Fisiopatologia, Diagnóstico e Exames Complementares",
+                description: "Aula sobre Insuficiência Cardíaca (Parte I) - Classificação, Fisiopatologia, Diagnóstico e Exames Complementares.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Insuficiência Cardíaca - Parte I: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1vTyJMmRT8ahDhifPp_N4OeikuMBP6EDh/preview?usp=drive_link", downloadUrl: "#dl-ic1-v1" },
+                        { title: "Insuficiência Cardíaca - Parte I: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1EZs9fRY4d_TcrJUfe3kGLb-9LtzIllq8/preview?usp=drive_link", downloadUrl: "#dl-ic1-v2" },
+                        { title: "Insuficiência Cardíaca - Parte I: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1oeDaYpjP-lr8lUSTom7dlK0KWoQ-H0le/preview?usp=drive_link", downloadUrl: "#dl-ic1-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Insuficiência Cardíaca - Parte I", downloadUrl: "https://drive.google.com/file/d/1cq9VSjnhke8QsmaoXj3JgkY1jQKOhyA9/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "Insuficiência Cardíaca - Parte I", downloadUrl: "https://drive.google.com/file/d/1VYim97qzBymY89Z8IF18fGXcIc5iyh9-/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Insuficiência Cardíaca - Parte I: Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1NS33Uu-uBSIZRgN2-FwKj5egLW4YHU08/preview?usp=drive_link" },
+                        { title: "Insuficiência Cardíaca - Parte I: Slides", downloadUrl: "https://drive.google.com/file/d/1DEUCdTdmF97Qzd8UDkcdZj7a4zpqSmGV/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "Insuficiência Cardíaca - Parte I", downloadUrl: "https://drive.google.com/file/d/14XtuKLPQCJCy0RCchEy-_fpZEwuurGts/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 15: Insuficiência Cardíaca (Parte II) - Tratamento
+            {
+                title: "Insuficiência Cardíaca (Parte II) - Tratamento",
+                description: "Aula sobre Insuficiência Cardíaca (Parte II) - Tratamento.",
+                 subItems: {
+                    'Videoaulas': [
+                        { title: "Insuficiência Cardíaca - Parte II: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1BGlGb-7DMK1jK9mWLscAaMGuLxJnKt3y/preview?usp=drive_link", downloadUrl: "#dl-ic2-v1" },
+                        { title: "Insuficiência Cardíaca - Parte II: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1gvZzKyZR2MS-Dm-6ot0IpWkQSLF4Vn_Y/preview?usp=drive_link", downloadUrl: "#dl-ic2-v2" },
+                        { title: "Insuficiência Cardíaca - Parte II: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1AIWkuCv7HRlAMdWyr-YgL-5f3hIYgZoD/preview?usp=drive_link", downloadUrl: "#dl-ic2-v3" },
+                        { title: "Insuficiência Cardíaca - Parte II: Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1vSklcJswHJRP7eVLGdZumgCicL1NrJ5W/preview?usp=drive_link", downloadUrl: "#dl-ic2-v4" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Insuficiência Cardíaca - Parte II", downloadUrl: "https://drive.google.com/file/d/1XQBNaEHPoLnMHaiOav6Fg_JsnPDCklRv/preview?usp=drive_link" },
+                        { title: "Insuficiência Cardíaca - Parte II: Flashcards", downloadUrl: "https://drive.google.com/file/d/1vxYQcFma6vZPr55lhQe9WnDIcfzIWh_A/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Insuficiência Cardíaca - Parte II", downloadUrl: "https://drive.google.com/file/d/1EuhW4g1ZgCaRlw4847CyZvCNtTS-PoHU/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Insuficiência Cardíaca - Parte II: Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1D1dRs7UO_I31dnSJogehny_sorZrxIIQ/preview?usp=drive_link" },
+                        { title: "Insuficiência Cardíaca - Parte II: Slides", downloadUrl: "https://drive.google.com/file/d/17sfclmxhm0uiGyiKcvRsgRNKno4v89AP/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Insuficiência Cardíaca - Parte II", downloadUrl: "https://drive.google.com/file/d/1kRjU3AZAGk-tV4-hB9ZQxLTuCnoo1S4P/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 16: Insuficiência Cardíaca Aguda
+            {
+                title: "Insuficiência Cardíaca Aguda",
+                description: "Aula sobre Insuficiência Cardíaca Aguda.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "IC Aguda - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1mnu0pwl1EsIzeDWIloRY4Q48CB0gPnCn/preview?usp=drive_link", downloadUrl: "#dl-icaguda-v1" },
+                        { title: "IC Aguda - Parte II", driveVideoUrl: "https://drive.google.com/file/d/18vsWSReIxncwFxPbYBKBZgzYAcAu6b5K/preview?usp=drive_link", downloadUrl: "#dl-icaguda-v2" },
+                        { title: "IC Aguda - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1ZNrajSA7ti764MZteEdJ90yaGb_gpEWq/preview?usp=drive_link", downloadUrl: "#dl-icaguda-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "IC Aguda", downloadUrl: "https://drive.google.com/file/d/15v2hAKFUO_Zv3gSnlyV-D5amdEq6RviU/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "IC Aguda", downloadUrl: "https://drive.google.com/file/d/1CJnC8SzLIsa2IpX-f8eVJq6Hwo-X4XhB/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "IC Aguda - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1K3Mkw9DmSMl5aYSfgirddm0DijZLqndR/preview?usp=drive_link" },
+                        { title: "IC Aguda - Slides", downloadUrl: "https://drive.google.com/file/d/1BIw_mpU_oOeSq3N5FRRsyoIaRHHyHTW-/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "IC Aguda", downloadUrl: "https://drive.google.com/file/d/1yJF5pIAsTPC_D5Z2nqQ5zr0bMlbaBjcO/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 17: Choque
+            {
+                title: "Choque",
+                description: "Aula sobre Choque.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Choque - Parte I", driveVideoUrl: "https://drive.google.com/file/d/13UXqvEOy-xucm5G3NfpNg-KnGPmsx50-/preview?usp=drive_link", downloadUrl: "#dl-choque-v1" },
+                        { title: "Choque - Parte II", driveVideoUrl: "https://drive.google.com/file/d/19ux5Op8-upp9D2QYVrgUiRLn_5kA4xA8/preview?usp=drive_link", downloadUrl: "#dl-choque-v2" },
+                        { title: "Choque - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1iYcvm7n9Gt-Di9narCGmHXvrkOsEs2fx/preview?usp=drive_link", downloadUrl: "#dl-choque-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Choque", downloadUrl: "https://drive.google.com/file/d/1R5fvbd7gQRI81rPyzPjYPw9045ikhztz/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "Choque", downloadUrl: "https://drive.google.com/file/d/10NqEEgMYJ7vYsg41O8ZSRVZHRiWMJafr/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Choque", downloadUrl: "https://drive.google.com/file/d/1VkewYzoU1knAkOQ7rGE073Bs6WDdDTmu/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "Choque", downloadUrl: "https://drive.google.com/file/d/1Eq0Vu_omXQYvC7OOg-aS26YAAPFmGbX8/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 18: Semiologia Cardíaca
+            {
+                title: "Semiologia Cardíaca",
+                description: "Aula sobre Semiologia Cardíaca.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Semiologia Cardíaca - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1SvYTRoYLAhy5quuVYKrr4ri--TshCsrw/preview?usp=drive_link", downloadUrl: "#dl-semio-v1" },
+                        { title: "Semiologia Cardíaca - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1sglK_sU9tDg5C3u8y029frEipxSykvgU/preview?usp=drive_link", downloadUrl: "#dl-semio-v2" },
+                        { title: "Semiologia Cardíaca - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1tAvuDd5blSv1SVhUiWo_MdjzavI8BfAY/preview?usp=drive_link", downloadUrl: "#dl-semio-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Semiologia Cardíaca", downloadUrl: "https://drive.google.com/file/d/1nFqOvKLope73CVPekUSyau32S709QflR/preview?usp=drive_link" },
+                        { title: "Semiologia Cardíaca - Flashcards", downloadUrl: "https://drive.google.com/file/d/1acjJ_2kTpI_lYGcgQrj22oTd4lO753rC/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "Semiologia Cardíaca", downloadUrl: "https://drive.google.com/file/d/16D-OpcPrLVzTktywpVlvBzxCinXo3jDL/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Semiologia Cardíaca", downloadUrl: "https://drive.google.com/file/d/1KiASTGOQq9XtnE8BbLV_EikK-psTvT-8/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "Semiologia Cardíaca", downloadUrl: "https://drive.google.com/file/d/1R6f7tjhmROmBOlGc92y87EP8-LdHRumt/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 19: Valvopatias
+            {
+                title: "Valvopatias",
+                description: "Aula sobre Valvopatias.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Valvopatias - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1v-RAfPUATusbKlUP-LX_5F2WTHA5US9a/preview?usp=drive_link", downloadUrl: "#dl-valvo-v1" },
+                        { title: "Valvopatias - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1vLi2BWt0CfC3pIxOBz6dmB0EZ0SaVBBE/preview?usp=drive_link", downloadUrl: "#dl-valvo-v2" },
+                        { title: "Valvopatias - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1QMs_SSJUJmT2PkUTY5ffUyCpa3hxVAzi/preview?usp=drive_link", downloadUrl: "#dl-valvo-v3" },
+                        { title: "Valvopatias - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1OISHEuUl0mzvpz9JCAdfu70IlRJxkLhO/preview?usp=drive_link", downloadUrl: "#dl-valvo-v4" },
+                        { title: "Valvopatias - Parte V", driveVideoUrl: "https://drive.google.com/file/d/11kfbhopmYFjM47luqrE-xgMjiXPyxJOJ/preview?usp=drive_link", downloadUrl: "#dl-valvo-v5" },
+                        { title: "Valvopatias - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1otLAjq-hzH5rypzdk10H0qP7Wdm-G74C/preview?usp=drive_link", downloadUrl: "#dl-valvo-v6" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Valvopatias", downloadUrl: "https://drive.google.com/file/d/1qLErcS_DGssEA68ugSbUKwRo4lMznGpW/preview?usp=drive_link" },
+                        { title: "Valvopatias - Flashcards", downloadUrl: "https://drive.google.com/file/d/1rhoPHU9EHg0S0Y9RC9KaKe-mPAJCqDq9/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Valvopatias", downloadUrl: "https://drive.google.com/file/d/1EV8ksvE8_5R6m-NGZcEW205Fe1qFB6Jz/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Valvopatias - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1K_zYHKghRQ4pCNauIn9ByXmC4hvjEyFe/preview?usp=drive_link" },
+                        { title: "Valvopatias - Slides", downloadUrl: "https://drive.google.com/file/d/1LiBhqgRIH6otC_lYS5iczAFkl7ergNE8/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Valvopatias", downloadUrl: "https://drive.google.com/file/d/1xSWzhvVuWSngCzwmUjk74qfi6HxiWyhm/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 20: Cardiomiopatias
+            {
+                title: "Cardiomiopatias",
+                description: "Aula sobre Cardiomiopatias.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Cardiomiopatias - Parte I", driveVideoUrl: "https://drive.google.com/file/d/14mQqL8N1EwtS3jatdUs_IIYBl-KaJqty/preview?usp=drive_link", downloadUrl: "#dl-cardio-v1" },
+                        { title: "Cardiomiopatias - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1gD5QuG25xPuEtPTyrd8S0CBPUDoriMaw/preview?usp=drive_link", downloadUrl: "#dl-cardio-v2" },
+                        { title: "Cardiomiopatias - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1U-DBw7jA8pS-qfKOlxx68UgDtsG_xISH/preview?usp=drive_link", downloadUrl: "#dl-cardio-v3" },
+                        { title: "Cardiomiopatias - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1cSDnQ-n9a1rhDIQ0meHhpPMVBy205w4h/preview?usp=drive_link", downloadUrl: "#dl-cardio-v4" },
+                        { title: "Cardiomiopatias - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1kLk90Ai72_DkJg72sB7UbS3L1S9gf8lK/preview?usp=drive_link", downloadUrl: "#dl-cardio-v5" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Cardiomiopatias", downloadUrl: "https://drive.google.com/file/d/1A4wtPEL4A0_NbMD3RhnYZAzu8_A6mJEu/preview?usp=drive_link" },
+                        { title: "Cardiomiopatias - Flashcards", downloadUrl: "https://drive.google.com/file/d/1owzm3R-NnX-eZHwY3pYZvmbLTvrKykaL/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                         { title: "Cardiomiopatias", downloadUrl: "https://drive.google.com/file/d/1ALTRFd7ujyng6KNAiLxvTJOEA-tDqe-W/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Cardiomiopatias", downloadUrl: "https://drive.google.com/file/d/1QeKwGXr_Q1bciBWNW7-e9K4psPxpBEqa/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "Cardiomiopatias", downloadUrl: "https://drive.google.com/file/d/13KjNq3wHwub1PyPAIZrVQfMt05PeBB05/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 21: Pericardiopatias
+            {
+                title: "Pericardiopatias",
+                description: "Aula sobre Pericardiopatias.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Pericardiopatias - Parte I", driveVideoUrl: "https://drive.google.com/file/d/19jWc96XaQSrt0CdcgrCetBGKymRphg60/preview?usp=drive_link", downloadUrl: "#dl-pericardio-v1" },
+                        { title: "Pericardiopatias - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1vN-JRFmJhEDS1UTamknKX7VLwTvWZ_uU/preview?usp=drive_link", downloadUrl: "#dl-pericardio-v2" },
+                        { title: "Pericardiopatias - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1BgGtepKtw7Fq7880nOa-eIUAff1Y6z8e/preview?usp=drive_link", downloadUrl: "#dl-pericardio-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Pericardiopatias", downloadUrl: "https://drive.google.com/file/d/1lLr2kCdwqtBwdMNfncmGy07uInrmGt0S/preview?usp=drive_link" },
+                        { title: "Pericardiopatias - Flashcards", downloadUrl: "https://drive.google.com/file/d/1nvPvxbj3uXCTzWfEZvAxva2Uh2-m1srQ/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Pericardiopatias", downloadUrl: "https://drive.google.com/file/d/1305unYRm33HmUH9EkEzdExg5Dmo5VYnM/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Pericardiopatias - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1zZ766OtYIlAHZLHXIDUTcaeluK1cAEdX/preview?usp=drive_link" },
+                        { title: "Pericardiopatias - Slides", downloadUrl: "https://drive.google.com/file/d/1lbLLR3S7xJXaAjoEcGSjXRJx0qou5d5b/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Pericardiopatias", downloadUrl: "https://drive.google.com/file/d/1V5fcvNX3QwB1TIcPp43EttsjvCABFz2Q/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 22: Avaliação Perioperatória
+            {
+                title: "Avaliação Perioperatória",
+                description: "Aula sobre Avaliação Perioperatória.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Avaliação Perioperatória - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1YufU0F_twhk0RiaNVKZKGjxY2mXj8CVf/preview?usp=drive_link", downloadUrl: "#dl-periop-v1" },
+                        { title: "Avaliação Perioperatória - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1VEhe8EmWZiRFfJmaJJrHfSr2jesxFg0N/preview?usp=drive_link", downloadUrl: "#dl-periop-v2" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Avaliação Perioperatória", downloadUrl: "https://drive.google.com/file/d/1htgXVE56gkxvY9mf_qrYb29ia8B9C1Bb/preview?usp=drive_link" },
+                        { title: "Avaliação Perioperatória - Flashcards", downloadUrl: "https://drive.google.com/file/d/1WjJBrkNylEiMFNvDEfTJLEBsB2wd4p18/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Avaliação Perioperatória", downloadUrl: "https://drive.google.com/file/d/1EjWuyMwVyOxI5NTL-b5UPzzHYwuhXyz3/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Avaliação Perioperatória - Aula Resumo", downloadUrl: "https://drive.google.com/file/d/1T2Kum8TWp7a9UffAHmq8VQArGx-lBObp/preview?usp=drive_link" },
+                        { title: "Avaliação Perioperatória - Slides", downloadUrl: "https://drive.google.com/file/d/1p3FySiF9ayEmFml-sTosv56M8AMMZqpR/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                         { title: "Avaliação Perioperatória", downloadUrl: "https://drive.google.com/file/d/1uYG8LSY7sDWBKv9Ftz8PwoBDJc_fnUZR/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 23: Eletrocardiograma
+            {
+                title: "Eletrocardiograma",
+                description: "Aula sobre Eletrocardiograma.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Eletrocardiograma - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1O8MYNNzwUKuLGfZ9-_Shv4kboTWI8Qpg/preview?usp=drive_link", downloadUrl: "#dl-ecg-v1" },
+                        { title: "Eletrocardiograma - Parte II", driveVideoUrl: "https://drive.google.com/file/d/14c6mLM3efR646I-yRl9LcuyxW4BV5kL8/preview?usp=drive_link", downloadUrl: "#dl-ecg-v2" },
+                        { title: "Eletrocardiograma - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1pvM95-oyIU25aC8ts9I4gMW6j7UrZa9q/preview?usp=drive_link", downloadUrl: "#dl-ecg-v3" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Eletrocardiograma", downloadUrl: "https://drive.google.com/file/d/1BUiMZRE_krBbzerhG17iffcqATWEdR6B/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                        { title: "Eletrocardiograma", downloadUrl: "https://drive.google.com/file/d/1xNsG4kkDmQtvRRjGzgZagSSR0YJVln1A/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                        { title: "Eletrocardiograma", downloadUrl: "https://drive.google.com/file/d/1-e-cbQ9nVm8vx6_4G7T8wEFOK8_x5BOK/preview?usp=drive_link" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Eletrocardiograma", downloadUrl: "https://drive.google.com/file/d/1xqDnkAiEvZbFiON8hwGHr_fsuXRn0P8Q/preview?usp=drive_link" }
+                    ]
+                }
+            }
+        ];
+
+        // Configuração dos ícones (agora com ícone genérico para documentos)
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num; // Retorna o próprio número se inválido ou menor que 1
+             var digits = String(+num).split(""),
+                 key = ["","I","II","III","IV","V","VI","VII","VIII","IX", // Unidades
+                        "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC", // Dezenas
+                        "","C","CC","CCC","CD","D","DC","DCC","DCCC","CM"], // Centenas
+                 roman = "",
+                 i = 3;
+             while (i--)
+                 roman = (key[+digits.pop() + (i * 10)] || "") + roman;
+             return Array(+digits.join("") + 1).join("M") + roman; // Milhares
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+             const detailNode = detailsTemplate.content.cloneNode(true);
+             const detailDiv = detailNode.querySelector('.sub-item-details');
+             const itemDetailsContent = detailNode.querySelector('.item-details-content');
+             const titleEl = detailNode.querySelector('.item-title');
+             const downloadLink = detailNode.querySelector('.download-link');
+             const iconPathData = subItemIcons[subItemType]; // Pega o path do ícone
+
+             // Adiciona o ícone apropriado
+             if (iconPathData) {
+                  const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                  const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                  iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                  if (subItemType === 'Videoaulas') {
+                       iconContainer.setAttribute('fill', 'currentColor');
+                       iconContainer.setAttribute('viewBox', '0 0 20 20');
+                  } else {
+                       iconContainer.setAttribute('fill', 'none');
+                       iconContainer.setAttribute('stroke', 'currentColor');
+                       iconContainer.setAttribute('viewBox', '0 0 24 24');
+                  }
+                  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                  path.setAttribute('d', iconPathData);
+                  if (subItemType === 'Videoaulas') {
+                       path.setAttribute('fill-rule', 'evenodd');
+                       path.setAttribute('clip-rule', 'evenodd');
+                  } else {
+                       path.setAttribute('stroke-linecap', 'round');
+                       path.setAttribute('stroke-linejoin', 'round');
+                       path.setAttribute('stroke-width', '1.5');
+                  }
+                  iconContainer.appendChild(path);
+                  itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+             } else {
+                  titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+             }
+
+             // Define o título
+             if (titleEl) {
+                 if (subItemType === 'Videoaulas') {
+                     if (totalVideos === 1) {
+                         titleEl.textContent = mainTitle;
+                     } else {
+                         // Usa o título específico da videoaula se houver e não for genérico
+                         titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula"))
+                                               ? detailData.title
+                                               : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                     }
+                 } else {
+                      titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                 }
+             }
+
+             // Configura o link de download ou remove o ícone
+             if (downloadLink) {
+                 // Mostra link se houver URL válida e não for placeholder genérico de vídeo
+                 if (detailData.downloadUrl && detailData.downloadUrl !== '#' && !detailData.downloadUrl.startsWith('#dl-')) {
+                     downloadLink.href = detailData.downloadUrl;
+                     downloadLink.title = `Baixar ${titleEl.textContent}`;
+                     downloadLink.setAttribute('target', '_blank');
+                     downloadLink.addEventListener('click', (e) => {
+                         e.stopPropagation();
+                     });
+                 } else {
+                     downloadLink.remove();
+                 }
+             }
+
+              // Adiciona atributos e classes para interatividade
+             const itemDisplayTitle = titleEl.textContent;
+             if (subItemType === 'Videoaulas' && detailData.driveVideoUrl && detailData.driveVideoUrl.includes('/d/')) {
+                 detailDiv.setAttribute('data-drive-video-url', detailData.driveVideoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             } else if (detailData.downloadUrl && detailData.downloadUrl !== '#' && detailData.downloadUrl.includes('/d/')) {
+                 detailDiv.setAttribute('data-download-url', detailData.downloadUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             } else {
+                  detailDiv.classList.remove('cursor-pointer');
+             }
+
+             return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+              contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+
+              // Limpa o menu existente antes de gerar o novo
+              menuListContainer.innerHTML = '';
+
+              menuItemsData.forEach((itemData, mainIndex) => {
+                   const title = itemData.title;
+                   const description = itemData.description;
+                   const subItems = itemData.subItems || {};
+                   const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                   const accordionItem = document.createElement('div');
+                   accordionItem.className = 'accordion-item';
+                   accordionItem.setAttribute('data-completed', 'false');
+                   accordionItem.setAttribute('data-main-description', description);
+
+                   const headerButton = document.createElement('button');
+                   headerButton.className = 'menu-item-header w-full accordion-header';
+                   headerButton.setAttribute('aria-expanded', 'false');
+                   headerButton.setAttribute('aria-controls', mainContentId);
+
+                   const headerContent = document.createElement('div');
+                   headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                   headerContent.innerHTML = `
+                       <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                       <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                            <span>Estratégia Educacional</span>
+                            <button type="button" class="status-toggle flex-shrink-0">
+                                <span>Concluído</span>
+                                <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                                <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                            </button>
+                       </div>`;
+
+                   const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                   chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                   chevronIcon.setAttribute('fill', 'none');
+                   chevronIcon.setAttribute('stroke', 'currentColor');
+                   chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                   chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                   headerButton.appendChild(headerContent);
+                   headerButton.appendChild(chevronIcon);
+
+                   const contentDiv = document.createElement('div');
+                   contentDiv.id = mainContentId;
+                   contentDiv.className = 'menu-item-content hidden';
+
+                   // Gera os subitens acordeões
+                   subItemOrder.forEach((subItemType, subIndex) => {
+                       const subItemArray = subItems[subItemType] || [];
+                       const count = subItemArray.length;
+                       const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                       const subAccordionItem = document.createElement('div');
+                       subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                       const subHeaderButton = document.createElement('button');
+                       subHeaderButton.className = 'sub-accordion-header w-full';
+                       subHeaderButton.setAttribute('aria-expanded', 'false');
+                       subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                       if (count === 0) {
+                           subHeaderButton.disabled = true;
+                       }
+                       subHeaderButton.innerHTML = `
+                            <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                            <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                       `;
+
+                       const subContentDiv = document.createElement('div');
+                       subContentDiv.id = nestedContentId;
+                       subContentDiv.className = 'sub-accordion-content hidden';
+
+                       if (count > 0) {
+                           const totalVideos = (subItemType === 'Videoaulas') ? count : 0;
+                           subItemArray.forEach((detailData, detailIndex) => {
+                               const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                               if (detailElement) {
+                                   subContentDiv.appendChild(detailElement);
+                               }
+                           });
+                       }
+
+                       subAccordionItem.appendChild(subHeaderButton);
+                       subAccordionItem.appendChild(subContentDiv);
+                       contentDiv.appendChild(subAccordionItem);
+                   });
+
+                   accordionItem.appendChild(headerButton);
+                   accordionItem.appendChild(contentDiv);
+                   menuListContainer.appendChild(accordionItem);
+              });
+
+                // --- Lógica de Funcionamento do Acordeão Principal (MODIFICADO PARA EXCLUSIVO) ---
+                const allAccordionHeaders = document.querySelectorAll('.accordion-header'); // Pega todos os cabeçalhos principais
+                allAccordionHeaders.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    // Ignora o clique se foi no botão de status
+                    if (event.target.closest('.status-toggle')) return;
+
+                    const currentContentId = header.getAttribute('aria-controls');
+                    const currentContent = document.getElementById(currentContentId);
+                    const currentChevronIcon = header.querySelector('.chevron-icon');
+                    const isOpening = header.getAttribute('aria-expanded') === 'false'; // Verifica se este item está fechado e será aberto
+
+                    // Fecha TODOS os outros itens ANTES de abrir/fechar o clicado
+                    allAccordionHeaders.forEach(otherHeader => {
+                    if (otherHeader !== header) { // Não executa no próprio item que foi clicado
+                        const otherContentId = otherHeader.getAttribute('aria-controls');
+                        const otherContent = document.getElementById(otherContentId);
+                        const otherChevronIcon = otherHeader.querySelector('.chevron-icon');
+
+                        if (otherHeader.getAttribute('aria-expanded') === 'true') { // Se o outro item estiver aberto...
+                        // ...fecha ele
+                        otherHeader.setAttribute('aria-expanded', 'false');
+                        if (otherContent) otherContent.classList.add('hidden');
+                        if (otherChevronIcon) otherChevronIcon.classList.remove('rotate-180');
+                        }
+                    }
+                    });
+
+                    // Agora, abre ou fecha o item que foi clicado
+                    if (!currentContent) return; // Segurança caso o conteúdo não exista
+                    header.setAttribute('aria-expanded', isOpening); // Define o novo estado (true se estava fechado, false se estava aberto)
+                    currentContent.classList.toggle('hidden', !isOpening); // Mostra se isOpening=true, esconde se isOpening=false
+                    if (currentChevronIcon) currentChevronIcon.classList.toggle('rotate-180', isOpening); // Gira se isOpening=true, volta se isOpening=false
+                });
+                });
+
+
+              // --- Lógica de Funcionamento do Acordeão Aninhado ---
+              const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+              subAccordionHeaders.forEach(subHeader => {
+                  if (!subHeader.disabled) {
+                      subHeader.addEventListener('click', (event) => {
+                          event.stopPropagation();
+                          const contentId = subHeader.getAttribute('aria-controls');
+                          const content = document.getElementById(contentId);
+                          if (!content) return;
+                          const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                          const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                          subHeader.setAttribute('aria-expanded', !expanded);
+                          content.classList.toggle('hidden');
+                          if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                      });
+                  }
+              });
+
+              // --- Lógica para Marcar/Desmarcar como Concluído ---
+              const statusToggles = document.querySelectorAll('.status-toggle');
+              statusToggles.forEach(toggle => {
+                  toggle.addEventListener('click', (event) => {
+                      event.stopPropagation();
+                      const accordionItem = toggle.closest('.accordion-item');
+                      if (!accordionItem) return;
+                      const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                      accordionItem.setAttribute('data-completed', !isCompleted);
+                      toggle.classList.toggle('is-completed', !isCompleted);
+                      console.log(`Item "${accordionItem.querySelector('h3').innerText}" marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                  });
+              });
+
+               // --- Lógica para Carregar Conteúdo (Vídeo ou PDF/Documento) no Iframe ---
+               menuListContainer.addEventListener('click', (event) => {
+                   const detailItem = event.target.closest('.sub-item-details');
+                   if (event.target.closest('.download-link')) { // Ignora clique no link de download
+                       return;
+                   }
+                   if (detailItem && contentViewer && contentDescription) {
+                       const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                       const downloadUrl = detailItem.getAttribute('data-download-url');
+                       const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                       const parentAccordionItem = detailItem.closest('.accordion-item');
+                       const mainDescription = parentAccordionItem ? parentAccordionItem.getAttribute('data-main-description') : 'Descrição não disponível.';
+
+                       // Verifica se o item é clicável (possui URL válida)
+                       if (driveVideoUrl || downloadUrl) {
+                            document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                                activeItem.classList.remove('is-active');
+                            });
+                            detailItem.classList.add('is-active');
+
+                           if (driveVideoUrl) {
+                                contentViewer.src = driveVideoUrl;
+                                contentDescription.textContent = `${mainDescription} - Assistindo: ${itemTitle}`;
+                                console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                           } else if (downloadUrl) {
+                                contentViewer.src = downloadUrl;
+                                contentDescription.textContent = `${mainDescription} - Visualizando: ${itemTitle}`;
+                                console.log(`Carregando documento: ${downloadUrl}`);
+                           }
+                       }
+                   }
+               });
+
+
+               // --- Lógica para o botão de Like ---
+               if(likeButton) {
+                   likeButton.addEventListener('click', () => {
+                       likeButton.classList.toggle('is-liked');
+                       const isLiked = likeButton.classList.contains('is-liked');
+                       console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                   });
+               }
+
+               // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+               const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+               if (firstClickableDetail) {
+                   // Procura o cabeçalho pai do primeiro item clicável
+                   const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                   if (parentHeader) {
+                       // Abre o acordeão pai primeiro (sem fechar os outros, pois é o carregamento inicial)
+                       const contentId = parentHeader.getAttribute('aria-controls');
+                       const content = document.getElementById(contentId);
+                       const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                       if (content && content.classList.contains('hidden')) {
+                            parentHeader.setAttribute('aria-expanded', 'true');
+                            content.classList.remove('hidden');
+                            if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                       }
+                       // Abre o sub-acordeão se necessário
+                       const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                       if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                           const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                           if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') parentSubHeader.click();
+                       }
+                       // Clica no item para carregar o conteúdo
+                       firstClickableDetail.click();
+                   }
+               } else {
+                 // Se nenhum item for clicável inicialmente, limpa o viewer e a descrição
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+               }
+
+
+        } else {
+            console.error("Erro: Elementos essenciais do DOM não foram encontrados.");
+        }
+    </script>
+
+</body>
+</html>

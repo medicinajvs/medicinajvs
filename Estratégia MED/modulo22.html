@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Pneumologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+
+        .accordion-item {
+            margin-bottom: 0.0625rem; /* Espaçamento de 1px (se 1rem = 16px) entre os módulos */
+        }
+        .accordion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .menu-item-header {
+            border: 1px solid #e2e8f0; /* Cinza Tailwind 300 */
+            padding: 0.75rem 1rem; /* p-3 e px-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, border-radius 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            width: 100%;
+        }
+        .menu-item-header:hover { background-color: #f8fafc; } /* Cinza Tailwind 50 */
+
+        .menu-item-header[aria-expanded="true"] {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+        }
+
+        .menu-item-content {
+            padding: 0.5rem 1rem 1rem 1rem; /* py-2 px-4 pb-4 */
+            background-color: white;
+            border-left: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0.375rem; /* rounded-b-md */
+            border-bottom-right-radius: 0.375rem; /* rounded-b-md */
+        }
+
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; }
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; }
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; }
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; }
+        .like-button.is-liked .heart-filled { animation: pulse 0.3s ease-out; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Pneumologia</h1> <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                <div class="video-container-yt">
+                    <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                    <div class="sub-item-details">
+                        <div class="item-details-content">
+                            <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                            </div>
+                        </div>
+                        <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Variáveis Globais ---
+        let newPlaceholderIdCounter = 1; // Contador global para IDs de placeholder únicos
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+            if (isNaN(num) || num < 1) return num;
+            const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+            let roman = '', i;
+            for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+            return roman;
+        }
+
+        function adjustSubItemsArray(originalArray, targetCount, itemType, moduleTitle) {
+            originalArray = originalArray || [];
+            const currentLength = originalArray.length;
+
+            if (currentLength === targetCount) {
+                return originalArray;
+            }
+            if (targetCount === 0) {
+                return [];
+            }
+            if (currentLength > targetCount) {
+                return originalArray.slice(0, targetCount);
+            }
+
+            const itemsToAdd = [];
+            const numberToAdd = targetCount - currentLength;
+            const itemTypeSingular = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
+
+            for (let i = 0; i < numberToAdd; i++) {
+                const newItem = {
+                    title: `${itemTypeSingular} Placeholder ${currentLength + i + 1}` // Título placeholder
+                };
+                const placeholderIdSuffix = `NEW_ID_${newPlaceholderIdCounter++}`;
+                if (itemType === 'Videoaulas') {
+                    newItem.driveVideoUrl = `https://drive.google.com/file/d/${placeholderIdSuffix}_video/preview`;
+                    newItem.downloadUrl = "#"; // Videoaulas geralmente têm '#' como URL de download
+                } else {
+                    newItem.downloadUrl = `https://drive.google.com/file/d/${placeholderIdSuffix}_doc/preview`;
+                }
+                itemsToAdd.push(newItem);
+            }
+            return originalArray.concat(itemsToAdd);
+        }
+
+        // --- Dados de Configuração ---
+        // Configuração base dos módulos (títulos e descrições)
+        const menuItemsDataConfig = [
+            { title: "Derrame Pleural", description: "Descrição Derrame Pleural." },
+            { title: "Doença Pulmonar Obstrutiva Crónica (DPOC)", description: "Descrição Doença Pulmonar Obstrutiva Crónica (DPOC)." },
+            { title: "Tromboembolismo Pulmonar (TEP)", description: "Descrição Tromboembolismo Pulmonar (TEP)." },
+            { title: "Introdução à Pneumologia", description: "Descrição Introdução à Pneumologia." },
+            { title: "Pneumologia Intensiva", description: "Descrição Pneumologia Intensiva." },
+            { title: "Asma", description: "Descrição Asma." },
+            { title: "Miscelânea (Interstício, Bronquiectasias, Hipertensão Pulmonar e Pneumotórax)", description: "Descrição Miscelânea (Interstício, Bronquiectasias, Hipertensão Pulmonar e Pneumotórax)." },
+            { title: "Neoplasias Pulmonares", description: "Descrição Neoplasias Pulmonares." }
+        ];
+
+        // Ordem definida para os subitens, usada para iterar e garantir consistência
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Definição das contagens desejadas para cada módulo e tipo de subitem
+        const targetCounts = [
+            { 'Videoaulas': 3, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Módulo 1
+            { 'Videoaulas': 6, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Módulo 2
+            { 'Videoaulas': 7, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Módulo 3
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 0 }, // Módulo 4
+            { 'Videoaulas': 10, 'Livros digitais': 1, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 },// Módulo 5
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Módulo 6
+            { 'Videoaulas': 5, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 4 }, // Módulo 7
+            { 'Videoaulas': 7, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }  // Módulo 8
+        ];
+
+        // Links específicos para cada item de cada módulo
+        const moduleLinks = [
+            // Módulo 1: Derrame Pleural
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/1rQZF7CPPYDjQFrKdOiozORVXDpCbxmWs/view?usp=sharing", "https://drive.google.com/file/d/18jkFz8a4A77jszA19mlkxiew_QA9aXwb/view?usp=sharing", "https://drive.google.com/file/d/1MfIkrRNsszywHke1gqPYvkJtlLxYHgpu/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1Hmblzi43pcOAbYmh9B9mpsd9ZqcEq1Ie/view?usp=drive_link", "https://drive.google.com/file/d/18zJIys0xxgubbiM_mp2MLzYG5KBpteAA/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1M0rJiq6pwDxSeeX9dAT7FtOyiIbMJwpn/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1IUw9KCMhHsJD7O3hmUBM8ReXBSQS610Z/view?usp=drive_link", "https://drive.google.com/file/d/1rR7DRcmRnX7zeKnnLZko024YhmBb1VSV/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1wBHvtmW-MXpsrXEyGmYcjgrKaIf8YK5-/view?usp=drive_link"]
+            },
+            // Módulo 2: Doença Pulmonar Obstrutiva Crônica (DPOC)
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/1aYVR3B7QdpJgcUszySoVxlSoZT_UAOBB/view?usp=sharing", "https://drive.google.com/file/d/1wu16iAADaQYXaz1prR-NcN4byZsrw6ia/view?usp=sharing", "https://drive.google.com/file/d/1s6UClnKJ2-Ssb8T5thN8qquVGJmzjuyK/view?usp=sharing", "https://drive.google.com/file/d/1-Jzdju2-rCcuEvfjuWfJ0MaMsix8rQNi/view?usp=sharing", "https://drive.google.com/file/d/1LHnCBOznocRQwletd-uaTQO0ppsG9NtS/view?usp=sharing", "https://drive.google.com/file/d/1h5iLJOpIXlUZ2005a12kkss0gTrNFfP7/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1jYHhRX_1ExM4RsxUy_GGtyE53HIzwHrk/view?usp=drive_link", "https://drive.google.com/file/d/1vpIlsN4KMPLqqhguuQ1_XELDxb_sZmfk/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1t1E03bgdKA1oHO-Vmn2KsstJp4cNw6-M/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1ttiyf0p-uR5pH9F4m9AW2BqM-IoFjSLy/view?usp=drive_link", "https://drive.google.com/file/d/1yaWttc3soq44UWGrm-1ahSz7ov-VOsHR/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1eGKm9lhbd9FTbgAQCm4oryMaxA8Y2xOl/view?usp=drive_link"]
+            },
+            // Módulo 3: Tromboembolismo Pulmonar (TEP)
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/10BuevAU9mu_pWcS0YNMcxqE-ODUhsxFf/view?usp=sharing", "https://drive.google.com/file/d/1g5v8Ylf4g77X9mvjrzq8KHiQiBf8Rce0/view?usp=sharing", "https://drive.google.com/file/d/1EJmlZneALxlTTwkeysov4pnPSjS2ScMf/view?usp=sharing", "https://drive.google.com/file/d/1ysKd_h60WO4ogziwqZnBR8p_aq4QTsZj/view?usp=sharing", "https://drive.google.com/file/d/1s3rlht5L4PXAfh02IoFvFoS6fQ-ICPwo/view?usp=sharing", "https://drive.google.com/file/d/1r_HCDgpymXh78Re_qW0eBCpxRBZlOaO-/view?usp=sharing", "https://drive.google.com/file/d/18miCJFLxVQZdPAh218CbDsSFFBpiztHs/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1UfWzOQF2bgtP2hyKKouvpEUYialXpZ2r/view?usp=drive_link", "https://drive.google.com/file/d/18sWeOlqsjXtaRSnfvNpGypE9IQiR2kn9/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1L_dq9ox_B9gTn7SotuqDpJZIppwRwM9m/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1wtLWAg83n1AuLE6GrU3LztuLIuOEERNE/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1IVPJ-v5j-lmE03GtAh5nRTWsLWbxiluR/view?usp=drive_link"]
+            },
+            // Módulo 4: Introdução à Pneumologia
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/1waL5q3zu0F6-3BCT2LnovDsxTiIkLSCl/view?usp=sharing", "https://drive.google.com/file/d/1unI9fKCNUgzGa9Bb_soGDRYZ1eUMQoVB/view?usp=sharing", "https://drive.google.com/file/d/1WTP0-NHU5HBTCmCmtYqHsRpkkcWJimyc/view?usp=sharing", "https://drive.google.com/file/d/1OQLVj_ZmQcxRJqLce3e49Sgk-zzsxzG1/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1NqctwA1c24N1WIl5YJoWP-k13jM4_joy/view?usp=drive_link", "https://drive.google.com/file/d/10z356xYj_MKkhL5AjoI5PgB3WRD637Fd/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1sWOtjzNMcmLd3JY9Mqg0UYhAZzbz2zA-/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1oELnSA5Y2tTshKBR6cbTjeQFu9p3Acdu/view?usp=drive_link"],
+                'Mapas mentais': [] // Target count is 0
+            },
+            // Módulo 5: Pneumologia Intensiva
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/17BKyPJ-Bub4rC9H2BUJeUk3fvr9eEvVy/view?usp=sharing", "https://drive.google.com/file/d/1o0vNOhDeif5uY9PE8ROhBGbQAISpiU16/view?usp=sharing", "https://drive.google.com/file/d/1SAyp_puBOhu5xMaCgrzF3OSlKiuPAVBX/view?usp=sharing", "https://drive.google.com/file/d/1I5x9zFSEG6fxOh-ZH_uCZdq2cV8BKVBd/view?usp=sharing", "https://drive.google.com/file/d/1It-2RG1Mwf9yNdS8bYDvmht20VbGh3ns/view?usp=sharing", "https://drive.google.com/file/d/1C9bEEPpBYJggkgoz5eXJyfdYB2Y2sfgs/view?usp=sharing", "https://drive.google.com/file/d/1kjr8_nfVEj34p1KyBlKfGawn0bb1J6NN/view?usp=sharing", "https://drive.google.com/file/d/1JHg1IDluxBN3Iw3goNVLqmRtHxGdc-Yr/view?usp=sharing", "https://drive.google.com/file/d/1efqgqqHdIyO2ZotbDmtsnhhpc142HyHk/view?usp=sharing", "https://drive.google.com/file/d/1IkUmx_A4ZUhiVowgReTrrEEY_WEuoQGe/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1boeqqyMzplQ0Q-E4-aY47AP_vQVcZ8SE/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1mdWJrlr1LVfu6GmaK3yLsCTixmCgRvCe/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1EbktLCAqxF_yL3K7UAUf6yrHDatBH3Px/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1nPYeklWmrRtBGmXtjwVDOTBaseNfQXLs/view?usp=drive_link"]
+            },
+            // Módulo 6: Asma
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/1v8OM_DHY3tNiQjuE7Rk6fXB_z2hO5eKz/view?usp=sharing", "https://drive.google.com/file/d/1ntJ4qFVjWP-sRlW6isEx5iiNfIbvL7hL/view?usp=sharing", "https://drive.google.com/file/d/1VvTMGTF4LjPD2GPL88JQalzptJ8qjx_J/view?usp=sharing", "https://drive.google.com/file/d/1BASIFHZeiXu5xVCRSN9XoCKr8qxca-jp/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1v7EUS6CqkZPk9hFihXB9Jjgpebx5WPN1/view?usp=drive_link", "https://drive.google.com/file/d/1G869rjAUg4V5qMSMMUupTPOtSmLS5P9p/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1TYf1OtWnq8BfZOiQ78TcyRFMm0GnYjXN/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1vMoX1Mml6UYR8yoqCILH0kLg-nNILdWe/view?usp=drive_link", "https://drive.google.com/file/d/1BPGJgVPTPf8sVGmAFwNkndDyj7-IMwHP/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/19ch8bRomPwlM-HdmKSadm7ExgjnaQnxs/view?usp=drive_link"]
+            },
+            // Módulo 7: Miscelânea
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/15htCongMi3lQ8KvJEF8PB3_xpAKxsJX9/view?usp=sharing", "https://drive.google.com/file/d/1MEPC5oiuD4Srhuiiv3jFO6-HkuudMKI7/view?usp=sharing", "https://drive.google.com/file/d/1JHpZcLUICGZtlPYXf8f1uQG5DQMSpXxk/view?usp=sharing", "https://drive.google.com/file/d/1OOfvKr5RybnA0Fs7MVmzaESnv5mJeVi3/view?usp=sharing", "https://drive.google.com/file/d/1PylhomWzshJSX8QDVjpDgqOjZARZtYaF/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1HKcyBblHOPGEXahMNLvT9rnACLUGJ-rN/view?usp=drive_link", "https://drive.google.com/file/d/1sZ2EhD9OkbqYeTOJRr0PXi8jAdhvjngS/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1jNlq5kb9SaVjCyB6E-UzCQMST6g_ml8P/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1IkXkYHGEVm6vfvlCWIPaVW5jLPVi1e7F/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1ybG-JkmSYjClZ8LvEm8D-0Zb5931556R/view?usp=drive_link", "https://drive.google.com/file/d/1Vc8Eqv9bpQsFaJgJo8JEelcIODGTaARf/view?usp=drive_link", "https://drive.google.com/file/d/1cXbUEhoqOZEgvDAfFQh2YLyoOCMasEpY/view?usp=drive_link", "https://drive.google.com/file/d/1kVJkdHZX7fd1BWNBDbkwFzLTa-V7e81D/view?usp=drive_link"]
+            },
+            // Módulo 8: Neoplasias Pulmonares
+            {
+                'Videoaulas': ["https://drive.google.com/file/d/1BLWc1mQv7NXs4ywSnosfcJBuj6An8k2h/view?usp=sharing", "https://drive.google.com/file/d/1-NnEEqwMQuGOKUfYgSvBDBPQRxC5xEZI/view?usp=sharing", "https://drive.google.com/file/d/16BQ7i7Qqd8IG1y57CgdpdaCZclYOgslj/view?usp=sharing", "https://drive.google.com/file/d/1ufjldNj5UtHN-xFL0GYLYjMdOKv8Jw4x/view?usp=sharing", "https://drive.google.com/file/d/1i85NpIGKt83BFJkygJQzsq_kHUuAIViL/view?usp=sharing", "https://drive.google.com/file/d/1sG8s8LkxnZ3mZFTPtZ1UwSKsbVV_kuHR/view?usp=sharing", "https://drive.google.com/file/d/1CPyUMiNsJRr11iq9ACjwlrd3TduktnUW/view?usp=sharing"],
+                'Livros digitais': ["https://drive.google.com/file/d/1KcZnBdPRmrUNB18qoCrDup99IaoSHHHj/view?usp=drive_link", "https://drive.google.com/file/d/1T6BjUCT4Vd9yJ6XG7honnG3JauQlec7V/view?usp=drive_link"],
+                'Resumos': ["https://drive.google.com/file/d/1iyI-fZQ7-1fiNQGbOnQ_TUyzxXd0f2U8/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1eiaH71MbdXZlmQBbIzPo6pb371RK4zPz/view?usp=drive_link"],
+                'Mapas mentais': ["https://drive.google.com/file/d/1tizKPUIqwJ6rpqLUuEaho0m-jAbH1-Vv/view?usp=drive_link"]
+            }
+        ];
+
+        // --- Construção Dinâmica do menuItemsData ---
+        // Esta função irá construir a estrutura de dados final para o menu.
+        const menuItemsData = menuItemsDataConfig.map((moduleConfig, moduleIndex) => {
+            const newModule = { ...moduleConfig, subItems: {} }; // Copia a configuração base do módulo
+            const currentModuleTargetCounts = targetCounts[moduleIndex]; // Pega as contagens alvo para o módulo atual
+
+            // Itera sobre a ordem definida dos tipos de subitens (Videoaulas, Livros, etc.)
+            subItemOrder.forEach(itemType => {
+                const countForItemType = currentModuleTargetCounts[itemType]; // Número de itens desejado para este tipo
+                let itemsArray = []; // Array para armazenar os subitens deste tipo
+
+                // Verifica se há links específicos definidos em moduleLinks para este módulo e tipo de item
+                if (moduleIndex < moduleLinks.length && moduleLinks[moduleIndex] && moduleLinks[moduleIndex][itemType]) {
+                    const specificLinksForType = moduleLinks[moduleIndex][itemType]; // Array de links específicos
+
+                    // Cria o número de itens conforme targetCount
+                    for (let i = 0; i < countForItemType; i++) {
+                        const newItem = {};
+                        const itemTypeSingular = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
+                        // Título placeholder inicial, será formatado pela função createSubItemDetail
+                        newItem.title = `${itemTypeSingular} Placeholder ${i + 1}`;
+
+                        // Se houver um link específico para este índice, usa-o
+                        if (i < specificLinksForType.length) {
+                            if (itemType === 'Videoaulas') {
+                                newItem.driveVideoUrl = specificLinksForType[i];
+                                newItem.downloadUrl = "#"; // Padrão para videoaulas sem download direto
+                            } else {
+                                newItem.downloadUrl = specificLinksForType[i]; // Para outros tipos, o downloadUrl é o link principal
+                            }
+                        } else {
+                            // Se faltar um link específico (não deveria ocorrer se moduleLinks estiver completo para targetCount),
+                            // gera um placeholder. Isso serve como fallback.
+                            const placeholderIdSuffix = `FALLBACK_LINK_ID_${newPlaceholderIdCounter++}`;
+                            if (itemType === 'Videoaulas') {
+                                newItem.driveVideoUrl = `https://drive.google.com/file/d/${placeholderIdSuffix}_video/preview`;
+                                newItem.downloadUrl = "#";
+                            } else {
+                                newItem.downloadUrl = `https://drive.google.com/file/d/${placeholderIdSuffix}_doc/preview`;
+                            }
+                        }
+                        itemsArray.push(newItem);
+                    }
+                } else {
+                    // Se não houver links específicos em moduleLinks para este módulo/tipo (ou se moduleIndex >= moduleLinks.length),
+                    // usa a função adjustSubItemsArray para criar itens com URLs placeholder.
+                    itemsArray = adjustSubItemsArray([], countForItemType, itemType, moduleConfig.title);
+                }
+                newModule.subItems[itemType] = itemsArray; // Adiciona o array de subitens ao módulo
+            });
+            return newModule; // Retorna o objeto do módulo completo
+        });
+
+
+        // Configuração dos ícones (SVG paths)
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z',
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z'
+        };
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+            if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const isVideo = subItemType === 'Videoaulas';
+                const iconSizeClass = isVideo ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                iconContainer.setAttribute('fill', isVideo ? 'currentColor' : 'none');
+                iconContainer.setAttribute('stroke', isVideo ? 'none' : 'currentColor');
+                iconContainer.setAttribute('viewBox', isVideo ? '0 0 20 20' : '0 0 24 24');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', iconPathData);
+                if (isVideo) {
+                    path.setAttribute('fill-rule', 'evenodd');
+                    path.setAttribute('clip-rule', 'evenodd');
+                } else {
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.setAttribute('stroke-linejoin', 'round');
+                    path.setAttribute('stroke-width', '1.5');
+                }
+                iconContainer.appendChild(path);
+                itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0'; // Remove margem se não houver ícone
+            }
+
+            if (titleEl) {
+                let currentTitle = detailData.title || ""; // Pega o título do objeto de dados, se existir
+                let useFormattedTitle = true; // Flag para decidir se formata o título ou usa o existente
+
+                // Verifica se o título existente é um placeholder que deve ser substituído
+                // ou se é um título específico que deve ser mantido.
+                // A lógica considera "placeholder" no título ou se começa com o tipo de item (ex: "Videoaula ...") como genérico.
+                if (currentTitle.toLowerCase().includes("placeholder") || currentTitle.toLowerCase().startsWith(subItemType.slice(0,-1).toLowerCase())) {
+                    useFormattedTitle = true;
+                } else if (currentTitle) { // Se houver um título (e não for genérico), usa ele
+                    useFormattedTitle = false;
+                }
+
+
+                if (useFormattedTitle) { // Formata o título se necessário
+                    if (subItemType === 'Videoaulas') {
+                        // Se for a única videoaula e o título for genérico, usa o título do módulo principal
+                        if (totalVideos === 1 && (!currentTitle || currentTitle.toLowerCase().startsWith("videoaula"))) {
+                            titleEl.textContent = mainTitle;
+                        } else { // Caso contrário, formata como "Módulo - Parte X"
+                            titleEl.textContent = `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                        }
+                    } else { // Para outros tipos de subitens (Livros, Resumos, etc.)
+                         // Formata como "Tipo - Módulo"
+                         titleEl.textContent = `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                    }
+                } else {
+                    titleEl.textContent = currentTitle; // Usa o título específico do objeto de dados
+                }
+            }
+
+
+            if (subtitleEl) {
+                subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+            if (downloadLink) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    let previewUrl = detailData.downloadUrl;
+                    // Converte links do Google Drive para o formato /preview para melhor visualização em iframes
+                    if (previewUrl.includes("drive.google.com") && previewUrl.includes("/view?usp=sharing")) {
+                        previewUrl = previewUrl.replace("/view?usp=sharing", "/preview");
+                    } else if (previewUrl.includes("drive.google.com") && previewUrl.includes("/view?usp=drive_link")) {
+                         previewUrl = previewUrl.replace("/view?usp=drive_link", "/preview");
+                    }
+
+
+                    if (!previewUrl.startsWith('#dl-')) { // #dl- seria para downloads diretos (não implementado aqui)
+                        downloadLink.href = previewUrl;
+                        downloadLink.setAttribute('target', '_blank'); // Abrir link de download em nova aba
+                        downloadLink.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Impede que o clique no link de download carregue o conteúdo no iframe principal
+                        });
+                    } else {
+                        // Para links internos de download (simulados)
+                        downloadLink.href = previewUrl;
+                        downloadLink.removeAttribute('target');
+                    }
+                    downloadLink.title = `Baixar ${titleEl.textContent}`;
+                }
+                else {
+                    downloadLink.remove(); // Remove o ícone de download se não houver URL
+                }
+            }
+
+            const itemDisplayTitle = titleEl.textContent; // Título final que será exibido
+
+            // Prepara URLs para visualização no iframe
+            let videoUrl = detailData.driveVideoUrl;
+             if (videoUrl && videoUrl.includes("drive.google.com") && videoUrl.includes("/view?usp=sharing")) {
+                videoUrl = videoUrl.replace("/view?usp=sharing", "/preview");
+            } else if (videoUrl && videoUrl.includes("drive.google.com") && videoUrl.includes("/view?usp=drive_link")) {
+                 videoUrl = videoUrl.replace("/view?usp=drive_link", "/preview");
+            }
+
+
+            let docUrl = detailData.downloadUrl; // Para documentos, a URL de download é usada para preview no iframe
+             if (docUrl && docUrl.includes("drive.google.com") && docUrl.includes("/view?usp=sharing")) {
+                docUrl = docUrl.replace("/view?usp=sharing", "/preview");
+            } else if (docUrl && docUrl.includes("drive.google.com") && docUrl.includes("/view?usp=drive_link")) {
+                 docUrl = docUrl.replace("/view?usp=drive_link", "/preview");
+            }
+
+
+            // Adiciona atributos de dados para carregar o conteúdo ao clicar no item
+            if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            // Para outros tipos de documentos, se houver um downloadUrl válido (e não for um link interno de download simulado)
+            else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                detailDiv.setAttribute('data-download-url', docUrl); // Usamos data-download-url para carregar no iframe
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            else {
+                // Se não for vídeo e não tiver URL de visualização, remove o cursor de ponteiro
+                if (subItemType !== 'Videoaulas') { // Mantém o cursor para vídeos mesmo sem URL (caso seja adicionada depois)
+                    detailDiv.classList.remove('cursor-pointer');
+                }
+            }
+            return detailDiv;
+        }
+
+
+        // --- Geração do Menu (quando o DOM estiver pronto) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Garante que todos os elementos essenciais do DOM existam antes de prosseguir
+            if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+                contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+                menuListContainer.innerHTML = ''; // Limpa o menu existente antes de gerar um novo
+
+                // Itera sobre os dados dos módulos para criar os elementos do menu
+                menuItemsData.forEach((itemData, mainIndex) => {
+                    const title = itemData.title;
+                    const description = itemData.description;
+                    const subItems = itemData.subItems || {}; // Garante que subItems seja um objeto
+                    // ID único para o conteúdo do acordeão principal
+                    const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 30)}`;
+
+
+                    const accordionItem = document.createElement('div');
+                    accordionItem.className = 'accordion-item';
+                    accordionItem.setAttribute('data-completed', 'false'); // Estado de conclusão
+                    accordionItem.setAttribute('data-main-description', description); // Descrição do módulo principal
+
+                    // Botão do cabeçalho do acordeão principal
+                    const headerButton = document.createElement('button');
+                    headerButton.className = 'menu-item-header w-full accordion-header';
+                    headerButton.setAttribute('aria-expanded', 'false');
+                    headerButton.setAttribute('aria-controls', mainContentId);
+
+                    // Conteúdo do cabeçalho (título, subtítulo, botão de status)
+                    const headerContent = document.createElement('div');
+                    headerContent.className = 'text-left flex-grow mr-2 overflow-hidden'; // Permite truncar texto
+                    headerContent.innerHTML = `
+                        <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                        <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                            <span>Estratégia Educacional</span>
+                            <button type="button" class="status-toggle flex-shrink-0" title="Marcar como concluído"> <span class="mr-1">Concluído</span> <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                                <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>`;
+
+                    // Ícone de chevron para expandir/recolher
+                    const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                    chevronIcon.setAttribute('fill', 'none');
+                    chevronIcon.setAttribute('stroke', 'currentColor');
+                    chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                    chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                    headerButton.appendChild(headerContent);
+                    headerButton.appendChild(chevronIcon);
+
+                    // Div de conteúdo do acordeão principal (inicialmente oculta)
+                    const contentDiv = document.createElement('div');
+                    contentDiv.id = mainContentId;
+                    contentDiv.className = 'menu-item-content hidden';
+
+                    // Itera sobre a ordem definida para os subitens (Videoaulas, Livros, etc.) para criar sub-acordeões
+                    subItemOrder.forEach((subItemType, subIndex) => {
+                        const subItemArray = subItems[subItemType] || []; // Array de detalhes para este tipo de subitem
+                        const count = subItemArray.length;
+                        const nestedContentId = `nested-content-${mainIndex}-${subIndex}`; // ID único para o conteúdo do sub-acordeão
+
+                        const subAccordionItem = document.createElement('div');
+                        subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`; // Adiciona margem superior se não for o primeiro
+
+                        // Botão do cabeçalho do sub-acordeão
+                        const subHeaderButton = document.createElement('button');
+                        subHeaderButton.className = 'sub-accordion-header w-full';
+                        subHeaderButton.setAttribute('aria-expanded', 'false');
+                        subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                        if (count === 0) {
+                            subHeaderButton.disabled = true; // Desabilita se não houver itens
+                        }
+                        subHeaderButton.innerHTML = `
+                            <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                            <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        `;
+
+                        // Div de conteúdo do sub-acordeão (inicialmente oculta)
+                        const subContentDiv = document.createElement('div');
+                        subContentDiv.id = nestedContentId;
+                        subContentDiv.className = 'sub-accordion-content hidden';
+
+                        // Se houver itens, cria e adiciona os detalhes de cada um
+                        if (count > 0) {
+                            const totalVideos = (subItemType === 'Videoaulas') ? count : 0; // Usado para lógica de nomeação de vídeos
+                            subItemArray.forEach((detailData, detailIndex) => {
+                                const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                                if (detailElement) {
+                                    subContentDiv.appendChild(detailElement);
+                                }
+                            });
+                        }
+
+                        subAccordionItem.appendChild(subHeaderButton);
+                        subAccordionItem.appendChild(subContentDiv);
+                        contentDiv.appendChild(subAccordionItem); // Adiciona o sub-acordeão ao conteúdo do acordeão principal
+                    });
+
+                    accordionItem.appendChild(headerButton);
+                    accordionItem.appendChild(contentDiv);
+                    menuListContainer.appendChild(accordionItem); // Adiciona o item do acordeão principal à lista
+                });
+
+                // --- Lógica dos Acordeões ---
+                const accordionHeaders = document.querySelectorAll('.accordion-header');
+                accordionHeaders.forEach(header => {
+                    header.addEventListener('click', (event) => {
+                        // Impede que o clique no botão de status expanda/recolha o acordeão
+                        if (event.target.closest('.status-toggle')) return;
+
+                        const content = header.nextElementSibling;
+                        if (!content || !content.classList.contains('menu-item-content')) return; // Verifica se o conteúdo existe
+
+                        const isExpanded = header.getAttribute('aria-expanded') === 'true';
+                        const chevronIcon = header.querySelector('.chevron-icon');
+
+                        header.setAttribute('aria-expanded', String(!isExpanded));
+                        content.classList.toggle('hidden');
+                        if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                    });
+                });
+
+                const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+                subAccordionHeaders.forEach(subHeader => {
+                    if (!subHeader.disabled) { // Adiciona listener apenas se não estiver desabilitado
+                        subHeader.addEventListener('click', (event) => {
+                            event.stopPropagation(); // Impede que o clique no sub-acordeão afete o acordeão pai
+                            const content = subHeader.nextElementSibling;
+                            if (!content || !content.classList.contains('sub-accordion-content')) return;
+
+                            const isExpanded = subHeader.getAttribute('aria-expanded') === 'true';
+                            const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+
+                            subHeader.setAttribute('aria-expanded', String(!isExpanded));
+                            content.classList.toggle('hidden');
+                            if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                        });
+                    }
+                });
+
+                // --- Lógica para Marcar/Desmarcar como Concluído ---
+                const statusToggles = document.querySelectorAll('.status-toggle');
+                statusToggles.forEach(toggle => {
+                    toggle.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Impede que o clique afete o acordeão
+                        const accordionItem = toggle.closest('.accordion-item');
+                        if (!accordionItem) return;
+
+                        const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                        const newCompletedState = !isCompleted;
+
+                        accordionItem.setAttribute('data-completed', String(newCompletedState));
+                        toggle.classList.toggle('is-completed', newCompletedState);
+                        toggle.title = newCompletedState ? 'Marcar como não concluído' : 'Marcar como concluído';
+                        // console.log(`Item "${accordionItem.querySelector('h3').innerText}" marcado como ${newCompletedState ? 'concluído' : 'não concluído'}`);
+                    });
+                });
+
+                // --- Lógica para Carregar Conteúdo ---
+                menuListContainer.addEventListener('click', (event) => {
+                    const detailItem = event.target.closest('.sub-item-details');
+                    // Se o clique foi no link de download, não faz nada aqui (já tratado no createSubItemDetail)
+                    if (event.target.closest('.download-link')) { return; }
+
+                    if (detailItem && contentViewer && contentDescription) {
+                        let driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                        let downloadUrl = detailItem.getAttribute('data-download-url'); // Pode ser vídeo ou documento
+                        const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                        const parentAccordionItem = detailItem.closest('.accordion-item');
+                        const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+
+                        // Apenas carrega se houver uma URL válida
+                        if (driveVideoUrl || downloadUrl) { // Verifica se há URL para vídeo ou documento
+                            // Remove a classe 'is-active' de qualquer item previamente ativo
+                            document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                                activeItem.classList.remove('is-active');
+                            });
+                            // Adiciona a classe 'is-active' ao item clicado
+                            detailItem.classList.add('is-active');
+
+                            let contentType = '';
+                            if (driveVideoUrl && driveVideoUrl !== '#') {
+                                contentViewer.src = driveVideoUrl;
+                                contentType = 'Assistindo';
+                                // console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                            }
+                            else if (downloadUrl && downloadUrl !== '#') { // Carrega documentos no iframe também
+                                contentViewer.src = downloadUrl; // Usa a mesma URL de download para visualização
+                                contentType = 'Visualizando';
+                                // console.log(`Carregando documento: ${downloadUrl}`);
+                            }
+                            contentDescription.textContent = `Aula sobre ${mainTitle} - ${contentType}: ${itemTitle}`;
+                        }
+                    }
+                });
+
+                // --- Lógica para o botão de Like ---
+                if(likeButton) {
+                    likeButton.addEventListener('click', () => {
+                        likeButton.classList.toggle('is-liked');
+                        const isLiked = likeButton.classList.contains('is-liked');
+                        // console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                    });
+                }
+
+                // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+                // Seleciona o primeiro item que tem uma URL de vídeo ou uma URL de download (que não seja placeholder '#')
+                const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url]:not([data-drive-video-url="#"]), #menu-items-list .sub-item-details[data-download-url]:not([data-download-url="#"]):not([data-download-url^="#dl-"])');
+                if (firstClickableDetail) {
+                    // Usar setTimeout para garantir que a UI esteja pronta e os acordeões possam ser abertos
+                    setTimeout(() => {
+                        // Abre o acordeão pai, se estiver fechado
+                        const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                        const parentHeader = parentAccordionItem?.querySelector('.accordion-header');
+                        if (parentHeader && parentHeader.getAttribute('aria-expanded') === 'false') {
+                            if(typeof parentHeader.click === 'function') parentHeader.click(); // Simula o clique
+                        }
+
+                        // Abre o sub-acordeão pai, se estiver fechado
+                        const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                        if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                            const parentSubHeader = parentSubAccordionContent.previousElementSibling; // O botão do sub-acordeão
+                            if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                                 parentSubHeader.click(); // Simula o clique
+                            }
+                        }
+
+                        // Clica no primeiro item para carregar o conteúdo
+                       if(typeof firstClickableDetail.click === 'function'){
+                            firstClickableDetail.click();
+                       }
+                    }, 100); // Pequeno delay para renderização
+                } else {
+                    // Se nenhum item clicável for encontrado
+                    contentViewer.src = '';
+                    contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+                    // console.log("Nenhum item inicial clicável encontrado para carregar.");
+                }
+
+            } else {
+                console.error("Erro: Elementos essenciais do DOM não foram encontrados. Verifique os IDs: menu-items-list, subitem-details-template, content-viewer, content-description, like-button.");
+            }
+        });
+    </script>
+
+</body>
+</html>

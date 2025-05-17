@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Ginecologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Ginecologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                         id="content-viewer" src="" title="Visualizador de Conteúdo"
+                         frameborder="0"
+                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                         referrerpolicy="strict-origin-when-cross-origin"
+                         allowfullscreen>
+                     </iframe>
+                 </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                     Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                     </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Funções Auxiliares ---
+
+        /**
+         * Converte um número para algarismo romano.
+         * @param {number} num O número a ser convertido.
+         * @returns {string|number} O número em algarismo romano ou o número original se inválido.
+         */
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num;
+             const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+             let roman = '', i;
+             for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+             return roman;
+        }
+
+        /**
+         * Cria um array de objetos placeholder para um tipo de subitem.
+         * Usado para módulos onde os links reais ainda não foram fornecidos.
+         * @param {number} count O número de itens a serem criados.
+         * @param {string} baseId O ID base para gerar URLs placeholder (ex: 'PLACEHOLDER_ID_21_V').
+         * @param {string} itemType O tipo de item ('V' para Videoaula, 'L' para Livro, 'R' para Resumo, 'S' para Slide, 'M' para Mapa).
+         * @param {string} titlePrefix O prefixo do título (ex: 'Videoaula', 'Livro').
+         * @returns {Array<object>} Um array de objetos placeholder.
+         */
+        function createPlaceholderItems(count, baseId, itemType, titlePrefix) {
+            const items = [];
+            for (let i = 1; i <= count; i++) {
+                const placeholderUrl = `https://drive.google.com/file/d/${baseId}${itemType}${i}/preview?usp=drive_link`;
+                const item = {
+                    title: `${titlePrefix} Placeholder ${i}`,
+                };
+                if (itemType === 'V') {
+                    item.driveVideoUrl = placeholderUrl;
+                    item.downloadUrl = "#";
+                } else {
+                    item.downloadUrl = placeholderUrl;
+                }
+                items.push(item);
+            }
+            return items;
+        }
+
+        // --- Dados e Configurações ---
+        // MODIFICADO: Links reais inseridos para os módulos 1-20. Placeholders para 21-31.
+        const menuItemsData = [
+            // Módulo 1: Ciclo Menstrual
+            { title: "Ciclo Menstrual", description: "Descrição Ciclo Menstrual.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Ciclo Menstrual 1", driveVideoUrl: "https://drive.google.com/file/d/126pwt95UZxU0xiCW7tQczjmNviq74vYu/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Ciclo Menstrual 2", driveVideoUrl: "https://drive.google.com/file/d/1Aqw6azPzT5gZicxu2_wUGjpW8XHzH6j7/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Ciclo Menstrual 3", driveVideoUrl: "https://drive.google.com/file/d/1LlZVbqTRIUocBhcosbE9hgCWw2KVo2tg/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Ciclo Menstrual 1", downloadUrl: "https://drive.google.com/file/d/1Cc13fTp2C1H65WnE16JCz0nM-weBiL5f/preview?usp=drive_link" },
+                    { title: "Livro Ciclo Menstrual 2", downloadUrl: "https://drive.google.com/file/d/1Y0jC7BClCfJwvFeT3VvKKPRjCY63zagw/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Ciclo Menstrual", downloadUrl: "https://drive.google.com/file/d/13bkUz63LphX5fszdGouL2C3t35ncm_AQ/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Ciclo Menstrual 1", downloadUrl: "https://drive.google.com/file/d/1RWNbLOgJLYm3aBGtiov7ebgNDPFyRDCh/preview?usp=drive_link" },
+                    { title: "Slide Ciclo Menstrual 2", downloadUrl: "https://drive.google.com/file/d/1Kp70Oa6zffVYBWfx9gas5dqQH6nOP9fB/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Ciclo Menstrual", downloadUrl: "https://drive.google.com/file/d/1DmWpamarAGVkivAJY6eDLIClHPU2Q3oV/preview?usp=drive_link" } ]
+            } },
+            // Módulo 2: Planejamento Familiar
+            { title: "Planejamento Familiar", description: "Descrição Planejamento Familiar.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Planejamento Familiar 1", driveVideoUrl: "https://drive.google.com/file/d/19aC0FTtkhFHxNyDjsd0qDpPopkUzAqz5/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Planejamento Familiar 2", driveVideoUrl: "https://drive.google.com/file/d/1egs4qmwPOC4bgjRTAa3rol42SLtWjNbL/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Planejamento Familiar 1", downloadUrl: "https://drive.google.com/file/d/1QzQIssOgnvQ4bP8BwNSpPMwjcR9B5jt3/preview?usp=drive_link" },
+                    { title: "Livro Planejamento Familiar 2", downloadUrl: "https://drive.google.com/file/d/11r18xJmtVKD7HGAKMPGnh6tKVDch4Yt0/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Planejamento Familiar", downloadUrl: "https://drive.google.com/file/d/1MjCq5VfPL2_xvBbqMsyC6uAD2Ebo44KD/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Planejamento Familiar 1", downloadUrl: "https://drive.google.com/file/d/1IzrCBsjYnN0pooKUx5OX9VdNWuhxaNnj/preview?usp=drive_link" },
+                    { title: "Slide Planejamento Familiar 2", downloadUrl: "https://drive.google.com/file/d/1unz9FXZ90h6OTmQTEbD1yhBXnHpi4_VY/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Planejamento Familiar", downloadUrl: "https://drive.google.com/file/d/1EMlm43otU0E7em265wIbA9mrq6zOq8uL/preview?usp=drive_link" } ]
+            } },
+            // Módulo 3: Amenorreia
+            { title: "Amenorreia", description: "Descrição Amenorreia.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Amenorreia 1", driveVideoUrl: "https://drive.google.com/file/d/17dQq9w5bFGY2AhWa-dArhs2FoHW8XRiY/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Amenorreia 2", driveVideoUrl: "https://drive.google.com/file/d/1OYhSvMyt1VV4tRDd2Z0InqhWj3VaruDg/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Amenorreia 3", driveVideoUrl: "https://drive.google.com/file/d/18GcJiSuQIKHHRlyNrbcpERGrswqmaSGD/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Amenorreia 1", downloadUrl: "https://drive.google.com/file/d/1zpHSg_JYv6BMqho1hDxTAMCHqRibKYJN/preview?usp=drive_link" },
+                    { title: "Livro Amenorreia 2", downloadUrl: "https://drive.google.com/file/d/1GKjaSCrn-Sj0dKA53De5huhQ_DU1fvX7/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Amenorreia", downloadUrl: "https://drive.google.com/file/d/157b27xebt0m1aavEsvDx55zCFSggZFh4/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Amenorreia 1", downloadUrl: "https://drive.google.com/file/d/1lwzcszJFRF3Qs4_e7-lBFHzqVxV_9e2v/preview?usp=drive_link" },
+                    { title: "Slide Amenorreia 2", downloadUrl: "https://drive.google.com/file/d/1d2ieHqjeOE3jsUU9uJYbO0W6bBT947eh/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Amenorreia", downloadUrl: "https://drive.google.com/file/d/10T_lOb8wGIden2EZgrsLTy653k1LRa9z/preview?usp=drive_link" } ]
+            } },
+            // Módulo 4: Síndrome dos Ovários Policísticos
+            { title: "Síndrome dos Ovários Policísticos", description: "Descrição Síndrome dos Ovários Policísticos.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula SOP 1", driveVideoUrl: "https://drive.google.com/file/d/1OMkH_9Qu0wdgjXL5iPp3uIiNAZYdq8N6/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula SOP 2", driveVideoUrl: "https://drive.google.com/file/d/1jSmcblx6h7fIUg6NrvhxK7yehLSnwwp2/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula SOP 3", driveVideoUrl: "https://drive.google.com/file/d/1PgYfl1U3KRQl6VRUG7dvh6AfoyOR9ZEK/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro SOP 1", downloadUrl: "https://drive.google.com/file/d/1xpBruFQcAvgmOQ3xazlLGPD0KWhNvDxi/preview?usp=drive_link" },
+                    { title: "Livro SOP 2", downloadUrl: "https://drive.google.com/file/d/1O0yMwKinkKI5N8dt_gtEuz6lcrqRKrrE/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo SOP", downloadUrl: "https://drive.google.com/file/d/1U7YN_db54ZGR2nKeh0S_PwWlJlZDFC5y/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide SOP 1", downloadUrl: "https://drive.google.com/file/d/1WPa1fm-mZUhyMOBTtYDAyOO7Pe6EuZar/preview?usp=drive_link" },
+                    { title: "Slide SOP 2", downloadUrl: "https://drive.google.com/file/d/1r0gkwUo_28niJ4KEMswLOieAtWGwtbO-/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental SOP", downloadUrl: "https://drive.google.com/file/d/1WKDcSieq4hyR-ag6J40V9AOq6XyGnC64/preview?usp=drive_link" } ]
+            } },
+            // Módulo 5: Endometriose
+            { title: "Endometriose", description: "Descrição Endometriose.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Endometriose 1", driveVideoUrl: "https://drive.google.com/file/d/15OH0fcGqHJ-iwqhr6gj4bKxqW18arvza/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Endometriose 2", driveVideoUrl: "https://drive.google.com/file/d/10-F6App-RRJdQvAI7urg4j0XKP9Q1CHz/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Endometriose 1", downloadUrl: "https://drive.google.com/file/d/1sIJM6dXDGzjQMz5MCXJDSfLiBlUy_wbw/preview?usp=drive_link" },
+                    { title: "Livro Endometriose 2", downloadUrl: "https://drive.google.com/file/d/1VyWBefm3PbpuvQEDOsCQE7MZMIUaCwUM/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Endometriose", downloadUrl: "https://drive.google.com/file/d/1g6l8aL7vs40tNVsHAB5EuH86JKUTn8Xj/preview?usp=drive_link" } ],
+                'Slides': [ { title: "Slide Endometriose", downloadUrl: "https://drive.google.com/file/d/1sitbMymzv9kl75lmkyc2IC9XDo8ZWAJg/preview?usp=drive_link" } ],
+                'Mapas mentais': [ { title: "Mapa Mental Endometriose", downloadUrl: "https://drive.google.com/file/d/1tyzMuXCw0aTPNBVX1IJo-TOT9Q4uTgsq/preview?usp=drive_link" } ]
+            } },
+            // Módulo 6: Adenomiose
+            { title: "Adenomiose", description: "Descrição Adenomiose.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Adenomiose 1", driveVideoUrl: "https://drive.google.com/file/d/1zG7HR9WlukqNkZOJPMWOH8RaznmiY5V7/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Adenomiose 2", driveVideoUrl: "https://drive.google.com/file/d/1xly5oeYl6J2VTUib7cVnIIcMhYasdXHB/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Adenomiose 1", downloadUrl: "https://drive.google.com/file/d/1IHXLJyqfa9hKTAYT9mYmMRXutgGZx6fX/preview?usp=drive_link" },
+                    { title: "Livro Adenomiose 2", downloadUrl: "https://drive.google.com/file/d/18LdhpWlv7ckMzFunUTGxIrtCbye6miB5/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Adenomiose", downloadUrl: "https://drive.google.com/file/d/1rqGNIvAxPqS65KToIEzFnzDS84TW3HKl/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Adenomiose 1", downloadUrl: "https://drive.google.com/file/d/1g8v1ZGFOP07W5oRsi6d8jJUaODaQUzdB/preview?usp=drive_link" },
+                    { title: "Slide Adenomiose 2", downloadUrl: "https://drive.google.com/file/d/1A9tjcggrg5ecTVkRsBEaRIaJ3dDye2jj/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Adenomiose", downloadUrl: "https://drive.google.com/file/d/1ZZvkqdFbAkVNlv3xBfZ4s8_0xUkr_wqN/preview?usp=drive_link" } ]
+            } },
+            // Módulo 7: Pólipos Uterinos
+            { title: "Pólipos Uterinos", description: "Descrição Pólipos Uterinos.", subItems: {
+                'Videoaulas': [ { title: "Videoaula Pólipos Uterinos", driveVideoUrl: "https://drive.google.com/file/d/1YU84nEFPYgwQBCgo8J2xlDDB-z0vVpuu/preview?usp=drive_link", downloadUrl: "#" } ],
+                'Livros digitais': [
+                    { title: "Livro Pólipos Uterinos 1", downloadUrl: "https://drive.google.com/file/d/17RFwOJe6t-McvNOV8qBWftXNC8aqYwdb/preview?usp=drive_link" },
+                    { title: "Livro Pólipos Uterinos 2", downloadUrl: "https://drive.google.com/file/d/1WJlZ5JrOfNlO2jkJtk0g4g3yC3BKM_sZ/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Pólipos Uterinos", downloadUrl: "https://drive.google.com/file/d/1oug_FUrooskOpb9R3QwDuzf9WvSeY--Z/preview?usp=drive_link" } ],
+                'Slides': [ { title: "Slide Pólipos Uterinos", downloadUrl: "https://drive.google.com/file/d/1tCz_dPSRK35-lxqxRSE7TQvV56i-cSpM/preview?usp=drive_link" } ],
+                'Mapas mentais': []
+            } },
+            // Módulo 8: Rastreamento do Câncer de Mama
+            { title: "Rastreamento do Câncer de Mama", description: "Descrição Rastreamento do Câncer de Mama.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Rastreamento Câncer de Mama 1", driveVideoUrl: "https://drive.google.com/file/d/1guOOrE7A5mUN9UOSRjEuSmkVPaj2VueE/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Rastreamento Câncer de Mama 2", driveVideoUrl: "https://drive.google.com/file/d/1gZDOcA3TBdlQq64d6yz2vuJ27jP6OpN9/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Rastreamento Câncer de Mama 1", downloadUrl: "https://drive.google.com/file/d/1MZghXx1mu3KGHR0DiYDzTpL0dYLIyz27/preview?usp=drive_link" },
+                    { title: "Livro Rastreamento Câncer de Mama 2", downloadUrl: "https://drive.google.com/file/d/1JkmkI6dYniRwkJ5aHMrQmk4LtIWtpnQQ/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Rastreamento Câncer de Mama", downloadUrl: "https://drive.google.com/file/d/1DqFJH0z1SkvoSNNSXl5AWgbnRs7K5u9i/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Rastreamento Câncer de Mama 1", downloadUrl: "https://drive.google.com/file/d/1iPFjbDDi1d_Mn7lIurJmIouLaDtug-ht/preview?usp=drive_link" },
+                    { title: "Slide Rastreamento Câncer de Mama 2", downloadUrl: "https://drive.google.com/file/d/1PclKG-fV4FVlUhh_zazoh3p6TdOtF6q5/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Rastreamento Câncer de Mama", downloadUrl: "https://drive.google.com/file/d/12uxJuqLVOYmws8bwR1LGizCfZAoAYkxC/preview?usp=drive_link" } ]
+            } },
+            // Módulo 9: Sangramento Uterino Anormal (SUA)
+            { title: "Sangramento Uterino Anormal (SUA)", description: "Descrição Sangramento Uterino Anormal (SUA).", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula SUA 1", driveVideoUrl: "https://drive.google.com/file/d/1RvN8JYt4FTv5RsDnV47VWwkC3P0Vcnwc/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula SUA 2", driveVideoUrl: "https://drive.google.com/file/d/13aRDlqNdyi2qEEpfiWOKnvVnriWrqnIz/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro SUA 1", downloadUrl: "https://drive.google.com/file/d/1nv_sJijz4ms8qlj6o8seKopJbcGzLg_M/preview?usp=drive_link" },
+                    { title: "Livro SUA 2", downloadUrl: "https://drive.google.com/file/d/15X1akQpnPFrPVECHka1qUSj4JleHwtom/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo SUA", downloadUrl: "https://drive.google.com/file/d/1UuYqjAr1a9GU1_u3yF9u33sTNqR4vWCo/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide SUA 1", downloadUrl: "https://drive.google.com/file/d/1j2DszhlDMdduYFVtHKlLEYekpKToFV4Y/preview?usp=drive_link" },
+                    { title: "Slide SUA 2", downloadUrl: "https://drive.google.com/file/d/1bnFAFCtNHxQ_N5v488BKr-czXQuTXvnn/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental SUA", downloadUrl: "https://drive.google.com/file/d/18D0VHtM_mqcmswi_iS5wfMqxUNljh8sW/preview?usp=drive_link" } ]
+            } },
+            // Módulo 10: Doenças Benignas da Mama
+            { title: "Doenças Benignas da Mama", description: "Descrição Doenças Benignas da Mama.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Doenças Benignas da Mama 1", driveVideoUrl: "https://drive.google.com/file/d/1wKs4DHC1tjBK3tTatJqbiLUNnHrDAPj1/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Doenças Benignas da Mama 2", driveVideoUrl: "https://drive.google.com/file/d/1wYeVHskGN_qVox7oykDKd4lLWkunqzHV/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Doenças Benignas da Mama 1", downloadUrl: "https://drive.google.com/file/d/1sJ_5NJIKTMnY82vrVzgk0nTYhvxWwq2i/preview?usp=drive_link" },
+                    { title: "Livro Doenças Benignas da Mama 2", downloadUrl: "https://drive.google.com/file/d/11S7Xw5hP4aXA5ULLv3Oclol2kT4CVK5Q/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Doenças Benignas da Mama", downloadUrl: "https://drive.google.com/file/d/100YOnzv_az8fFI4io73Yzf1U3VNhjHqW/preview?usp=drive_link" } ],
+                'Slides': [ { title: "Slide Doenças Benignas da Mama", downloadUrl: "https://drive.google.com/file/d/1nRZp3CnhCmsHzB-evwjkiG4stPhWdyHv/preview?usp=drive_link" } ],
+                'Mapas mentais': [ { title: "Mapa Mental Doenças Benignas da Mama", downloadUrl: "https://drive.google.com/file/d/1GfVZq9EOOQjVVDmuvoDjKdcty5O3VyFH/preview?usp=drive_link" } ]
+            } },
+            // Módulo 11: Incontinência Urinária
+            { title: "Incontinência Urinária", description: "Descrição Incontinência Urinária.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Incontinência Urinária 1", driveVideoUrl: "https://drive.google.com/file/d/1VHVbJSgyvjJiFma0wyBAcaUqM4wgOSn8/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Incontinência Urinária 2", driveVideoUrl: "https://drive.google.com/file/d/1FZWu_PbMX9I6W4tYmFGL7nkcsVHa_zGK/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Incontinência Urinária 3", driveVideoUrl: "https://drive.google.com/file/d/1JCxHtXLjiQGPu4PkUsZ_aGk__S4ZEDhK/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Incontinência Urinária 4", driveVideoUrl: "https://drive.google.com/file/d/1PxyPsV3jRd5N6DoSSBMwG-cegBWCHghR/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Incontinência Urinária 1", downloadUrl: "https://drive.google.com/file/d/1PSkO7FAOo1ilblMce9j1Ujxkc3DwsQPL/preview?usp=drive_link" },
+                    { title: "Livro Incontinência Urinária 2", downloadUrl: "https://drive.google.com/file/d/1pGEh0RFoz8G5HdIzJql8pEA2ZGhQ2Ijz/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Incontinência Urinária", downloadUrl: "https://drive.google.com/file/d/1Hd_h-u5jqjezKBHzhigEW4mAjxh2aXpE/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Incontinência Urinária 1", downloadUrl: "https://drive.google.com/file/d/1zhvPT62TzjNnZb2sygsrvsHXDCHiG7_A/preview?usp=drive_link" },
+                    { title: "Slide Incontinência Urinária 2", downloadUrl: "https://drive.google.com/file/d/16lgl0taPupmzlBNnyGlrm_4Ad9s7fcGZ/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Incontinência Urinária", downloadUrl: "https://drive.google.com/file/d/1WUwS_El3APYJYG70enjeXiArq1ZEYD-E/preview?usp=drive_link" } ]
+            } },
+            // Módulo 12: Câncer de Mama
+            { title: "Câncer de Mama", description: "Descrição Câncer de Mama.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Câncer de Mama 1", driveVideoUrl: "https://drive.google.com/file/d/1P4cpgqp0kmAHvISrV2QCxErIq564wdth/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Câncer de Mama 2", driveVideoUrl: "https://drive.google.com/file/d/1GDprLbSw5Uvv4xX3npwKsaRLrG_v-WRO/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Câncer de Mama 3", driveVideoUrl: "https://drive.google.com/file/d/1Url1Y9iVDDstLUtrmG70E4oj_1ote76A/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Câncer de Mama 1", downloadUrl: "https://drive.google.com/file/d/1dHPPIz0-GvVQCB0d12RdlUZGgMeod41L/preview?usp=drive_link" },
+                    { title: "Livro Câncer de Mama 2", downloadUrl: "https://drive.google.com/file/d/1zImt02vuoIN2bqB8WV-N1FxsHPSm1lnd/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Câncer de Mama", downloadUrl: "https://drive.google.com/file/d/1X4PEOqynae7zpVqvSevD8-IP7vf29mz2/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Câncer de Mama 1", downloadUrl: "https://drive.google.com/file/d/1PcMuhAN8odI6SBEZ2MT5nxiJ3olJD7s3/preview?usp=drive_link" },
+                    { title: "Slide Câncer de Mama 2", downloadUrl: "https://drive.google.com/file/d/1UpIdUd3S6KcBqaUR4V-wXd3_VRaLenGo/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Câncer de Mama", downloadUrl: "https://drive.google.com/file/d/1tlq_Y4LniaehSDYo2vyIjhcviUzVA3oK/preview?usp=drive_link" } ]
+            } },
+            // Módulo 13: Câncer do Corpo do Útero
+            { title: "Câncer do Corpo do Útero", description: "Descrição Câncer do Corpo do Útero.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Câncer do Corpo do Útero 1", driveVideoUrl: "https://drive.google.com/file/d/1xpeUZQ_lY_QGQJS5D82enivL7PAVr5c4/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Câncer do Corpo do Útero 2", driveVideoUrl: "https://drive.google.com/file/d/1e8wSQTUAc80BCFVul9fFx_foMW_UQ3_4/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Câncer do Corpo do Útero 3", driveVideoUrl: "https://drive.google.com/file/d/13oEpVKw1HN2OEruysJ8Ek3c3tybJD0s-/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Câncer do Corpo do Útero 1", downloadUrl: "https://drive.google.com/file/d/181tBDtJNy9ZosICPBAPbk4caIgtUTll3/preview?usp=drive_link" },
+                    { title: "Livro Câncer do Corpo do Útero 2", downloadUrl: "https://drive.google.com/file/d/1KGknH1IHEilhS8END-CdVJcRdPVsEZCw/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Câncer do Corpo do Útero", downloadUrl: "https://drive.google.com/file/d/1Ve50urY6f2PSoDv_SwxLB6Kb2MQjwNQR/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Câncer do Corpo do Útero 1", downloadUrl: "https://drive.google.com/file/d/1VqZ3YZgz8nuzS8bnkzCzDhcJnB8WzVIS/preview?usp=drive_link" },
+                    { title: "Slide Câncer do Corpo do Útero 2", downloadUrl: "https://drive.google.com/file/d/1fxOKOuDkgk7CJ4Flm_cC1iC-ZSendFJy/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Câncer do Corpo do Útero", downloadUrl: "https://drive.google.com/file/d/1GTFrdd2JxsQMxjt7i2c3CoDxbAkIGBFo/preview?usp=drive_link" } ]
+            } },
+            // Módulo 14: Tumores Anexiais e Câncer de Ovário
+            { title: "Tumores Anexiais e Câncer de Ovário", description: "Descrição Tumores Anexiais e Câncer de Ovário.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Tumores Anexiais e Câncer de Ovário 1", driveVideoUrl: "https://drive.google.com/file/d/1tc8mQpVz-YUQ6wVszRSyc-K-t3oa8n9W/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Tumores Anexiais e Câncer de Ovário 2", driveVideoUrl: "https://drive.google.com/file/d/1k-B2jCCS3pygHhTA5kCK_awHqrtVRRJ6/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Tumores Anexiais e Câncer de Ovário 3", driveVideoUrl: "https://drive.google.com/file/d/1qB_8e9lohGUo-YwHjTKmmh9KYVzyTu2B/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Tumores Anexiais e Câncer de Ovário 4", driveVideoUrl: "https://drive.google.com/file/d/1IqBNY0yDfawpMGiFLLQGg2LGWvZ60Kcf/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Tumores Anexiais e Câncer de Ovário 1", downloadUrl: "https://drive.google.com/file/d/1WzSRvS4PtgEY1ZDshG8q6ZH2DwpU3-qS/preview?usp=drive_link" },
+                    { title: "Livro Tumores Anexiais e Câncer de Ovário 2", downloadUrl: "https://drive.google.com/file/d/1ByFKlzCRyv1Ex90Tb_x4QpJRilywQGNz/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Tumores Anexiais e Câncer de Ovário", downloadUrl: "https://drive.google.com/file/d/1xvKHH3fc40VnikNKCvgmiyehc25zKyi8/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Tumores Anexiais e Câncer de Ovário 1", downloadUrl: "https://drive.google.com/file/d/1Csr8EdKpM9IcQLdOu8MAFZXudd_xJk8l/preview?usp=drive_link" },
+                    { title: "Slide Tumores Anexiais e Câncer de Ovário 2", downloadUrl: "https://drive.google.com/file/d/1wWF8H6dJ-bxhWPJA5T73SD6xJWNk8_tS/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Tumores Anexiais e Câncer de Ovário", downloadUrl: "https://drive.google.com/file/d/11Csg-gxdIiwmLNtW_pTxX8d38zgQcExM/preview?usp=drive_link" } ]
+            } },
+            // Módulo 15: Doenças de Vulva e Vagina
+            { title: "Doenças de Vulva e Vagina", description: "Descrição Doenças de Vulva e Vagina.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Doenças de Vulva e Vagina 1", driveVideoUrl: "https://drive.google.com/file/d/1EPXC8MwkmuEJ1m3ex4V3D7AgT2bg4EBO/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Doenças de Vulva e Vagina 2", driveVideoUrl: "https://drive.google.com/file/d/1Ep1Dh0VBA-4Tctbm1Pxc4-kr_wg-AgeR/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Doenças de Vulva e Vagina 1", downloadUrl: "https://drive.google.com/file/d/1JC88fb3eZC5XzZFSyZvAiRwTi5_Vk8xn/preview?usp=drive_link" },
+                    { title: "Livro Doenças de Vulva e Vagina 2", downloadUrl: "https://drive.google.com/file/d/1jR7P9jYpeb5n8cTpbDDH6DOJYFZhWKzS/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Doenças de Vulva e Vagina", downloadUrl: "https://drive.google.com/file/d/1mMhwt3lTKf0_i6sEE8DV9qafnbX4ntq_/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Doenças de Vulva e Vagina 1", downloadUrl: "https://drive.google.com/file/d/1OtwwYV-WX2x7RYWiUeadA0UaAFTG29Gh/preview?usp=drive_link" },
+                    { title: "Slide Doenças de Vulva e Vagina 2", downloadUrl: "https://drive.google.com/file/d/1QJ7Y_wXNtcgTN6bMSyJYZ8TmGzosLoHo/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Doenças de Vulva e Vagina", downloadUrl: "https://drive.google.com/file/d/18TXkaWiwxkh7iB6lPQ1q8uyEPPJij5z_/preview?usp=drive_link" } ]
+            } },
+            // Módulo 16: Vulvovaginites
+            { title: "Vulvovaginites", description: "Descrição Vulvovaginites.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Vulvovaginites 1", driveVideoUrl: "https://drive.google.com/file/d/1RH7dG3aL_GKOnbQ5ndEp2xmbyMWCFirO/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Vulvovaginites 2", driveVideoUrl: "https://drive.google.com/file/d/1Sz8eRWC9KyQNAsCGVFxBrVEXXRhANqVd/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Vulvovaginites 3", driveVideoUrl: "https://drive.google.com/file/d/1Wa888uliKFhuojcWZOmsfjIJdJCw6DYR/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Vulvovaginites 1", downloadUrl: "https://drive.google.com/file/d/1EQ3YZjM-RldsZ6M9f22k0EdhG1TNoE6U/preview?usp=drive_link" },
+                    { title: "Livro Vulvovaginites 2", downloadUrl: "https://drive.google.com/file/d/1nEFxZ8IwkXgmJU9BhGLRpEfbU5Xx9qW_/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Vulvovaginites", downloadUrl: "https://drive.google.com/file/d/1LQlknlctloC-BGQXtuvQmrHj9L1XdiJr/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Vulvovaginites 1", downloadUrl: "https://drive.google.com/file/d/1r7AmwR3WtNEmMTazCpLLKfpJTaAzmsY-/preview?usp=drive_link" },
+                    { title: "Slide Vulvovaginites 2", downloadUrl: "https://drive.google.com/file/d/1YAfpGIVmbULEGCcgPMkSFKG1SUU4O1TB/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Vulvovaginites", downloadUrl: "https://drive.google.com/file/d/12xOn7-7vzS2-wbCo6H47kkCvxt1sltcB/preview?usp=drive_link" } ]
+            } },
+            // Módulo 17: Cervicites
+            { title: "Cervicites", description: "Descrição Cervicites.", subItems: {
+                'Videoaulas': [ { title: "Videoaula Cervicites", driveVideoUrl: "https://drive.google.com/file/d/1sKmNCtaoEOmGeT3SbGrp3_OHwMJgX7sc/preview?usp=drive_link", downloadUrl: "#" } ],
+                'Livros digitais': [
+                    { title: "Livro Cervicites 1", downloadUrl: "https://drive.google.com/file/d/1fbNOHDwC6dt3M884vgKGgfL49ydvfWN-/preview?usp=drive_link" },
+                    { title: "Livro Cervicites 2", downloadUrl: "https://drive.google.com/file/d/1ALOyPe0oEnY_t3mc6ETHwr14hdQ7O_i5/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Cervicites", downloadUrl: "https://drive.google.com/file/d/1_twjJ59cQt2dLfbAHrJEo2Mn-wS9oYSH/preview?usp=drive_link" } ],
+                'Slides': [ { title: "Slide Cervicites", downloadUrl: "https://drive.google.com/file/d/1qse7TMUlyZXa7rf6SPnNSLGLDm2-BOiK/preview?usp=drive_link" } ],
+                'Mapas mentais': [ { title: "Mapa Mental Cervicites", downloadUrl: "https://drive.google.com/file/d/160DzYDHtMIX4hM3zRr7iqrdX_mRpzYbK/preview?usp=drive_link" } ]
+            } },
+            // Módulo 18: Doença Inflamatória Pélvica (DIP)
+            { title: "Doença Inflamatória Pélvica (DIP)", description: "Descrição Doença Inflamatória Pélvica (DIP).", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula DIP 1", driveVideoUrl: "https://drive.google.com/file/d/1Emxmgy0gC-oxt1gUBKQ4QQ1fjaTE9I-3/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula DIP 2", driveVideoUrl: "https://drive.google.com/file/d/1kLaQdyBYycebjDCscPieZBYePWfJ8610/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro DIP 1", downloadUrl: "https://drive.google.com/file/d/17tLg9t_2Ii3xB0fz-3jHsLus-OvPyb0c/preview?usp=drive_link" },
+                    { title: "Livro DIP 2", downloadUrl: "https://drive.google.com/file/d/18klRhXBKo52_akVCVSVsJfiWCfTEhUvJ/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo DIP", downloadUrl: "https://drive.google.com/file/d/1mIL4ZVnbRmNz_OKUDgwgjzFQ9OrSrx92/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide DIP 1", downloadUrl: "https://drive.google.com/file/d/1UhXcA1uFhj0z-xRHBYbwpLNswIBdTFLU/preview?usp=drive_link" },
+                    { title: "Slide DIP 2", downloadUrl: "https://drive.google.com/file/d/1jLR4-57uRs5e0HXGeQ5Ig-gEsT4oKVF-/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental DIP", downloadUrl: "https://drive.google.com/file/d/1MGRMBNAZqVvIPzTnIKjwwN1x3xEI2xUC/preview?usp=drive_link" } ]
+            } },
+            // Módulo 19: Úlceras Genitais
+            { title: "Úlceras Genitais", description: "Descrição Úlceras Genitais.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Úlceras Genitais 1", driveVideoUrl: "https://drive.google.com/file/d/1yz4NA752JjJ2qEo9iHrfjFr2wuckZifo/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Úlceras Genitais 2", driveVideoUrl: "https://drive.google.com/file/d/1w3JTwJMBYvMu1XnLOyhb5prt5qwszlix/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Úlceras Genitais 1", downloadUrl: "https://drive.google.com/file/d/1GJcvdbco3_usWhX8iIxeZzufpaIny47D/preview?usp=drive_link" },
+                    { title: "Livro Úlceras Genitais 2", downloadUrl: "https://drive.google.com/file/d/1BCG_10Cc0yD3oRZJjw4PflGmrheY3n8X/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Úlceras Genitais", downloadUrl: "https://drive.google.com/file/d/1cWYY5ug7AU4lHmN7UT3ILRwBvQYy8UHw/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Úlceras Genitais 1", downloadUrl: "https://drive.google.com/file/d/1oc71aDTMX1P3DfpIRVNDhsSP4IvONiXh/preview?usp=drive_link" },
+                    { title: "Slide Úlceras Genitais 2", downloadUrl: "https://drive.google.com/file/d/1FuDNqgfJJgNDfOHPBHOhaGVxxRMGuQEI/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Úlceras Genitais", downloadUrl: "https://drive.google.com/file/d/1Q5fajcfyfXEx9WfCFISF7LmQpGvW0-BQ/preview?usp=drive_link" } ]
+            } },
+            // Módulo 20: Assistência à Vítima de Violência Sexual
+            { title: "Assistência à Vítima de Violência Sexual", description: "Descrição Assistência à Vítima de Violência Sexual.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Assistência à Vítima de Violência Sexual 1", driveVideoUrl: "https://drive.google.com/file/d/1ZfmwUXIc6q5j14IOmVgy3kB5D0417SC3/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Assistência à Vítima de Violência Sexual 2", driveVideoUrl: "https://drive.google.com/file/d/1kDnozvvOIbr87ZNVr8zhntamAuIJjEwq/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Assistência à Vítima de Violência Sexual 1", downloadUrl: "https://drive.google.com/file/d/1ZFWPwDDgo7hTbU9iWej3De2CPB-a-vpZ/preview?usp=drive_link" },
+                    { title: "Livro Assistência à Vítima de Violência Sexual 2", downloadUrl: "https://drive.google.com/file/d/1m-zIyxp-HyelodtVDIfH2k4g6mV63Pht/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Assistência à Vítima de Violência Sexual", downloadUrl: "https://drive.google.com/file/d/1JIr_8fCRbBFHyeqdQLJ2DM4ut2OM81ep/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Assistência à Vítima de Violência Sexual 1", downloadUrl: "https://drive.google.com/file/d/18T5lIXJctYi86Dning-KuSqA29mWGnGq/preview?usp=drive_link" },
+                    { title: "Slide Assistência à Vítima de Violência Sexual 2", downloadUrl: "https://drive.google.com/file/d/10_woLLGhAr_tCgTVl7fAhV5KJ6bfQUUJ/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Assistência à Vítima de Violência Sexual", downloadUrl: "https://drive.google.com/file/d/1dvBuHdL4GWuAzG1Jk5-COhDpDB7YNWCH/preview?usp=drive_link" } ]
+            } },
+            // Módulo 21: Rastreamento do Câncer de Colo Uterino
+            { title: "Rastreamento do Câncer de Colo Uterino", description: "Descrição Rastreamento do Câncer de Colo Uterino.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Rastreamento Câncer de Colo Uterino 1", driveVideoUrl: "https://drive.google.com/file/d/1U2WxkKiaGamBcn3JXD2_UwOdzGGOdv4C/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Rastreamento Câncer de Colo Uterino 2", driveVideoUrl: "https://drive.google.com/file/d/19H5emIUKbnumEOvi5vT8HcuP6be_5mRC/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Rastreamento Câncer de Colo Uterino 1", downloadUrl: "https://drive.google.com/file/d/1AyLtpku30MsxabPh2OiyrJsMPvPqiHzy/preview?usp=drive_link" },
+                    { title: "Livro Rastreamento Câncer de Colo Uterino 2", downloadUrl: "https://drive.google.com/file/d/12NO2hQo86jd9tLWY-ATmvAK4QNGgv_-V/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Rastreamento Câncer de Colo Uterino", downloadUrl: "https://drive.google.com/file/d/105wSY1VXCSf9ngxLwINDl0p10GbEB50R/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Rastreamento Câncer de Colo Uterino 1", downloadUrl: "https://drive.google.com/file/d/1YJbn5y5bymCZQsWllaVpOrExS6SxIdpb/preview?usp=drive_link" },
+                    { title: "Slide Rastreamento Câncer de Colo Uterino 2", downloadUrl: "https://drive.google.com/file/d/1YUwnYm-0BdUKN5XUj1S-4wMqRcjKQYDw/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Rastreamento Câncer de Colo Uterino", downloadUrl: "https://drive.google.com/file/d/1dtLBWLdQQ9Bt9UdcRAQAcejSzBAhbTU4/preview?usp=drive_link" } ]
+            } },
+            // Módulo 22: Câncer de Colo Uterino
+            { title: "Câncer de Colo Uterino", description: "Descrição Câncer de Colo Uterino.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Câncer de Colo Uterino 1", driveVideoUrl: "https://drive.google.com/file/d/1Oj6BDqwydN03nOD9Ma-USRSbf9faiqOC/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Câncer de Colo Uterino 2", driveVideoUrl: "https://drive.google.com/file/d/1-_Ev7m1MhZkV2LowhQ7YQphGttH6rFzk/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Câncer de Colo Uterino 1", downloadUrl: "https://drive.google.com/file/d/1VOU6XZ3mVoGpC9yDLNWv17EHdlK-sU96/preview?usp=drive_link" },
+                    { title: "Livro Câncer de Colo Uterino 2", downloadUrl: "https://drive.google.com/file/d/1B1etkmr3M7BAz2FeeDgCc_Wvwiqxpvus/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Câncer de Colo Uterino", downloadUrl: "https://drive.google.com/file/d/1VRU0wwsN6DEddpWKlRK7wxcbsBJvUsHS/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Câncer de Colo Uterino 1", downloadUrl: "https://drive.google.com/file/d/1YakiHiPWeB2wPQokINssT-UeJXq2f3R1/preview?usp=drive_link" },
+                    { title: "Slide Câncer de Colo Uterino 2", downloadUrl: "https://drive.google.com/file/d/1oR-cN-1pD-J7I22mPCQlXVdhJbloTddJ/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Câncer de Colo Uterino", downloadUrl: "https://drive.google.com/file/d/1trTumFb-jiqwFt-AH_X1ExHOaEoG5ysY/preview?usp=drive_link" } ]
+            } },
+            // Módulo 23: Climatério e Terapia Hormonal
+            { title: "Climatério e Terapia Hormonal", description: "Descrição Climatério e Terapia Hormonal.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Climatério e Terapia Hormonal 1", driveVideoUrl: "https://drive.google.com/file/d/16AR2mja6SQ1-Q7L3qluO9GQFAQHkI20A/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Climatério e Terapia Hormonal 2", driveVideoUrl: "https://drive.google.com/file/d/1Lc3wcPNJKy3iq4gn712BL42EZSmcBjUP/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Climatério e Terapia Hormonal 3", driveVideoUrl: "https://drive.google.com/file/d/17zr9c40wEXpf3P_xn9R2wKysJ5OxSWYZ/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Climatério e Terapia Hormonal 1", downloadUrl: "https://drive.google.com/file/d/1TsJREgBHXPJSsMo8HWckCCg4NU3-GPkK/preview?usp=drive_link" },
+                    { title: "Livro Climatério e Terapia Hormonal 2", downloadUrl: "https://drive.google.com/file/d/1XVyqtTw0xufKviIBatVMrEmByeVLMQ4G/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Climatério e Terapia Hormonal", downloadUrl: "https://drive.google.com/file/d/1G5wizWzVk_WoQhmqHAWAeVhHBJl8Ej5_/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Climatério e Terapia Hormonal 1", downloadUrl: "https://drive.google.com/file/d/16jgCXWPeHKsUzVqt-djeHkVyxzv7c1WZ/preview?usp=drive_link" },
+                    { title: "Slide Climatério e Terapia Hormonal 2", downloadUrl: "https://drive.google.com/file/d/1khyxr2N6e5UsuwsvA3UjqH5V0D6q7ZuZ/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Climatério e Terapia Hormonal", downloadUrl: "https://drive.google.com/file/d/1ml2ob8bdXHx5zvW8tVkBOA_mY4atOfuJ/preview?usp=drive_link" } ]
+            } },
+            // Módulo 24: Miomatose Uterina
+            { title: "Miomatose Uterina", description: "Descrição Miomatose Uterina.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Miomatose Uterina 1", driveVideoUrl: "https://drive.google.com/file/d/1JzGFeaAIJYHcei6UaqNEpBon4IC6jgmg/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Miomatose Uterina 2", driveVideoUrl: "https://drive.google.com/file/d/19WL3CFqujPz1cLYp5xwKeJdl-EtKl6EF/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Miomatose Uterina 1", downloadUrl: "https://drive.google.com/file/d/1fmHTfoaciTmNmCTPPkLHKh2vSS05PN5H/preview?usp=drive_link" },
+                    { title: "Livro Miomatose Uterina 2", downloadUrl: "https://drive.google.com/file/d/1RTOGExdmT4SqluD9JInsZ911GZyzmORX/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Miomatose Uterina", downloadUrl: "https://drive.google.com/file/d/1Kg1elehGH-wqRqqH3hp21GqucmCltnqG/preview?usp=drive_link" } ],
+                'Slides': [ { title: "Slide Miomatose Uterina", downloadUrl: "https://drive.google.com/file/d/1y_XXkipIGLMevKvPCrsrTWLTQYf1aVND/preview?usp=drive_link" } ],
+                'Mapas mentais': [ { title: "Mapa Mental Miomatose Uterina", downloadUrl: "https://drive.google.com/file/d/1FS6pViB1MMyhumPRz5zhuuIfMP01W9aj/preview?usp=drive_link" } ]
+            } },
+            // Módulo 25: Prolapsos de Órgãos Pélvicos
+            { title: "Prolapsos de Órgãos Pélvicos", description: "Descrição Prolapsos de Órgãos Pélvicos.", subItems: {
+                'Videoaulas': [
+                    { title: "Videoaula Prolapsos de Órgãos Pélvicos 1", driveVideoUrl: "https://drive.google.com/file/d/1o1Mb7Fojqm3xO7LT5Hf2ywvHMBAmFS5D/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Prolapsos de Órgãos Pélvicos 2", driveVideoUrl: "https://drive.google.com/file/d/1fJ4oibPMSO2grs34tC4jLwib0k9bae4g/preview?usp=sharing", downloadUrl: "#" },
+                    { title: "Videoaula Prolapsos de Órgãos Pélvicos 3", driveVideoUrl: "https://drive.google.com/file/d/1YpM4IhAbkUCYNBfdKlGLJjjAlJn9yXin/preview?usp=sharing", downloadUrl: "#" }
+                ],
+                'Livros digitais': [
+                    { title: "Livro Prolapsos de Órgãos Pélvicos 1", downloadUrl: "https://drive.google.com/file/d/1ukVRtYFhLDDRUB_ZqM8kb-w-zJcIQjgJ/preview?usp=drive_link" },
+                    { title: "Livro Prolapsos de Órgãos Pélvicos 2", downloadUrl: "https://drive.google.com/file/d/1QA4_oNA9NaCkPym_ll5GPx_3yj5tPbGk/preview?usp=drive_link" }
+                ],
+                'Resumos': [ { title: "Resumo Prolapsos de Órgãos Pélvicos", downloadUrl: "https://drive.google.com/file/d/1BMBSoSo0nD7RfAeeAovPSHm1W579Krxg/preview?usp=drive_link" } ],
+                'Slides': [
+                    { title: "Slide Prolapsos de Órgãos Pélvicos 1", downloadUrl: "https://drive.google.com/file/d/1McWrhONwW7RgEaHtyXoqK6OnguA1A5hI/preview?usp=drive_link" },
+                    { title: "Slide Prolapsos de Órgãos Pélvicos 2", downloadUrl: "https://drive.google.com/file/d/1d-O8J7twh0W0X9tjdVTRIzgXd6mp2tWM/preview?usp=drive_link" }
+                ],
+                'Mapas mentais': [ { title: "Mapa Mental Prolapsos de Órgãos Pélvicos", downloadUrl: "https://drive.google.com/file/d/1CSJ0LDnXs7zSP-6puPG4cwgvtjM-xZQ-/preview?usp=drive_link" } ]
+            } },
+            // Módulo 26: Anatomia e Embriologia do Trato Genital Feminino (2V, 2L, 1R, 2S, 0M)
+            {
+        title: "Anatomia e Embriologia do Trato Genital Feminino",
+        description: "Descrição Anatomia e Embriologia do Trato Genital Feminino.",
+        subItems: {
+            'Videoaulas': [
+                { title: 'PLACEHOLDER_ID_26_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1mUqlTM8QI5N1Dv5MJz1862bzfkcANJcd/view?usp=sharing' },
+                { title: 'PLACEHOLDER_ID_26_V_2', title: 'Videoaula 2', driveVideoUrl: 'https://drive.google.com/file/d/1MrsydkvkbBLjynH0Wmswf_MVmHV73CVZ/view?usp=sharing' }
+            ],
+            'Livros digitais': [
+                { title: 'PLACEHOLDER_ID_26_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/1GWfcRlsabI01yoyC9cDruH8fjT98slYz/view?usp=drive_link' },
+                { title: 'PLACEHOLDER_ID_26_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/10NnjnMwXUGNBTPaisQ4KPfb9UYDTInZ0/view?usp=drive_link' }
+            ],
+            'Resumos': [
+                { title: 'PLACEHOLDER_ID_26_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/1ne2gIZRHR2XKufHdBbMWCdKja1NGd9GN/view?usp=drive_link' }
+            ],
+            'Slides': [
+                { title: 'PLACEHOLDER_ID_26_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1oqWO3cXtfu1uhCm5mZ2vyPpfw5Vm25Vd/view?usp=drive_link' },
+                { title: 'PLACEHOLDER_ID_26_S_2', title: 'Slide 2', downloadUrl: 'https://drive.google.com/file/d/1SMGWPoPGfcGFmiRNpaynU0vXvQlVWmbm/view?usp=drive_link' }
+            ],
+            'Mapas mentais': [] // 0 Mapas mentais
+        }
+    },
+    // Módulo 27: Infertilidade Conjugal (3V, 2L, 1R, 2S, 1M)
+    {
+        title: "Infertilidade Conjugal",
+        description: "Descrição Infertilidade Conjugal.",
+        subItems: {
+            'Videoaulas': [
+                { id: 'PLACEHOLDER_ID_27_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1_qHXyDfHtB6wSsMaPSvYqyUvZxlnyLip/view?usp=sharing' },
+                { id: 'PLACEHOLDER_ID_27_V_2', title: 'Videoaula 2', driveVideoUrl: 'https://drive.google.com/file/d/18LOX78kYsXt3SxJ7OV9S3mVYdEsG_CXU/view?usp=sharing' },
+                { id: 'PLACEHOLDER_ID_27_V_3', title: 'Videoaula 3', driveVideoUrl: 'https://drive.google.com/file/d/1dinySVk6wScbv7Z2DcwJOyFVcS7J6jVR/view?usp=sharing' }
+            ],
+            'Livros digitais': [
+                { id: 'PLACEHOLDER_ID_27_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/1O80uVHOFBn_R6Ocb8vIdEG4wOZR9Q_JQ/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_27_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/1RCvaE42XJiOOEUCukgpRugnDCEdcA8bl/view?usp=drive_link' }
+            ],
+            'Resumos': [
+                { id: 'PLACEHOLDER_ID_27_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/1yVBib-vs_uoxZ5CYj5Sj8wZy1O4ewbVL/view?usp=drive_link' }
+            ],
+            'Slides': [
+                { id: 'PLACEHOLDER_ID_27_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1hCUHYtiPWPOLrrcjwSdxRDpHAYBd0sQ1/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_27_S_2', title: 'Slide 2', downloadUrl: 'https://drive.google.com/file/d/1oiMYtF2DKbb4cEy1dVulpcbp8b5I3oXX/view?usp=drive_link' }
+            ],
+            'Mapas mentais': [
+                { id: 'PLACEHOLDER_ID_27_M_1', title: 'Mapa 1', downloadUrl: 'https://drive.google.com/file/d/1y8E9ECUE8ikZG0GSgP4Ukz0iQIvKHWTK/view?usp=drive_link' }
+            ]
+        }
+    },
+    // Módulo 28: Dor Pélvica Crônica e Dismenorreia (2V, 2L, 1R, 2S, 0M)
+    {
+        title: "Dor Pélvica Crônica e Dismenorreia",
+        description: "Descrição Dor Pélvica Crônica e Dismenorreia.",
+        subItems: {
+            'Videoaulas': [
+                { id: 'PLACEHOLDER_ID_28_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1HT76MoAAaRJ2pi9vzGXab64cK3PDWUE1/view?usp=sharing' },
+                { id: 'PLACEHOLDER_ID_28_V_2', title: 'Videoaula 2', driveVideoUrl: 'https://drive.google.com/file/d/1WYymFTBAkxu7Lxs9-DdNPlP_9_1NTvJz/view?usp=sharing' }
+            ],
+            'Livros digitais': [
+                { id: 'PLACEHOLDER_ID_28_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/135TNs9VufouPPEaNeDWk4detcRSh1vwD/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_28_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/1YOrBKZc9PpVAQlxp_YWz5za7qnpSqSGa/view?usp=drive_link' }
+            ],
+            'Resumos': [
+                { id: 'PLACEHOLDER_ID_28_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/14MZk787emRjrbHXrfaCH_IwmZ0sy2c0F/view?usp=drive_link' }
+            ],
+            'Slides': [
+                { id: 'PLACEHOLDER_ID_28_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1G2EKNdnIXYTtb0z34wHxCFy7FH_Cl7-6/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_28_S_2', title: 'Slide 2', downloadUrl: 'https://drive.google.com/file/d/1dvkQitEkrWR9QWw8FalQc6YoMZrWGAQE/view?usp=drive_link' }
+            ],
+            'Mapas mentais': [] // 0 Mapas mentais
+        }
+    },
+    // Módulo 29: Sexualidade (1V, 2L, 1R, 1S, 0M)
+    {
+        title: "Sexualidade",
+        description: "Descrição Sexualidade.",
+        subItems: {
+            'Videoaulas': [
+                { id: 'PLACEHOLDER_ID_29_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1wHhKorP0bjRhKSjdonVf7h0kk9Z7Wnfi/view?usp=drive_link' }
+            ],
+            'Livros digitais': [
+                { id: 'PLACEHOLDER_ID_29_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/1xWKafsxTHKczrD1Se7Vi5vqC0rwibCCQ/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_29_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/1kXC7pQWvLETJnx2JdAdk7FEySTYdZL8l/view?usp=drive_link' }
+            ],
+            'Resumos': [
+                { id: 'PLACEHOLDER_ID_29_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/1bTgxbjvk36MLei97_eBMisPuj9egcXjP/view?usp=drive_link' }
+            ],
+            'Slides': [
+                { id: 'PLACEHOLDER_ID_29_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1Tf2bY-3CpGdDdrfz34iabNFjoZokSOgl/view?usp=drive_link' }
+            ],
+            'Mapas mentais': [] // 0 Mapas mentais
+        }
+    },
+    // Módulo 30: Síndrome Pré-Menstrual (1V, 2L, 1R, 1S, 0M)
+    {
+        title: "Síndrome Pré-Menstrual",
+        description: "Descrição Síndrome Pré-Menstrual.",
+        subItems: {
+            'Videoaulas': [
+                { id: 'PLACEHOLDER_ID_30_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1yHBZOz3elXZMuHIyCQBAvlMebbbetcAV/view?usp=drive_link' }
+            ],
+            'Livros digitais': [
+                { id: 'PLACEHOLDER_ID_30_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/1KikyzaTkYEr-xds5F-fwDRGRxeA9hMe9/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_30_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/1oMRPcTSZFb2BI9jntjTU7MYAZIpAzaDV/view?usp=drive_link' }
+            ],
+            'Resumos': [
+                { id: 'PLACEHOLDER_ID_30_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/15RkMhaL9xGoj8L8kD3QB8uf5PoJ5hL31/view?usp=drive_link' }
+            ],
+            'Slides': [
+                { id: 'PLACEHOLDER_ID_30_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1qPaZdInPAnVhJGPnpAxD9gTPOEYMeOMl/view?usp=drive_link' }
+            ],
+            'Mapas mentais': [] // 0 Mapas mentais
+        }
+    },
+    // Módulo 31: Abdome Agudo em Ginecologia (1V, 2L, 1R, 1S, 0M)
+    {
+        title: "Abdome Agudo em Ginecologia",
+        description: "Descrição Abdome Agudo em Ginecologia.",
+        subItems: {
+            'Videoaulas': [
+                { id: 'PLACEHOLDER_ID_31_V_1', title: 'Videoaula 1', driveVideoUrl: 'https://drive.google.com/file/d/1RCa7nWQcsMHZF0atDSvTLcGjNk5kJao4/view?usp=drive_link' }
+            ],
+            'Livros digitais': [
+                { id: 'PLACEHOLDER_ID_31_L_1', title: 'Livro 1', downloadUrl: 'https://drive.google.com/file/d/1n-loY7-PaW_oGEnKJtqVI3a35eu5fXX1/view?usp=drive_link' },
+                { id: 'PLACEHOLDER_ID_31_L_2', title: 'Livro 2', downloadUrl: 'https://drive.google.com/file/d/1nIYroedjtw0W98tkeeBOV5o7CpM4sZXM/view?usp=drive_link' }
+            ],
+            'Resumos': [ // Links fornecidos insuficientes para este item
+                { id: 'PLACEHOLDER_ID_31_R_1', title: 'Resumo 1', downloadUrl: 'https://drive.google.com/file/d/1ZIOKDvWpCtNsiemWX2Z3cUXrNKLws858/view?usp=drive_link' }
+            ],
+            'Slides': [ // Links fornecidos insuficientes para estes itens
+                { id: 'PLACEHOLDER_ID_31_S_1', title: 'Slide 1', downloadUrl: 'https://drive.google.com/file/d/1p7iOuutGCEvfQRJhteHfciC_HTbTK8qf/view?usp=drive_link' }
+            ],
+            'Mapas mentais': []
+        }
+    }
+        ];
+
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+
+        /**
+         * Cria o elemento HTML para um subitem (vídeo, livro, etc.).
+         * @param {string} subItemType O tipo do subitem (ex: 'Videoaulas').
+         * @param {object} detailData Os dados do subitem (title, driveVideoUrl, downloadUrl).
+         * @param {string} mainTitle O título do módulo principal.
+         * @param {number} detailIndex O índice do item dentro de sua categoria.
+         * @param {number} totalVideos O número total de vídeos no módulo (usado para numeração).
+         * @returns {HTMLElement|null} O elemento HTML criado ou null se houver erro.
+         */
+        function createSubItemDetail(subItemType, detailData, mainTitle, detailIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+             const detailNode = detailsTemplate.content.cloneNode(true);
+             const detailDiv = detailNode.querySelector('.sub-item-details');
+             const itemDetailsContent = detailNode.querySelector('.item-details-content');
+             const titleEl = detailNode.querySelector('.item-title');
+             const subtitleEl = detailNode.querySelector('.item-subtitle');
+             const downloadLink = detailNode.querySelector('.download-link');
+             const iconPathData = subItemIcons[subItemType];
+
+             // Adiciona o ícone apropriado
+             if (iconPathData) {
+                  const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                  const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                  iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                  if (subItemType === 'Videoaulas') {
+                      iconContainer.setAttribute('fill', 'currentColor');
+                      iconContainer.setAttribute('viewBox', '0 0 20 20');
+                  } else {
+                      iconContainer.setAttribute('fill', 'none');
+                      iconContainer.setAttribute('stroke', 'currentColor');
+                      iconContainer.setAttribute('viewBox', '0 0 24 24');
+                  }
+                  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                  path.setAttribute('d', iconPathData);
+                  if (subItemType === 'Videoaulas') {
+                      path.setAttribute('fill-rule', 'evenodd');
+                      path.setAttribute('clip-rule', 'evenodd');
+                  } else {
+                      path.setAttribute('stroke-linecap', 'round');
+                      path.setAttribute('stroke-linejoin', 'round');
+                      path.setAttribute('stroke-width', '1.5');
+                  }
+                  iconContainer.appendChild(path);
+                  itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+             } else {
+                  titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+             }
+
+             // Define o título
+             if (titleEl) {
+                 // Usa o título específico fornecido nos dados, se existir e não for placeholder
+                 if (detailData.title && !detailData.title.toLowerCase().includes('placeholder')) {
+                     titleEl.textContent = detailData.title;
+                 }
+                 // Senão, aplica a lógica de numeração para vídeos ou título genérico
+                 else if (subItemType === 'Videoaulas') {
+                     if (totalVideos === 1) {
+                         // Se é o único vídeo e o título é placeholder, usa o título do módulo.
+                         titleEl.textContent = detailData.title.toLowerCase().includes('placeholder') ? mainTitle : detailData.title;
+                     } else if (totalVideos > 1) {
+                         titleEl.textContent = `${mainTitle} - Parte ${romanize(detailIndex + 1)}`; // Numera as partes
+                     } else {
+                          titleEl.textContent = detailData.title; // Fallback para o título do placeholder
+                     }
+                 } else {
+                      // Título genérico para outros placeholders
+                      titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} sobre ${mainTitle}`;
+                 }
+             }
+
+
+             // Define o subtítulo
+             if (subtitleEl) {
+                  subtitleEl.textContent = "Estratégia Educacional";
+             }
+
+             // Configura o link de download ou remove o ícone
+             if (downloadLink) {
+                 // Verifica se há URL válida (não # e não placeholder genérico)
+                 if (detailData.downloadUrl && detailData.downloadUrl !== '#' && detailData.downloadUrl.includes('drive.google.com')) {
+                     let previewOrDownloadUrl = detailData.downloadUrl;
+                     // Para documentos que não são vídeos, o link de download pode ser o mesmo que o de visualização
+                     if (!previewOrDownloadUrl.includes('/preview')) {
+                        const urlParts = previewOrDownloadUrl.split('/');
+                        const fileIdWithParams = urlParts[urlParts.indexOf('d') + 1];
+                        if (fileIdWithParams) {
+                            const fileId = fileIdWithParams.split('?')[0]; // Remove query params como usp=sharing
+                            previewOrDownloadUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                        }
+                     }
+                     downloadLink.href = detailData.downloadUrl; // O ícone de download sempre aponta para o link original de download/compartilhamento
+                     downloadLink.setAttribute('target', '_blank');
+                     downloadLink.addEventListener('click', (e) => { e.stopPropagation(); });
+                     downloadLink.title = `Baixar ${titleEl.textContent}`;
+                 } else {
+                     downloadLink.remove(); // Remove o ícone se for placeholder ou sem link real
+                 }
+             }
+
+             // Adiciona atributos e classes para interatividade
+             const itemDisplayTitle = titleEl.textContent;
+             const videoUrl = detailData.driveVideoUrl;
+             const docUrl = detailData.downloadUrl;
+
+             let isPlaceholderOrInvalid = (videoUrl && videoUrl.includes('PLACEHOLDER_ID')) ||
+                                          (docUrl && docUrl.includes('PLACEHOLDER_ID')) ||
+                                          (videoUrl && videoUrl !== '#' && !videoUrl.includes('drive.google.com')) ||
+                                          (docUrl && docUrl !== '#' && !docUrl.includes('drive.google.com'));
+
+
+             // Verifica se é um vídeo clicável (link real do Drive)
+             if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#' && videoUrl.includes('drive.google.com')) {
+                 let previewVideoUrl = videoUrl;
+                 if (!previewVideoUrl.includes('/preview')) {
+                    const urlParts = previewVideoUrl.split('/');
+                    const fileIdWithParams = urlParts[urlParts.indexOf('d') + 1];
+                     if (fileIdWithParams) {
+                        const fileId = fileIdWithParams.split('?')[0];
+                        previewVideoUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                    }
+                 }
+                 detailDiv.setAttribute('data-drive-video-url', previewVideoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Verifica se é um documento clicável (link real do Drive)
+             else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-') && docUrl.includes('drive.google.com')) {
+                 let previewDocUrl = docUrl;
+                 if (!previewDocUrl.includes('/preview')) {
+                    const urlParts = previewDocUrl.split('/');
+                    const fileIdWithParams = urlParts[urlParts.indexOf('d') + 1];
+                    if (fileIdWithParams) {
+                        const fileId = fileIdWithParams.split('?')[0];
+                        previewDocUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                    }
+                 }
+                 detailDiv.setAttribute('data-download-url', previewDocUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Se for placeholder ou não clicável/inválido
+             else {
+                 detailDiv.classList.remove('cursor-pointer');
+                 if (isPlaceholderOrInvalid) {
+                    detailDiv.style.opacity = '0.6';
+                    detailDiv.style.cursor = 'default';
+                 }
+             }
+
+             return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+             contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+
+             menuListContainer.innerHTML = ''; // Limpa o menu existente
+
+             menuItemsData.forEach((itemData, mainIndex) => {
+                 const title = itemData.title;
+                 const description = itemData.description;
+                 const subItems = itemData.subItems || {};
+                 const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                 const accordionItem = document.createElement('div');
+                 accordionItem.className = 'accordion-item';
+                 accordionItem.setAttribute('data-completed', 'false');
+                 accordionItem.setAttribute('data-main-description', description);
+
+                 const headerButton = document.createElement('button');
+                 headerButton.className = 'menu-item-header w-full accordion-header';
+                 headerButton.setAttribute('aria-expanded', 'false');
+                 headerButton.setAttribute('aria-controls', mainContentId);
+
+                 const headerContent = document.createElement('div');
+                 headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                 headerContent.innerHTML = `
+                     <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                     <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                          <span>Estratégia Educacional</span>
+                          <button type="button" class="status-toggle flex-shrink-0">
+                              <span>Concluído</span>
+                              <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                              <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                          </button>
+                      </div>`;
+
+                 const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                 chevronIcon.setAttribute('fill', 'none');
+                 chevronIcon.setAttribute('stroke', 'currentColor');
+                 chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                 chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                 headerButton.appendChild(headerContent);
+                 headerButton.appendChild(chevronIcon);
+
+                 const contentDiv = document.createElement('div');
+                 contentDiv.id = mainContentId;
+                 contentDiv.className = 'menu-item-content hidden';
+
+                 subItemOrder.forEach((subItemType, subIndex) => {
+                     const subItemArray = subItems[subItemType] || [];
+                     const count = subItemArray.length; // Usa o tamanho real do array gerado
+                     const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                     const subAccordionItem = document.createElement('div');
+                     subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                     const subHeaderButton = document.createElement('button');
+                     subHeaderButton.className = 'sub-accordion-header w-full';
+                     subHeaderButton.setAttribute('aria-expanded', 'false');
+                     subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                     if (count === 0) {
+                         subHeaderButton.disabled = true;
+                     }
+                     subHeaderButton.innerHTML = `
+                         <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                         <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     `;
+
+                     const subContentDiv = document.createElement('div');
+                     subContentDiv.id = nestedContentId;
+                     subContentDiv.className = 'sub-accordion-content hidden';
+
+                     if (count > 0) {
+                         const totalVideos = (subItemType === 'Videoaulas') ? count : 0;
+                         subItemArray.forEach((detailData, detailIndex) => {
+                             const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                             if (detailElement) {
+                                 subContentDiv.appendChild(detailElement);
+                             }
+                         });
+                     }
+
+                     subAccordionItem.appendChild(subHeaderButton);
+                     subAccordionItem.appendChild(subContentDiv);
+                     contentDiv.appendChild(subAccordionItem);
+                 });
+
+                 accordionItem.appendChild(headerButton);
+                 accordionItem.appendChild(contentDiv);
+                 menuListContainer.appendChild(accordionItem);
+             });
+
+             // --- Lógica dos Acordeões (Principal e Aninhado) ---
+             const accordionHeaders = document.querySelectorAll('.accordion-header');
+             accordionHeaders.forEach(header => {
+                 header.addEventListener('click', (event) => {
+                     if (event.target.closest('.status-toggle')) return;
+                     const content = header.nextElementSibling;
+                     if (!content || !content.classList.contains('menu-item-content')) return;
+                     const expanded = header.getAttribute('aria-expanded') === 'true';
+                     const chevronIcon = header.querySelector('.chevron-icon');
+                     header.setAttribute('aria-expanded', !expanded);
+                     content.classList.toggle('hidden');
+                     if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                 });
+             });
+
+             const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+             subAccordionHeaders.forEach(subHeader => {
+                 if (!subHeader.disabled) {
+                     subHeader.addEventListener('click', (event) => {
+                         event.stopPropagation();
+                         const content = subHeader.nextElementSibling;
+                         if (!content || !content.classList.contains('sub-accordion-content')) return;
+                         const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                         const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                         subHeader.setAttribute('aria-expanded', !expanded);
+                         content.classList.toggle('hidden');
+                         if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                     });
+                 }
+             });
+
+             // --- Lógica para Marcar/Desmarcar como Concluído ---
+             const statusToggles = document.querySelectorAll('.status-toggle');
+             statusToggles.forEach(toggle => {
+                 toggle.addEventListener('click', (event) => {
+                     event.stopPropagation();
+                     const accordionItem = toggle.closest('.accordion-item');
+                     if (!accordionItem) return;
+                     const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                     accordionItem.setAttribute('data-completed', !isCompleted);
+                     toggle.classList.toggle('is-completed', !isCompleted);
+                     console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                 });
+             });
+
+             // --- Lógica para Carregar Conteúdo (Vídeo ou PDF) ---
+             menuListContainer.addEventListener('click', (event) => {
+                 const detailItem = event.target.closest('.sub-item-details');
+
+                 if (event.target.closest('.download-link')) return; // Ignora clique no download
+                 if (detailItem && (detailItem.style.cursor === 'default' || detailItem.style.opacity === '0.6')) return; // Ignora clique em placeholder/inválido
+
+                 if (detailItem && contentViewer && contentDescription) {
+                     const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                     const downloadUrl = detailItem.getAttribute('data-download-url'); // Pode ser link de preview de doc
+                     const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                     const parentAccordionItem = detailItem.closest('.accordion-item');
+                     const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+
+                     if (driveVideoUrl || downloadUrl) {
+                         document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                             activeItem.classList.remove('is-active');
+                         });
+                         detailItem.classList.add('is-active');
+
+                         // Prioriza vídeo se ambos estiverem presentes (não deve acontecer com a lógica atual)
+                         if (driveVideoUrl) {
+                             contentViewer.src = driveVideoUrl; // Já deve ser o link /preview
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                             console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                         } else if (downloadUrl) {
+                             contentViewer.src = downloadUrl; // Já deve ser o link /preview
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                             console.log(`Carregando documento: ${downloadUrl}`);
+                         }
+                     }
+                 }
+             });
+
+             // --- Lógica para o botão de Like ---
+             if(likeButton) {
+                 likeButton.addEventListener('click', () => {
+                     likeButton.classList.toggle('is-liked');
+                     const isLiked = likeButton.classList.contains('is-liked');
+                     console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                 });
+             }
+
+             // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+             // Seleciona o primeiro item que tenha um link válido (não placeholder/inválido)
+             const firstClickableDetail = document.querySelector(
+                '#menu-items-list .sub-item-details[data-drive-video-url]:not([style*="opacity: 0.6"]), ' +
+                '#menu-items-list .sub-item-details[data-download-url]:not([style*="opacity: 0.6"])'
+             );
+
+
+             if (firstClickableDetail) {
+                 setTimeout(() => {
+                     const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                     if (!parentAccordionItem) return;
+                     const parentHeader = parentAccordionItem.querySelector('.accordion-header');
+
+                     // Abre acordeão principal
+                     if (parentHeader) {
+                         const content = parentHeader.nextElementSibling;
+                         const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                         if (content && content.classList.contains('hidden')) {
+                             parentHeader.setAttribute('aria-expanded', 'true');
+                             content.classList.remove('hidden');
+                             if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                         }
+                     }
+
+                     // Abre sub-acordeão
+                     const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                     if (!parentSubAccordionContent) return;
+                     const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+
+                     if (parentSubHeader && parentSubAccordionContent.classList.contains('hidden') && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                         parentSubHeader.click();
+                     }
+
+                     // Clica no item
+                     if (typeof firstClickableDetail.click === 'function') {
+                        firstClickableDetail.click();
+                     }
+
+                 }, 150);
+             } else {
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+                 console.log("Nenhum item inicial clicável encontrado.");
+             }
+
+        } else {
+             console.error("Elementos essenciais não encontrados no DOM.");
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Nefrologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Nefrologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                         id="content-viewer" src="" title="Visualizador de Conteúdo"
+                         frameborder="0"
+                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                         referrerpolicy="strict-origin-when-cross-origin"
+                         allowfullscreen>
+                     </iframe>
+                 </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                     </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Dados e Configurações ---
+
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        const newModuleTitles = [
+            "Doenças Glomerulares", "Lesão Renal Aguda (LRA)", "Doença Renal Crônica (DRC) - Parte I",
+            "Doença Renal Crônica (DRC) - Parte II", "Distúrbios Ácido-Básicos", "Análise da Gasometria Arterial",
+            "Distúrbios do Sódio - Disnatremias", "Distúrbios do Potássio", "Túbulo-Interstício Renal",
+            "ITU - Infecção do Trato Urinário", "Nefrolitíase"
+        ];
+
+        const moduleSubItemCounts = [
+            { 'Videoaulas': 8, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Doenças Glomerulares
+            { 'Videoaulas': 5, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Lesão Renal Aguda (LRA)
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Doença Renal Crônica (DRC) - Parte I
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Doença Renal Crônica (DRC) - Parte II
+            { 'Videoaulas': 6, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Distúrbios Ácido-Básicos
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Análise da Gasometria Arterial
+            { 'Videoaulas': 5, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 2, 'Mapas mentais': 1 }, // Distúrbios do Sódio - Disnatremias
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // Distúrbios do Potássio
+            { 'Videoaulas': 3, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 3, 'Mapas mentais': 0 }, // Túbulo-Interstício Renal
+            { 'Videoaulas': 4, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }, // ITU - Infecção do Trato Urinário
+            { 'Videoaulas': 8, 'Livros digitais': 2, 'Resumos': 1, 'Slides': 1, 'Mapas mentais': 1 }  // Nefrolitíase
+        ];
+
+        function transformDriveLinkForPreview(url) {
+            if (typeof url !== 'string') return "";
+            return url.replace('/view?usp=sharing', '/preview').replace('/view?usp=drive_link', '/preview');
+        }
+
+        const userProvidedLinks = [
+            // Módulo 1: Doenças Glomerulares (8V, 2L, 1R, 1S, 1M = 13 links)
+            "https://drive.google.com/file/d/1NTyJbfRHdFBTNlQB6FGcjiGiBfGa34Im/view?usp=sharing", "https://drive.google.com/file/d/1T7_E215bGzmQuMFxNxVqVxhnADNPUkcZ/view?usp=sharing", "https://drive.google.com/file/d/1-9dkLHVlRWO3oNSqclIZjc2WlXMHdXPm/view?usp=sharing", "https://drive.google.com/file/d/1_7vkIi5S0zACGJD4mtRRC_gq_qkwuSbb/view?usp=sharing", "https://drive.google.com/file/d/1eD8GzPq-97hXYMvbg70V7_cBh986RHI2/view?usp=sharing", "https://drive.google.com/file/d/1CrKN_VsbpKnzmZ_dz3k95QvnmkON7_9f/view?usp=sharing", "https://drive.google.com/file/d/13233CqEXABW5gWPjq1fL3Q3CGwkzPMeV/view?usp=sharing", "https://drive.google.com/file/d/1ZI2I4dQgBve2zSO-OqRIjo2WAs9ru8sg/view?usp=sharing", "https://drive.google.com/file/d/16AJ-GWecOd1Q0aHL2dFz3gMB3VF5Vavj/view?usp=drive_link", "https://drive.google.com/file/d/1eklifRjosw_L0B87MOyMiB3TeS_NGxkg/view?usp=drive_link", "https://drive.google.com/file/d/1AMGxhRn5D4i5ULyvPozqx7LvA5Umwwyq/view?usp=drive_link", "https://drive.google.com/file/d/1Hu4ZWU6MF6wGQmRGu3TLDj_H-ZGp0Lhk/view?usp=drive_link", "https://drive.google.com/file/d/1I4SyB5fRlmjNItPjf6RlriXmJ0SDUG00/view?usp=drive_link",
+            // Módulo 2: Lesão Renal Aguda (LRA) (5V, 2L, 1R, 2S, 1M = 11 links)
+            "https://drive.google.com/file/d/1T7E4Fyqs94s0VLufEPABNra0j5CLZtEc/view?usp=sharing", "https://drive.google.com/file/d/1wjKAuiYmre1lxDX8TboKhsVLHITIBM0y/view?usp=sharing", "https://drive.google.com/file/d/1IkhZFIScgVzjMABd9hUr3eXiO2CWRQYp/view?usp=sharing", "https://drive.google.com/file/d/16qtZtFYGp3BK100x_7UC7rrldJFUqwjN/view?usp=sharing", "https://drive.google.com/file/d/1zW5pyVhUb2jeJekFyrQOdlainyDlLfkL/view?usp=sharing", "https://drive.google.com/file/d/1jcegAgjyX3aXoKVSTPKcKEAy9SB2Hn2n/view?usp=drive_link", "https://drive.google.com/file/d/1_K7q_VDfPUNvtnxevvYjx8K_Vad77yVz/view?usp=drive_link", "https://drive.google.com/file/d/1OIj-BZqHRw7MVPjhSYkO2yA2Itrms0tF/view?usp=drive_link", "https://drive.google.com/file/d/1ZlkMiPRTOq_gcsLMf_IC3rjKc4qnC9s_/view?usp=drive_link", "https://drive.google.com/file/d/1MbR7VO7WFI_w-hiTJbBy6_A_6PTiPep7/view?usp=drive_link", "https://drive.google.com/file/d/1xVE81naRXWlEoqvl-tCo-cHQkDyLnjFv/view?usp=drive_link",
+            // Módulo 3: Doença Renal Crônica (DRC): Parte I (4V, 2L, 1R, 1S, 1M = 9 links)
+            "https://drive.google.com/file/d/1KXawaL6wx1NC0MgwO__dGgSrt4H78C4M/view?usp=sharing", "https://drive.google.com/file/d/1wNdTPiOiMvBTRMDeA8uuxoNqyMblXcfK/view?usp=sharing", "https://drive.google.com/file/d/1VvGwwHjlTAhcSHxvSxTDaZDk2q32RbIW/view?usp=sharing", "https://drive.google.com/file/d/13NGhGeIMk6wSHN_0VW9l9olsr6TcSonX/view?usp=sharing", "https://drive.google.com/file/d/1NOIk7Qfn0OL0ThQz8TGe0luw9Dccba9R/view?usp=drive_link", "https://drive.google.com/file/d/15KFz3ZK1CSI723lsXe7CHrpZfHQZVWTK/view?usp=drive_link", "https://drive.google.com/file/d/14UeUFkcuVLnbs5tE7QHcIMrp4TR1h41Q/view?usp=drive_link", "https://drive.google.com/file/d/1KqOb7HboTFB6CriNYjf1HWmmUf8Gbskl/view?usp=drive_link", "https://drive.google.com/file/d/1f67teqTZ2Vb6qaA4XuItpSzUf_aF5fh6/view?usp=drive_link",
+            // Módulo 4: Doença Renal Crônica (DRC): Parte II (4V, 2L, 1R, 2S, 1M = 10 links)
+            "https://drive.google.com/file/d/1tzJKxfZevAXtscGkmRHE-hdiVoLg9pZC/view?usp=sharing", "https://drive.google.com/file/d/1lDAb_JBB6CXanIupAsXkztsWJ0rl3ffQ/view?usp=sharing", "https://drive.google.com/file/d/1rTOuMQQ2_GJqjiDjjP0Kzp45cNGOYQUk/view?usp=sharing", "https://drive.google.com/file/d/1rPrjkahUFBVs8OavYnzliUd2tQ93f4nO/view?usp=sharing", "https://drive.google.com/file/d/1qSFrxJ9kmucOceE6XqzoyB9rtS7XtJQW/view?usp=drive_link", "https://drive.google.com/file/d/11gTZTvNLQyXbgif8FW-YkLwriKsbSCD2/view?usp=drive_link", "https://drive.google.com/file/d/1hpxwVXmxnw-opr_2UVrrHdvMCddYVtQp/view?usp=drive_link", "https://drive.google.com/file/d/1-rwhTbzlHn0zsy-O66xcIIJyrJECyA_i/view?usp=drive_link", "https://drive.google.com/file/d/1LCekcJsEZgr6RNNwBFQGon_Ha4-ut_At/view?usp=drive_link", "https://drive.google.com/file/d/1rnqG-6Bw0WFNk7iAbYLIKSdsY6w9sIrk/view?usp=drive_link",
+            // Módulo 5: Distúrbios Ácido-Básicos (6V, 2L, 1R, 1S, 1M = 11 links)
+            "https://drive.google.com/file/d/1kwHn2uOZL74xxW8c8SJkhTpfd3Lwn9tP/view?usp=sharing", "https://drive.google.com/file/d/14SVQTvbts7yX-vp9TNVU_d-_MRrQtMDS/view?usp=sharing", "https://drive.google.com/file/d/1edS9-Sehv7s-G1ScRFos7wTB7vCzYWaJ/view?usp=sharing", "https://drive.google.com/file/d/1PNI53gkDZzIkdN8vCox4z9WQs7gPxchF/view?usp=sharing", "https://drive.google.com/file/d/1AqnUGFGzWYWaiZV2WRpQwbZePtcMxUS9/view?usp=sharing", "https://drive.google.com/file/d/1tp4J145ET1IVCZqazm8EihPYjI-5iHPA/view?usp=sharing", "https://drive.google.com/file/d/1lxjGTPLCFHc_UEMZ6k8BrooDpYnYVISj/view?usp=drive_link", "https://drive.google.com/file/d/1IMLoSMfVJSrtQ8jFO-gmS5HL5NgyhMDg/view?usp=drive_link", "https://drive.google.com/file/d/1GOQRbf2yesvNVRqcVlXUBNZzi55sm0H2/view?usp=drive_link", "https://drive.google.com/file/d/1etJvYDw7xuK54Jcu3OfqO8hlt1KAH_Xy/view?usp=drive_link", "https://drive.google.com/file/d/1foosbW4v4YHc6GaQ707oUMl6xCHgepeU/view?usp=drive_link",
+            // Módulo 6: Análise da Gasometria Arterial (4V, 2L, 1R, 1S, 1M = 9 links)
+            "https://drive.google.com/file/d/1X6GfzHWcRkI7pvzf1AY2cWR39M73icJI/view?usp=sharing", "https://drive.google.com/file/d/1ObBORx0I4U8tbymqTxnXsT2dvCt_qBM0/view?usp=sharing", "https://drive.google.com/file/d/1kitBLrVzXE2KeysalGxX8WKTHR5ydzGL/view?usp=sharing", "https://drive.google.com/file/d/1VSXEEYtvH_zQUoZDLNdzf3wrunY3b6LV/view?usp=sharing", "https://drive.google.com/file/d/1hN61qBqZmcGNrJrSOn8kiU2IIIQCNH_O/view?usp=drive_link", "https://drive.google.com/file/d/1wpiq1Va0fZCz9VU-nzWqOtwpCo1dnloy/view?usp=drive_link", "https://drive.google.com/file/d/1dVD8-cjyNtF32NXa9-fB6-L_vKLrdJNS/view?usp=drive_link", "https://drive.google.com/file/d/1bDDP8ytj-yl0d5iQQEntkpUBxFNpYE8Q/view?usp=drive_link", "https://drive.google.com/file/d/1YbJ8Be6CCJrAx27nWMrT_8sHIEsHKjR2/view?usp=drive_link",
+            // Módulo 7: Distúrbios do Sódio - Disnatremias (5V, 2L, 1R, 2S, 1M = 11 links)
+            "https://drive.google.com/file/d/1VO-X7FdEe5uarhqgQhdLk44csb2LHtzo/view?usp=sharing", "https://drive.google.com/file/d/1WDnlYg5L5PhKLAdIhIqV8KkwXTrj6m0d/view?usp=sharing", "https://drive.google.com/file/d/1SOlNrzp3BD01uLLoxgzuK90CfCLBpUow/view?usp=sharing", "https://drive.google.com/file/d/1UOZ6nft2qn8I_2M244J71NyuzUT_BiDz/view?usp=sharing", "https://drive.google.com/file/d/1kixxpz_50b2EUmJ4v-UqPlNwZHrXb2sA/view?usp=sharing", "https://drive.google.com/file/d/1XdJi4ZYwRtTrTC6gZ1Ypiz34GYsNwDsy/view?usp=drive_link", "https://drive.google.com/file/d/18mqFLuZXVA64mrYYY1vLycZWof-QXQjO/view?usp=drive_link", "https://drive.google.com/file/d/1Gel78V8qj6frNmSOxVz1ZoGn2nrUmFiL/view?usp=drive_link", "https://drive.google.com/file/d/1VYBBPl7G47wEML08YlUElJZ5wqmXfzyJ/view?usp=drive_link", "https://drive.google.com/file/d/17Q8t2b3341Xn0GtWEgqAZWnmLq_h-5ub/view?usp=drive_link", "https://drive.google.com/file/d/1znVDk_BVCKPJj_8idHlFKOVaCbsBY79r/view?usp=drive_link",
+            // Módulo 8: Distúrbios do Potássio (4V, 2L, 1R, 1S, 1M = 9 links)
+            "https://drive.google.com/file/d/19bHvOQbRLlSbHLajJ5CEJdShk3VPuWur/view?usp=sharing", "https://drive.google.com/file/d/1Yldz6tOK2st77EVtlJ3eVOa48NzUcPmG/view?usp=sharing", "https://drive.google.com/file/d/1enl5GD0J_7-DSGFOW01fIIkWtpdwttLX/view?usp=sharing", "https://drive.google.com/file/d/1ro-zI97xnJWYaF2l6YGNyAlGH1K32cKK/view?usp=sharing", "https://drive.google.com/file/d/1E8IwYhjVpQ_kArIpz0qKjvNst3ED2_KE/view?usp=drive_link", "https://drive.google.com/file/d/13dmnvhAEqrC60QBGTJ1dw_vebNTxWrkm/view?usp=drive_link", "https://drive.google.com/file/d/1YDD0Ono4XlbgXu0IbjR-7tRL-6r91VcB/view?usp=drive_link", "https://drive.google.com/file/d/1aEV9O-pFbC5WoWNLCzg04HFrObVKanha/view?usp=drive_link", "https://drive.google.com/file/d/1A4NPTrmd58f64olnUAp0sXYqyPwwl6Pd/view?usp=drive_link",
+            // Módulo 9: Túbulo-Interstício Renal (3V, 2L, 1R, 3S, 0M = 9 links)
+            "https://drive.google.com/file/d/1MgS7i6nIu8CD0RWIL-2eHekoEl7wX95P/view?usp=sharing", "https://drive.google.com/file/d/1oLdLcD0ueg-HlFEUvAtnBZX80FF0485A/view?usp=sharing", "https://drive.google.com/file/d/1qEsE505bFCsjwlONcCYK2mx5bQ-USonl/view?usp=sharing", "https://drive.google.com/file/d/1tWir3SfxilSe9RLS-LxrpULxA3mlmErN/view?usp=drive_link", "https://drive.google.com/file/d/1oZR5c0ix1cwr34Ytq3M3uzRh5HcANeFj/view?usp=drive_link", "https://drive.google.com/file/d/1V0nNL9wNh_TngB5ukDrtLUs31YcAZNlw/view?usp=drive_link", "https://drive.google.com/file/d/11tiaMfl-Jn9vv1psE1eAr0mksIqvIHw_/view?usp=drive_link", "https://drive.google.com/file/d/1AC9dqDO6wmdxNc8cv4s1gN4RaSsXGxgc/view?usp=drive_link", "https://drive.google.com/file/d/1RHx0JwUK74a5cf-EoDuwDuKA5COrD_KQ/view?usp=drive_link",
+            // Módulo 10: ITU - Infecção do Trato Urinário (4V, 2L, 1R, 1S, 1M = 9 links)
+            "https://drive.google.com/file/d/1to-try4ACaeh6on6nbQR7I4A4BgXntYT/view?usp=sharing", "https://drive.google.com/file/d/196waZSD3VWlxsomE8dXw9SOXrEqNNyJE/view?usp=sharing", "https://drive.google.com/file/d/1Oy_6i3CLPUlfiZAy1Jt6QQ0BjQjHfuQ7/view?usp=sharing", "https://drive.google.com/file/d/1XN1E6EOVXXACJuqoejEgGJnfEiDtHyMP/view?usp=sharing", "https://drive.google.com/file/d/1inICD0Gsy-fOolEmgS6yEvfY2r6d1B7u/view?usp=drive_link", "https://drive.google.com/file/d/1yuftKBhwx1kn9zmK0Tj9NpetXz_kZtcC/view?usp=drive_link", "https://drive.google.com/file/d/1uNje4yDs6bTIHRD2CTi87U2C7u26HHk3/view?usp=drive_link", "https://drive.google.com/file/d/1Zg5p1mEiIHUIozFXN6Zv-_c4LNM049_n/view?usp=drive_link", "https://drive.google.com/file/d/19e8zxMOSvz3az4kC4wVwrFfeBVkPGk_f/view?usp=drive_link",
+            // Módulo 11: Nefrolitíase (8V, 2L, 1R, 1S, 1M = 13 links)
+            "https://drive.google.com/file/d/1jwU02P4UUjyMlREjneSH9jYJDio6d-aO/view?usp=sharing", "https://drive.google.com/file/d/1qE7wCkBTFjQm9fnITPepZ-IQRZa52aD_/view?usp=sharing", "https://drive.google.com/file/d/1k5Enu1sLv3mzgAVjF3JM8KwxHHixWBla/view?usp=sharing", "https://drive.google.com/file/d/14PEN9XK5U6h211Ywr6EOatF7FTqB1efV/view?usp=sharing", "https://drive.google.com/file/d/1wtQ_WPH3R4xNL9Aa6mnOHkkdWh3hTqzD/view?usp=sharing", "https://drive.google.com/file/d/1ch_xmGGlphKdX4sAuLO55v33n-ZPmsHN/view?usp=sharing", "https://drive.google.com/file/d/1Rsm9qPLwJ500K0giMYDrvfwkbdPkE1-X/view?usp=sharing", "https://drive.google.com/file/d/1vWeVatPaqMFf5d4U2oeB0aI7jjz4yjro/view?usp=sharing", "https://drive.google.com/file/d/1nZElbCYG02husNCzHsHmKm5w1GHiQ7a0/view?usp=drive_link", "https://drive.google.com/file/d/1nCFmDmy4zN6IDpEg3QL8vC28LbvDPiAX/view?usp=drive_link", "https://drive.google.com/file/d/1YhmhuwPmkY7Tv05FWdtDEhcgwW3zxtg6/view?usp=drive_link", "https://drive.google.com/file/d/1Sa6iszn0Z2TVEUd-fZvhV1FJWla0PG-G/view?usp=drive_link", "https://drive.google.com/file/d/17-aDl-sL37crpa9PyOZbb9NaQ74OlFly/view?usp=drive_link"
+        ];
+        let currentUserLinkIndex = 0;
+
+        function generateOrAssignSubItems(moduleIndex, moduleTitle, counts) {
+            const subItems = {};
+            const placeholderBaseUrl = "https://drive.google.com/file/d/";
+            let itemCounter = 1; // Para IDs de placeholder, caso necessário
+
+            subItemOrder.forEach(subItemType => {
+                const count = counts[subItemType] || 0;
+                subItems[subItemType] = [];
+                for (let i = 0; i < count; i++) {
+                    let item = { title: `${subItemType.slice(0, -1)} Placeholder ${i + 1}` }; // Título genérico
+                    let actualLinkToUse = "";
+
+                    // Agora todos os módulos devem usar os links fornecidos
+                    if (currentUserLinkIndex < userProvidedLinks.length) {
+                        actualLinkToUse = transformDriveLinkForPreview(userProvidedLinks[currentUserLinkIndex++]);
+                    } else {
+                        // Fallback MUITO improvável se as contagens e links estiverem corretos
+                        const uniqueIdPart = `mod${moduleIndex}_${subItemType.toLowerCase().substring(0,2)}_${i + 1}_item${itemCounter++}`;
+                        actualLinkToUse = `${placeholderBaseUrl}fallback_placeholder_${uniqueIdPart}/preview`;
+                        console.warn(`Links fornecidos insuficientes. Usando fallback para ${moduleTitle} - ${subItemType} #${i+1}`);
+                    }
+
+                    if (subItemType === 'Videoaulas') {
+                        item.driveVideoUrl = actualLinkToUse;
+                        item.downloadUrl = "#"; // Vídeos não têm link de download direto aqui, apenas preview
+                    } else {
+                        item.downloadUrl = actualLinkToUse; // Para outros, é o link de preview/download
+                    }
+                    subItems[subItemType].push(item);
+                }
+            });
+            return subItems;
+        }
+
+        const menuItemsData = newModuleTitles.map((title, index) => {
+            const counts = moduleSubItemCounts[index];
+            const subItemsData = generateOrAssignSubItems(index, title, counts);
+            return {
+                title: title,
+                description: `Conteúdo sobre ${title}.`,
+                subItems: subItemsData
+            };
+        });
+
+        if (currentUserLinkIndex !== userProvidedLinks.length) {
+            console.warn(`DISCREPÂNCIA DE LINKS: ${userProvidedLinks.length} links fornecidos, ${currentUserLinkIndex} links usados. Verifique as contagens e a lista de links.`);
+        }
+
+
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z',
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z'
+        };
+
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return String(num);
+             const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+             let roman = '', i;
+             for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+             return roman;
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainModuleTitle, itemIndexWithinType, totalItemsInType) {
+            if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLinkEl = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                if (subItemType === 'Videoaulas') {
+                    iconContainer.setAttribute('fill', 'currentColor'); iconContainer.setAttribute('viewBox', '0 0 20 20');
+                } else {
+                    iconContainer.setAttribute('fill', 'none'); iconContainer.setAttribute('stroke', 'currentColor'); iconContainer.setAttribute('viewBox', '0 0 24 24');
+                }
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', iconPathData);
+                if (subItemType === 'Videoaulas') {
+                    path.setAttribute('fill-rule', 'evenodd'); path.setAttribute('clip-rule', 'evenodd');
+                } else {
+                    path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); path.setAttribute('stroke-width', '1.5');
+                }
+                iconContainer.appendChild(path);
+                itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+            if (titleEl) {
+                if (subItemType === 'Videoaulas') {
+                    titleEl.textContent = `${mainModuleTitle} - Parte ${romanize(itemIndexWithinType + 1)}`;
+                } else {
+                    titleEl.textContent = `${subItemType.slice(0,-1)} ${itemIndexWithinType + 1} de ${mainModuleTitle}`;
+                }
+            }
+
+            if (subtitleEl) {
+                subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+            if (downloadLinkEl) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    downloadLinkEl.href = detailData.downloadUrl;
+                    downloadLinkEl.setAttribute('target', '_blank');
+                    downloadLinkEl.title = `Baixar ${titleEl.textContent}`;
+                    downloadLinkEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                } else {
+                    downloadLinkEl.remove();
+                }
+            }
+
+            const itemDisplayTitleForViewer = titleEl.textContent;
+            const videoUrl = detailData.driveVideoUrl;
+            const docUrlForIframe = detailData.downloadUrl;
+
+            if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitleForViewer);
+                detailDiv.classList.add('cursor-pointer');
+            } else if (subItemType !== 'Videoaulas' && docUrlForIframe && docUrlForIframe !== '#' && !docUrlForIframe.startsWith('#dl-')) {
+                detailDiv.setAttribute('data-download-url', docUrlForIframe);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitleForViewer);
+                detailDiv.classList.add('cursor-pointer');
+            } else {
+                if (subItemType !== 'Videoaulas') {
+                    detailDiv.classList.remove('cursor-pointer');
+                }
+            }
+            return detailDiv;
+        }
+
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+            contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+            menuListContainer.innerHTML = '';
+
+            menuItemsData.forEach((itemData, mainIndex) => {
+                const title = itemData.title;
+                const description = itemData.description;
+                const subItems = itemData.subItems || {};
+                const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.setAttribute('data-completed', 'false');
+                accordionItem.setAttribute('data-main-description', description);
+                const headerButton = document.createElement('button');
+                headerButton.className = 'menu-item-header w-full accordion-header';
+                headerButton.setAttribute('aria-expanded', 'false');
+                headerButton.setAttribute('aria-controls', mainContentId);
+                const headerContent = document.createElement('div');
+                headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                headerContent.innerHTML = `
+                    <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3> <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                         <span>Estratégia Educacional</span> <button type="button" class="status-toggle flex-shrink-0"> <span>Concluído</span>
+                             <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                             <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                         </button>
+                     </div>`;
+                const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                chevronIcon.setAttribute('fill', 'none'); chevronIcon.setAttribute('stroke', 'currentColor'); chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+                headerButton.appendChild(headerContent); headerButton.appendChild(chevronIcon);
+                const contentDiv = document.createElement('div');
+                contentDiv.id = mainContentId; contentDiv.className = 'menu-item-content hidden';
+
+                subItemOrder.forEach((subItemType, subIndex) => {
+                    const subItemArray = subItems[subItemType] || [];
+                    const count = subItemArray.length;
+                    const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+                    const subAccordionItem = document.createElement('div');
+                    subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+                    const subHeaderButton = document.createElement('button');
+                    subHeaderButton.className = 'sub-accordion-header w-full';
+                    subHeaderButton.setAttribute('aria-expanded', 'false'); subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                    if (count === 0) subHeaderButton.disabled = true;
+                    subHeaderButton.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                        <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+                    const subContentDiv = document.createElement('div');
+                    subContentDiv.id = nestedContentId; subContentDiv.className = 'sub-accordion-content hidden';
+                    if (count > 0) {
+                        subItemArray.forEach((detailData, detailIndex) => {
+                            const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, count);
+                            if (detailElement) subContentDiv.appendChild(detailElement);
+                        });
+                    }
+                    subAccordionItem.appendChild(subHeaderButton); subAccordionItem.appendChild(subContentDiv);
+                    contentDiv.appendChild(subAccordionItem);
+                });
+                accordionItem.appendChild(headerButton); accordionItem.appendChild(contentDiv);
+                menuListContainer.appendChild(accordionItem);
+            });
+
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    if (event.target.closest('.status-toggle')) return;
+                    const content = header.nextElementSibling;
+                    if (!content || !content.classList.contains('menu-item-content')) return;
+                    const expanded = header.getAttribute('aria-expanded') === 'true';
+                    const chevronIcon = header.querySelector('.chevron-icon');
+                    header.setAttribute('aria-expanded', !expanded); content.classList.toggle('hidden');
+                    if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                });
+            });
+            const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+            subAccordionHeaders.forEach(subHeader => {
+                if (!subHeader.disabled) {
+                    subHeader.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const content = subHeader.nextElementSibling;
+                        if (!content || !content.classList.contains('sub-accordion-content')) return;
+                        const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                        const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                        subHeader.setAttribute('aria-expanded', !expanded); content.classList.toggle('hidden');
+                        if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                    });
+                }
+            });
+            const statusToggles = document.querySelectorAll('.status-toggle');
+            statusToggles.forEach(toggle => {
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const accordionItem = toggle.closest('.accordion-item');
+                    if (!accordionItem) return;
+                    const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                    accordionItem.setAttribute('data-completed', !isCompleted);
+                    toggle.classList.toggle('is-completed', !isCompleted);
+                    console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                });
+            });
+            menuListContainer.addEventListener('click', (event) => {
+                const detailItem = event.target.closest('.sub-item-details');
+                if (event.target.closest('.download-link')) return;
+                if (detailItem && contentViewer && contentDescription) {
+                    const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                    const downloadUrl = detailItem.getAttribute('data-download-url');
+                    const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                    const parentAccordionItem = detailItem.closest('.accordion-item');
+                    const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+                    if (driveVideoUrl || downloadUrl) {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => activeItem.classList.remove('is-active'));
+                        detailItem.classList.add('is-active');
+                        if (driveVideoUrl && driveVideoUrl !== '#') {
+                            contentViewer.src = driveVideoUrl;
+                            contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                        } else if (downloadUrl && downloadUrl !== '#') {
+                            contentViewer.src = downloadUrl;
+                            contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                        } else {
+                             // Caso onde o link pode ser '#' ou inválido, limpa o viewer
+                            contentViewer.src = 'about:blank'; // ou uma página de placeholder
+                            contentDescription.textContent = `Conteúdo para "${itemTitle}" não disponível para visualização.`;
+                        }
+                    }
+                }
+            });
+            if(likeButton) {
+                likeButton.addEventListener('click', () => {
+                    likeButton.classList.toggle('is-liked');
+                    console.log(`Item ${likeButton.classList.contains('is-liked') ? 'curtido' : 'descurtido'}`);
+                });
+            }
+            const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url]:not([data-drive-video-url="#"]), #menu-items-list .sub-item-details[data-download-url]:not([data-download-url="#"])');
+            if (firstClickableDetail) {
+                setTimeout(() => {
+                    const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                    if (parentAccordionItem) {
+                         const parentHeader = parentAccordionItem.querySelector('.accordion-header');
+                         if (parentHeader) {
+                            const content = parentHeader.nextElementSibling;
+                            const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                            if (content && content.classList.contains('hidden')) {
+                                parentHeader.setAttribute('aria-expanded', 'true'); content.classList.remove('hidden');
+                                if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                            }
+                        }
+                        const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                        if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                            const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                            if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') parentSubHeader.click();
+                        }
+                        firstClickableDetail.click();
+                    }
+                }, 100);
+            } else {
+                contentViewer.src = '';
+                contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+            }
+        } else {
+            console.error("Elementos essenciais não encontrados.");
+        }
+    </script>
+
+</body>
+</html>

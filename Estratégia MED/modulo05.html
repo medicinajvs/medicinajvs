@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Curso Multimídia e Radiologia (Bônus)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Curso Multimídia e Radiologia (Bônus)</h1> <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                         id="content-viewer" src="" title="Visualizador de Conteúdo"
+                         frameborder="0"
+                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                         referrerpolicy="strict-origin-when-cross-origin"
+                         allowfullscreen>
+                     </iframe>
+                 </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                     Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                     </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+
+        // Helper function to create placeholder items
+        function createPlaceholderItem(itemType, moduleTitle, index, uniqueId) {
+            const placeholderBaseUrl = "https://drive.google.com/file/d/generic_placeholder_id_";
+            const videoSuffix = "/preview?usp=drive_link"; // Ensure this is embeddable
+            const docSuffix = "/preview?usp=drive_link";   // Ensure this is embeddable
+            const safeModuleTitle = moduleTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            let title = "";
+            // Consistent title generation
+            if (itemType === 'Videoaulas') {
+                title = `Vídeo Aula ${index + 1} - ${moduleTitle}`;
+                return { title: title, driveVideoUrl: `${placeholderBaseUrl}${safeModuleTitle}_video_${uniqueId}${videoSuffix}`, downloadUrl: "#" };
+            } else {
+                // Remove 's' from itemType for singular title (e.g., "Livro Digital" from "Livros Digitais")
+                const singularItemType = itemType.endsWith('s') ? itemType.slice(0, -1) : itemType;
+                title = `${singularItemType} ${index + 1} - ${moduleTitle}`;
+                return { title: title, downloadUrl: `${placeholderBaseUrl}${safeModuleTitle}_${singularItemType.toLowerCase().replace(' ', '')}_${uniqueId}${docSuffix}` };
+            }
+        }
+
+
+        const menuItemsData = [ // Titles and descriptions are set, subItems will be populated
+            { title: "Radiologia", description: "Conteúdo sobre Radiologia.", subItems: {} },
+            { title: "Ginecologia", description: "Conteúdo sobre Ginecologia.", subItems: {} },
+            { title: "Obstetrícia", description: "Conteúdo sobre Obstetrícia.", subItems: {} },
+            { title: "Cirurgia", description: "Conteúdo sobre Cirurgia.", subItems: {} },
+            { title: "Gastroenterologia", description: "Conteúdo sobre Gastroenterologia.", subItems: {} },
+            { title: "Hematologia", description: "Conteúdo sobre Hematologia.", subItems: {} },
+            { title: "Oftalmologia", description: "Conteúdo sobre Oftalmologia.", subItems: {} },
+            { title: "Nefrologia", description: "Conteúdo sobre Nefrologia.", subItems: {} },
+            { title: "Pocus - O Que Você Precisa Saber Para as Provas de Residência Médica?", description: "Conteúdo sobre Pocus.", subItems: {} },
+            { title: "Ecocardiograma - O Que Você Precisa Saber Para as Provas de Residência Médica?", description: "Conteúdo sobre Ecocardiograma.", subItems: {} },
+            { title: "Medicina Preventiva", description: "Conteúdo sobre Medicina Preventiva.", subItems: {} },
+            { title: "Simulado Multimídia - Ginecologia I", description: "Simulado sobre Ginecologia I.", subItems: {} },
+            { title: "Simulado Multimídia - Ginecologia II", description: "Simulado sobre Ginecologia II.", subItems: {} },
+            { title: "Simulado Multimídia - Hematologia I", description: "Simulado sobre Hematologia I.", subItems: {} },
+            { title: "Simulado Multimídia - Cardiologia", description: "Simulado sobre Cardiologia.", subItems: {} },
+            { title: "Simulado Multimídia - Eletrocardiograma", description: "Simulado sobre Eletrocardiograma.", subItems: {} },
+            { title: "Simulado Multimídia - Ortopedia", description: "Simulado sobre Ortopedia.", subItems: {} },
+            { title: "Simulado Multimídia - Endocrinologia", description: "Simulado sobre Endocrinologia.", subItems: {} },
+            { title: "Simulado Multimídia - Pediatria I", description: "Simulado sobre Pediatria I.", subItems: {} },
+            { title: "Simulado Multimídia - Radiologia", description: "Simulado sobre Radiologia.", subItems: {} },
+            { title: "Simulado Multimídia - Dermatologia I", description: "Simulado sobre Dermatologia I.", subItems: {} },
+            { title: "Simulado Multimídia - Pediatria II", description: "Simulado sobre Pediatria II.", subItems: {} },
+            { title: "Simulado Multimídia - Nefrologia", description: "Simulado sobre Nefrologia.", subItems: {} },
+            { title: "Simulado Multimídia - Ortopedia USP-SP", description: "Simulado sobre Ortopedia USP-SP.", subItems: {} },
+            { title: "Simulado Multimídia - Gastroenterologia", description: "Simulado sobre Gastroenterologia.", subItems: {} },
+            { title: "Simulado Multimídia - Dermatologia II", description: "Simulado sobre Dermatologia II.", subItems: {} },
+            { title: "Simulado Multimídia - Hematologia II", description: "Simulado sobre Hematologia II.", subItems: {} },
+            { title: "Simulado Multimídia - Obstetrícia", description: "Simulado sobre Obstetrícia.", subItems: {} }
+        ];
+
+        // Counts for each module and subitem type
+        const newCountsData = [
+            { title: "Radiologia", counts: { 'Videoaulas': 19, 'Livros Digitais': 1, 'Resumos': 0, 'Slides': 9, 'Mapas Mentais': 0 } },
+            { title: "Ginecologia", counts: { 'Videoaulas': 4, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 4, 'Mapas Mentais': 0 } },
+            { title: "Obstetrícia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 1, 'Mapas Mentais': 0 } },
+            { title: "Cirurgia", counts: { 'Videoaulas': 8, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 1, 'Mapas Mentais': 0 } },
+            { title: "Gastroenterologia", counts: { 'Videoaulas': 4, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Hematologia", counts: { 'Videoaulas': 3, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 3, 'Mapas Mentais': 0 } },
+            { title: "Oftalmologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Nefrologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 1, 'Mapas Mentais': 0 } },
+            { title: "Pocus - O Que Você Precisa Saber Para as Provas de Residência Médica?", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 1, 'Mapas Mentais': 0 } },
+            { title: "Ecocardiograma - O Que Você Precisa Saber Para as Provas de Residência Médica?", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 1, 'Mapas Mentais': 0 } },
+            { title: "Medicina Preventiva", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Ginecologia I", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Ginecologia II", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Hematologia I", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Cardiologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Eletrocardiograma", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Ortopedia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Endocrinologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Pediatria I", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Radiologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Dermatologia I", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Pediatria II", counts: { 'Videoaulas': 3, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Nefrologia", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Ortopedia USP-SP", counts: { 'Videoaulas': 3, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Gastroenterologia", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Dermatologia II", counts: { 'Videoaulas': 2, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Hematologia II", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } },
+            { title: "Simulado Multimídia - Obstetrícia", counts: { 'Videoaulas': 1, 'Livros Digitais': 0, 'Resumos': 0, 'Slides': 0, 'Mapas Mentais': 0 } }
+        ];
+
+        // Actual links provided by the user
+        const realLinksData = {
+            "Radiologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1v9Md7_8hblVqhvQkfDHzjxa7-NpeiPyF/view?usp=sharing", "https://drive.google.com/file/d/1iujNP7aSuck2SMGnWIYJcoEoQ5EVH5VA/view?usp=sharing", "https://drive.google.com/file/d/1jY5R9cYU6ZYPWGLpOzHx7C2eUyDOI-lD/view?usp=sharing", "https://drive.google.com/file/d/1yuRFzDHl9SOFFZs0f8C8aFOxmPi9ypn9/view?usp=sharing", "https://drive.google.com/file/d/1zWq5vaZXDCy1lnpBWAzwEx-x4ZrKrSxi/view?usp=sharing", "https://drive.google.com/file/d/1i-yRfbRWhEyQeVSss6o0Nao08Q4jVHNX/view?usp=sharing", "https://drive.google.com/file/d/1XFy5beGrdZKTesIJKTr5TMnOr-HCQVh4/view?usp=sharing", "https://drive.google.com/file/d/1obUZ_T6Qf9U8ai41QaFt8eCs88f-sfNM/view?usp=sharing", "https://drive.google.com/file/d/16WuklqseM-6ZvtEi1H7c5yoz7IGr-Luj/view?usp=sharing", "https://drive.google.com/file/d/11sUqUGsrkwsT0I2SsRKwVinc55CZgAED/view?usp=sharing", "https://drive.google.com/file/d/1Y_BNx6ncuz47TGjyUHp1wS9oPAYcVy2g/view?usp=sharing", "https://drive.google.com/file/d/1hvutA5TmyUg_W9VQ11u_MBYKeveymQG2/view?usp=sharing", "https://drive.google.com/file/d/1WOVOPu6CGgV0G4V1pWtdIUG7eYLu7gm5/view?usp=sharing", "https://drive.google.com/file/d/18dYF63qj0v20lvG4yRxmkChixZ1ipqsQ/view?usp=sharing", "https://drive.google.com/file/d/1oD1tBUZhrQ84-RaEq7iLsyFUbWSwOsbw/view?usp=sharing", "https://drive.google.com/file/d/15pvnuwYhF5G6gvvEJ_Er73NeyFJpWPrZ/view?usp=sharing", "https://drive.google.com/file/d/1rqjU9qFvtj_yBNZHhtmPwIuu0UrFX-I6/view?usp=sharing", "https://drive.google.com/file/d/1DNzknYznszXnnWbsDcQuCUsAdg9Vcjzl/view?usp=sharing", "https://drive.google.com/file/d/1WGEGg5yQZwyUZbzDEq-iwRPHEkyLkXE_/view?usp=sharing"],
+                'Livros Digitais': ["https://drive.google.com/file/d/13Zj2kGZMYk9c837Xj2tzH5gPuRBjq4nh/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1dYgo5GqVEoj_QCTm4g-UX9gbVDl74c0f/view?usp=drive_link", "https://drive.google.com/file/d/12u-eIEfZT_vaz0_4GY34t9iT4Xki3o6h/view?usp=sharing", "https://drive.google.com/file/d/1AQoza70TLCLAfuz6PRPcjRASUGeMALdf/view?usp=sharing", "https://drive.google.com/file/d/1CEgllM4zZbHxhOEJRgIYPMQbpemfAKdJ/view?usp=sharing", "https://drive.google.com/file/d/1Ug2qPYiG-PAX2bvkoxALLY-zrRMf4J4o/view?usp=sharing", "https://drive.google.com/file/d/1Vu2gjVvmcuOkec-O36_TUhW8kOCgzkjz/view?usp=sharing", "https://drive.google.com/file/d/1VyAJ6YgasPxbkyV13qkQOMe5hae0bZ7y/view?usp=sharing", "https://drive.google.com/file/d/1k-O_b7y6Cm_fetgR2LWFeAVI4S-wutqQ/view?usp=sharing", "https://drive.google.com/file/d/1kGrnDKI-6Or4UrYNZt5YqN5AEnWerxFm/view?usp=sharing"]
+            },
+            "Ginecologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1zspVZyjTulqe4lajz0n4281GqhUbS5zT/view?usp=sharing", "https://drive.google.com/file/d/1oHw9clGcX2tLCDm0GGVC96H8joHyM1tS/view?usp=sharing", "https://drive.google.com/file/d/1c1oADH5HR2Og4IInx-TqSXnqa7Atg7fQ/view?usp=sharing", "https://drive.google.com/file/d/13RGYxtggCZeyQvPO7TzS4QZMaSma_q9w/view?usp=sharing"],
+                'Slides': ["https://drive.google.com/file/d/116J9_v4pkDT2hvckCEj_0hT979oHAscj/view?usp=sharing", "https://drive.google.com/file/d/1JPlVqzGJRtfxvlGBcOdANuoDJKVdE5pS/view?usp=sharing", "https://drive.google.com/file/d/1NPbsH6-cYWbd6_mD9JWsAek8AQ8ougYc/view?usp=sharing", "https://drive.google.com/file/d/1mBl0CURpUQr2rLhXESsAzdzFEMatv_6N/view?usp=sharing"]
+            },
+            "Obstetrícia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1v0ZlllPfB2tJqDUV1bXSl9QC7eXLCeSZ/view?usp=sharing", "https://drive.google.com/file/d/1JQrlMNayJx4Epcb5p6qW3zzY8Te2lGnB/view?usp=sharing"],
+                'Slides': ["https://drive.google.com/file/d/1ZUc5B10Gg27YN_MNGpTUsBpHa6SG9TN0/view?usp=drive_link"]
+            },
+            "Cirurgia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1LXRNQFlMfgB8G5jdJ0zeiUHemcHJhf3Z/view?usp=sharing", "https://drive.google.com/file/d/1TOhYFtxW-OOWNjQi5JAEiqroYGzbQkh_/view?usp=sharing", "https://drive.google.com/file/d/1hN_nsDLxjtXQpTYsVMNqHLdlB5dOEa4p/view?usp=sharing", "https://drive.google.com/file/d/1LA0ewG6n5S5rOQ-S3cC-45ZykEFZM9M0/view?usp=sharing", "https://drive.google.com/file/d/1qY8Ccme8WYyX6qY1ErPpzuJujOyBH_hy/view?usp=sharing", "https://drive.google.com/file/d/1F7JSNXUveZfrc_DA89xGf5dIfwHi4QZx/view?usp=sharing", "https://drive.google.com/file/d/1ZCxM0aN0TZi7LKZC2qpRahOgbT6DTW32/view?usp=sharing", "https://drive.google.com/file/d/1F_Rn_fLTkN0f5uR1PGkgFEm8SbzY8MBd/view?usp=sharing"],
+                'Slides': ["https://drive.google.com/file/d/1tdIwQpUzhzPat-GQ7nyupDkaQepGL3w5/view?usp=drive_link"]
+            },
+            "Gastroenterologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1d-z3ytPREOCJYAPPye16VvlYckY7BUEy/view?usp=sharing", "https://drive.google.com/file/d/1Wbw4YrXuA5C7oxDFTKjUHHy9zAHHbkX5/view?usp=sharing", "https://drive.google.com/file/d/1APRKve4hLbx9KIJyjp2O2misJMZhSpVI/view?usp=sharing", "https://drive.google.com/file/d/1av7i_vK7yJhhK9EhfOcTn_8ZRnPb18hC/view?usp=sharing"]
+            },
+            "Hematologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/18N5FBM2puGFIL0CcusxBge2OLnT6UOCE/view?usp=sharing", "https://drive.google.com/file/d/1-SazQF0XL8MXVswetIUUSkAju_pHDkMt/view?usp=sharing", "https://drive.google.com/file/d/1CCoBzWx_duoGihuDi5-pNRsXeU8bwqma/view?usp=sharing"],
+                'Slides': ["https://drive.google.com/file/d/18J_KwbkBR-UkO6ZMLJekpbmlfmqZdxph/view?usp=sharing", "https://drive.google.com/file/d/1LhzQ3sydFMm2zICVe4cdD2wxUyAHtvCn/view?usp=sharing", "https://drive.google.com/file/d/1OTRp6L2XLClYgG8ZZpfEZHnIN7lzOoO9/view?usp=sharing"]
+            },
+            "Oftalmologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1ezwYZv4x-_oOXBfQGLDilveqWAjeooyz/view?usp=sharing", "https://drive.google.com/file/d/1jruUWJTEGJo21NDoBW-BOveSrudQnXDx/view?usp=sharing"]
+            },
+            "Nefrologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1nh1LGGm8Rv7YlCHps1f3_fB7Qpfx7Xww/view?usp=sharing", "https://drive.google.com/file/d/1gbao2-Rru7PQ_V_RAwGJnKN3SF2B_lXg/view?usp=sharing"],
+                'Slides': ["https://drive.google.com/file/d/1YxuyNAyT9gZO11Jz32ogGHmYiZR03na5/view?usp=drive_link"]
+            },
+            "Pocus - O Que Você Precisa Saber Para as Provas de Residência Médica?": {
+                'Videoaulas': ["https://drive.google.com/file/d/1MMV_d-8n5jrazrOEnEQ6ZlnwifSGnfv8/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1r7vS4lb4PFbGxl3nPNKzz7BETDR9Yk2R/view?usp=drive_link"]
+            },
+            "Ecocardiograma - O Que Você Precisa Saber Para as Provas de Residência Médica?": {
+                'Videoaulas': ["https://drive.google.com/file/d/1p__2ewZxcSnAWbJY4JXiLrNqTPIHqxnT/view?usp=drive_link"],
+                'Slides': ["https://drive.google.com/file/d/1pXF1UMPuh_PFRH6IyHgA4nHepEPcUvfJ/view?usp=drive_link"]
+            },
+            "Medicina Preventiva": {
+                'Videoaulas': ["https://drive.google.com/file/d/1bRHJhO1fdER3fUPJbiEeKm0Y9TLtFQEW/view?usp=drive_link"]
+            },
+            "Simulado Multimídia - Ginecologia I": {
+                'Videoaulas': ["https://drive.google.com/file/d/1P8wQ1MC1ziqidtWOsXAYfu1p28mGOiXe/view?usp=sharing", "https://drive.google.com/file/d/1QtX_zeCCsjBR6pYfqBIDUNqiD8Lbgki8/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Ginecologia II": {
+                'Videoaulas': ["https://drive.google.com/file/d/1K1P1AVyW_CmwvPga7gDEXlwfFjzx20cg/view?usp=sharing", "https://drive.google.com/file/d/1_1cUykCBJL2BTBLWaZuZiRgbuYevUHd8/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Hematologia I": {
+                'Videoaulas': ["https://drive.google.com/file/d/1cxk99N6Wnq8XuYJyfGycVIWSSKUNNOEH/view?usp=drive_link"]
+            },
+            "Simulado Multimídia - Cardiologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1ASUBAafyh2KmTUkECWKoV2gdvhzs637z/view?usp=sharing", "https://drive.google.com/file/d/1YOIHznIL2OFnSD9HIWMa5Da1KpfiUtFi/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Eletrocardiograma": {
+                'Videoaulas': ["https://drive.google.com/file/d/1DYxNxrDmW7zK24SJ_cyhgF2ddNJthaKj/view?usp=sharing", "https://drive.google.com/file/d/1k6GQTkLFfmUYxoRWdBsB9-22aHKehDo4/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Ortopedia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1plqVuXcVlOhK_-DABwxjTUEBn9cS3er-/view?usp=sharing", "https://drive.google.com/file/d/104XGXE56FPDZlr2YyuAJyWZscrjLQ6KF/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Endocrinologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1YCAPwNt_oAumO3Ip56tixj2ZhqX_Bnuc/view?usp=sharing", "https://drive.google.com/file/d/1zQNaoAVUZtaMS8GwT0OEEy7aFU9uz6tH/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Pediatria I": {
+                'Videoaulas': ["https://drive.google.com/file/d/1EvUz-4SkauD6AyDe7iKljPZ2xNL7cFc3/view?usp=drive_link"]
+            },
+            "Simulado Multimídia - Radiologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1OmDxlX5nxhkCIdL7q97sCUBjnhX2JKVz/view?usp=sharing", "https://drive.google.com/file/d/1QaNB2aMsUacfegpJHv_Xhf6aXP7A1fGX/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Dermatologia I": {
+                'Videoaulas': ["https://drive.google.com/file/d/1KJBnvIsyBHWFxsiEaLLcUcwndE8wnapz/view?usp=sharing", "https://drive.google.com/file/d/1sbOa85lkiLo3sl2oq7VXczw9dxo7GzLA/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Pediatria II": {
+                'Videoaulas': ["https://drive.google.com/file/d/18xDTKCYWbzo8uumgopkybawoPTnEyHET/view?usp=sharing", "https://drive.google.com/file/d/1xnFKGRF2OgTaNPtLyD9eqf_SQwXsQtvd/view?usp=sharing", "https://drive.google.com/file/d/1wxNQ40VtmRXLWkHQPRVVIf67O1MnZxJm/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Nefrologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1Z62AY-J4IvylSLW855brb3eKnXBLrIxG/view?usp=drive_link"]
+            },
+            "Simulado Multimídia - Ortopedia USP-SP": {
+                'Videoaulas': ["https://drive.google.com/file/d/1Arx714s71eBXYpQqpCjq7-Hpp_5TXZL4/view?usp=sharing", "https://drive.google.com/file/d/1xxlZ3UvwH5L2IHj9utnh68i37wMzr_Iw/view?usp=sharing", "https://drive.google.com/file/d/1nYeo-YPbGIvZfCorOuruYzjQnFyCZUyR/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Gastroenterologia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1FObcKlo6X4JBojE8fFiUggoKfknGVyEC/view?usp=sharing", "https://drive.google.com/file/d/1yE__YQ1hBY_pbBCmFH18ix4v7YEvxbRD/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Dermatologia II": {
+                'Videoaulas': ["https://drive.google.com/file/d/1KjGJmhjidlbdWaqwdImbHUn7QhoevYYd/view?usp=sharing", "https://drive.google.com/file/d/1BYS_qm5MH802kPc6nQOZQmIus_6MIvHB/view?usp=sharing"]
+            },
+            "Simulado Multimídia - Hematologia II": {
+                'Videoaulas': ["https://drive.google.com/file/d/1qd7iaoKP9try_fzwrLH06Pzms0n5nIcJ/view?usp=drive_link"]
+            },
+            "Simulado Multimídia - Obstetrícia": {
+                'Videoaulas': ["https://drive.google.com/file/d/1mCM3zYMHcyh3aG3pWP-iSKJL-Rz0jhGS/view?usp=drive_link"]
+            }
+        };
+
+        const subItemOrder = ['Videoaulas', 'Livros Digitais', 'Resumos', 'Slides', 'Mapas Mentais'];
+        let placeholderUniqueIdCounter = 0;
+
+        menuItemsData.forEach((moduleItem, index) => {
+            const moduleTitle = moduleItem.title;
+            const targetCountsForModule = newCountsData.find(item => item.title === moduleTitle)?.counts;
+
+            if (!targetCountsForModule) {
+                console.error(`Contagem não encontrada para o módulo: ${moduleTitle}`);
+                moduleItem.subItems = {};
+                subItemOrder.forEach(subItemType => {
+                    moduleItem.subItems[subItemType] = [];
+                });
+                return;
+            }
+
+            moduleItem.subItems = {};
+            const currentModuleRealLinks = realLinksData[moduleTitle];
+
+            subItemOrder.forEach(subItemType => {
+                const targetCount = targetCountsForModule[subItemType];
+                const newSubItemsArray = [];
+                const linksForThisType = currentModuleRealLinks ? (currentModuleRealLinks[subItemType] || []) : [];
+
+                for (let i = 0; i < targetCount; i++) {
+                    if (i < linksForThisType.length) {
+                        let url = linksForThisType[i];
+                        // Ensure URL is in preview format for embedding
+                        url = url.replace('/view?usp=sharing', '/preview?usp=drive_link')
+                                 .replace('/view?usp=drive_link', '/preview?usp=drive_link');
+
+                        let titleForItem = "";
+                        if (subItemType === 'Videoaulas') {
+                            titleForItem = `Vídeo Aula ${i + 1} - ${moduleTitle}`;
+                            newSubItemsArray.push({ title: titleForItem, driveVideoUrl: url, downloadUrl: "#" });
+                        } else {
+                            const singularItemType = subItemType.endsWith('s') ? subItemType.slice(0, -1) : subItemType;
+                            titleForItem = `${singularItemType} ${i + 1} - ${moduleTitle}`;
+                            newSubItemsArray.push({ title: titleForItem, downloadUrl: url });
+                        }
+                    } else {
+                        newSubItemsArray.push(createPlaceholderItem(subItemType, moduleTitle, i, placeholderUniqueIdCounter++));
+                    }
+                }
+                moduleItem.subItems[subItemType] = newSubItemsArray;
+            });
+        });
+
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z',
+            'Livros Digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+            'Mapas Mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z'
+        };
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num;
+             const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+             let roman = '', i;
+             for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+             return roman;
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                 const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                 iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                 if (subItemType === 'Videoaulas') {
+                     iconContainer.setAttribute('fill', 'currentColor');
+                     iconContainer.setAttribute('viewBox', '0 0 20 20');
+                 } else {
+                     iconContainer.setAttribute('fill', 'none');
+                     iconContainer.setAttribute('stroke', 'currentColor');
+                     iconContainer.setAttribute('viewBox', '0 0 24 24');
+                 }
+
+                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                 path.setAttribute('d', iconPathData);
+                 if (subItemType === 'Videoaulas') {
+                     path.setAttribute('fill-rule', 'evenodd');
+                     path.setAttribute('clip-rule', 'evenodd');
+                 } else {
+                     path.setAttribute('stroke-linecap', 'round');
+                     path.setAttribute('stroke-linejoin', 'round');
+                     path.setAttribute('stroke-width', '1.5');
+                 }
+                 iconContainer.appendChild(path);
+                 itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+            if (titleEl) {
+                titleEl.textContent = detailData.title;
+            }
+
+            if (subtitleEl) {
+                 subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+            if (downloadLink) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    if (!detailData.downloadUrl.startsWith('#dl-')) {
+                        downloadLink.href = detailData.downloadUrl;
+                        downloadLink.setAttribute('target', '_blank');
+                        downloadLink.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    } else {
+                        downloadLink.href = detailData.downloadUrl;
+                        downloadLink.removeAttribute('target');
+                    }
+                     downloadLink.title = `Baixar ${titleEl.textContent}`;
+                }
+                else {
+                    downloadLink.remove();
+                }
+            }
+
+             const itemDisplayTitle = titleEl.textContent;
+             const videoUrl = detailData.driveVideoUrl;
+             const docUrl = (subItemType !== 'Videoaulas' && detailData.downloadUrl && detailData.downloadUrl !== '#' && !detailData.downloadUrl.startsWith('#dl-'))
+                            ? detailData.downloadUrl
+                            : null;
+
+             if (videoUrl && videoUrl !== '#') {
+                 detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             else if (docUrl) {
+                 detailDiv.setAttribute('data-download-url', docUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             else {
+                detailDiv.classList.remove('cursor-pointer');
+             }
+             return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+             contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+             menuListContainer.innerHTML = '';
+
+             menuItemsData.forEach((itemData, mainIndex) => {
+                 const title = itemData.title;
+                 const description = itemData.description;
+                 const subItems = itemData.subItems || {};
+                 const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                 const accordionItem = document.createElement('div');
+                 accordionItem.className = 'accordion-item';
+                 accordionItem.setAttribute('data-completed', 'false');
+                 accordionItem.setAttribute('data-main-description', description);
+
+                 const headerButton = document.createElement('button');
+                 headerButton.className = 'menu-item-header w-full accordion-header';
+                 headerButton.setAttribute('aria-expanded', 'false');
+                 headerButton.setAttribute('aria-controls', mainContentId);
+
+                 const headerContent = document.createElement('div');
+                 headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                 headerContent.innerHTML = `
+                     <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3> <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                          <span>Estratégia Educacional</span> <button type="button" class="status-toggle flex-shrink-0"> <span>Concluído</span>
+                              <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                              <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                          </button>
+                      </div>`;
+
+                 const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                 chevronIcon.setAttribute('fill', 'none');
+                 chevronIcon.setAttribute('stroke', 'currentColor');
+                 chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                 chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                 headerButton.appendChild(headerContent);
+                 headerButton.appendChild(chevronIcon);
+
+                 const contentDiv = document.createElement('div');
+                 contentDiv.id = mainContentId;
+                 contentDiv.className = 'menu-item-content hidden';
+
+                 subItemOrder.forEach((subItemType, subIndex) => {
+                     const subItemArray = subItems[subItemType] || [];
+                     const count = subItemArray.length;
+                     const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                     const subAccordionItem = document.createElement('div');
+                     subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                     const subHeaderButton = document.createElement('button');
+                     subHeaderButton.className = 'sub-accordion-header w-full';
+                     subHeaderButton.setAttribute('aria-expanded', 'false');
+                     subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                     if (count === 0) {
+                         subHeaderButton.disabled = true;
+                     }
+                     subHeaderButton.innerHTML = `
+                         <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                         <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     `;
+
+                     const subContentDiv = document.createElement('div');
+                     subContentDiv.id = nestedContentId;
+                     subContentDiv.className = 'sub-accordion-content hidden';
+
+                     if (count > 0) {
+                         const totalVideos = (subItemType === 'Videoaulas') ? count : 0;
+                         subItemArray.forEach((detailData, detailIndex) => {
+                             const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                             if (detailElement) {
+                                 subContentDiv.appendChild(detailElement);
+                             }
+                         });
+                     }
+
+                     subAccordionItem.appendChild(subHeaderButton);
+                     subAccordionItem.appendChild(subContentDiv);
+                     contentDiv.appendChild(subAccordionItem);
+                 });
+
+                 accordionItem.appendChild(headerButton);
+                 accordionItem.appendChild(contentDiv);
+                 menuListContainer.appendChild(accordionItem);
+             });
+
+             const accordionHeaders = document.querySelectorAll('.accordion-header');
+             accordionHeaders.forEach(header => {
+                 header.addEventListener('click', (event) => {
+                     if (event.target.closest('.status-toggle')) return;
+                     const content = header.nextElementSibling;
+                     if (!content || !content.classList.contains('menu-item-content')) return;
+                     const expanded = header.getAttribute('aria-expanded') === 'true';
+                     const chevronIcon = header.querySelector('.chevron-icon');
+                     header.setAttribute('aria-expanded', !expanded);
+                     content.classList.toggle('hidden');
+                     if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                 });
+             });
+
+
+             const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+             subAccordionHeaders.forEach(subHeader => {
+                 if (!subHeader.disabled) {
+                     subHeader.addEventListener('click', (event) => {
+                         event.stopPropagation();
+                         const content = subHeader.nextElementSibling;
+                         if (!content || !content.classList.contains('sub-accordion-content')) return;
+                         const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                         const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                         subHeader.setAttribute('aria-expanded', !expanded);
+                         content.classList.toggle('hidden');
+                         if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                     });
+                 }
+             });
+
+             const statusToggles = document.querySelectorAll('.status-toggle');
+             statusToggles.forEach(toggle => {
+                 toggle.addEventListener('click', (event) => {
+                     event.stopPropagation();
+                     const accordionItem = toggle.closest('.accordion-item');
+                     if (!accordionItem) return;
+                     const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                     accordionItem.setAttribute('data-completed', !isCompleted);
+                     toggle.classList.toggle('is-completed', !isCompleted);
+                     console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                 });
+             });
+
+             menuListContainer.addEventListener('click', (event) => {
+                 const detailItem = event.target.closest('.sub-item-details');
+
+                 if (event.target.closest('.download-link')) {
+                     return;
+                 }
+
+                 if (detailItem && contentViewer && contentDescription) {
+                     const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                     const downloadUrlForView = detailItem.getAttribute('data-download-url');
+                     const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                     const parentAccordionItem = detailItem.closest('.accordion-item');
+                     const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+
+                     const isClickableForView = (driveVideoUrl && driveVideoUrl !== '#') ||
+                                               (downloadUrlForView && downloadUrlForView !== '#' && !downloadUrlForView.startsWith('#dl-'));
+
+
+                     if (isClickableForView) {
+                         document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                             activeItem.classList.remove('is-active');
+                         });
+                         detailItem.classList.add('is-active');
+
+                         if (driveVideoUrl && driveVideoUrl !== '#') {
+                             contentViewer.src = driveVideoUrl;
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                             console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                         } else if (downloadUrlForView && downloadUrlForView !== '#') {
+                             contentViewer.src = downloadUrlForView;
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                             console.log(`Carregando documento: ${downloadUrlForView}`);
+                         } else {
+                             contentViewer.src = 'about:blank';
+                             contentDescription.textContent = `Conteúdo "${itemTitle}" não disponível para visualização direta.`;
+                         }
+                     }
+                 }
+             });
+
+
+             if(likeButton) {
+                 likeButton.addEventListener('click', () => {
+                     likeButton.classList.toggle('is-liked');
+                     const isLiked = likeButton.classList.contains('is-liked');
+                     console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                 });
+             }
+
+             const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url]:not([data-drive-video-url="#"]), #menu-items-list .sub-item-details[data-download-url]:not([data-download-url="#"]):not([data-download-url^="#dl-"])');
+             if (firstClickableDetail) {
+                 setTimeout(() => {
+                     const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                     if (parentAccordionItem) {
+                        const parentHeader = parentAccordionItem.querySelector('.accordion-header');
+                        if (parentHeader) {
+                            const content = parentHeader.nextElementSibling;
+                            const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                            if (content && content.classList.contains('hidden')) {
+                                parentHeader.setAttribute('aria-expanded', 'true');
+                                content.classList.remove('hidden');
+                                if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                            }
+                        }
+                     }
+
+                     const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                     if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                         const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                         if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                             parentSubHeader.click();
+                         }
+                     }
+                     if (typeof firstClickableDetail.click === 'function') {
+                        firstClickableDetail.click();
+                     }
+                 }, 100);
+             } else {
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo clicável disponível para visualização inicial.';
+             }
+        } else {
+             console.error("Elementos essenciais não encontrados.");
+        }
+    </script>
+
+</body>
+</html>

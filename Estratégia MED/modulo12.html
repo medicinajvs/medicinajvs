@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Infectologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Infectologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        // Lista com 21 títulos de Infectologia e estrutura subItems restaurada
+        const menuItemsData = [
+            // Módulo 1: Meningites (Contagem Atualizada)
+            {
+                title: "Meningites (Infecções do Sistema Nervoso Central)",
+                description: "Aula sobre Meningites.",
+                subItems: {
+                    'Videoaulas': [ // 8 Itens
+                        { title: "Meningites - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1sEL1ELx4bGWDRaohx6aRvGIpzVElQOqq/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1vhhw9miyE3KzRIclz7x_As4OWppAaP6i/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1ERpnqThk7CD8bg60hFooDMjSo-7um_ml/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1AGehbKhT-fIY4v0dgENghKVz6ib1eGdW/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1Y3qkBArG4hIGBKEhNRjxIilVzCno7bma/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1kfmCZNAd6bb8z66dAumu-zu77J38qp8k/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte VII", driveVideoUrl: "https://drive.google.com/file/d/1fIb_iv_uDqXHExnHBsixpjdN2YAU_3bu/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Meningites - Parte VIII", driveVideoUrl: "https://drive.google.com/file/d/1Bm9iO40mXdxM75hLq03BYE2_ohEa_GrE/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Meningites", downloadUrl: "https://drive.google.com/file/d/1QGuRZAX-vIo-M5wzvYDmZQ6UInZGE1YT/preview?usp=drive_link" },
+                        { title: "Flashcards - Meningites", downloadUrl: "https://drive.google.com/file/d/1aNKPKe4Nr54oHAeZiU0aRpLl-YTIaFfS/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Meningites", downloadUrl: "https://drive.google.com/file/d/1gjPvL7XJjmUGty-2KhUFBP3vnEx3hncy/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Meningites", downloadUrl: "https://drive.google.com/file/d/1fpLC3aLS5btZ7Hdk0ka5TKlB0k2ndg2v/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Meningites", downloadUrl: "https://drive.google.com/file/d/1JlPZNN1oBsHOYH7beSJrBqAvLzfG2RNc/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 2: Leptospirose (Contagem Atualizada)
+            {
+                title: "Leptospirose",
+                description: "Aula sobre Leptospirose.",
+                subItems: {
+                    'Videoaulas': [ // 2 Itens
+                        { title: "Leptospirose - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1gEGEIarVMX22Ryi5ONgH5otjOu5psjg0/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Leptospirose - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1wp4hgI3CL7aCWkALh_EzyrUH7DTcvKkF/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Leptospirose", downloadUrl: "https://drive.google.com/file/d/18rzP7HmK_eD3nU4jEJEmPEWhrTQSFOWp/preview?usp=drive_link" },
+                        { title: "Flashcards - Leptospirose", downloadUrl: "https://drive.google.com/file/d/1Fuh5TCymDGRV8bnjOnXyFYIklgz0fKkC/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Leptospirose", downloadUrl: "https://drive.google.com/file/d/1g--TXq3kDGmUOJ02muRLRgMkfQIe1AcC/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Leptospirose", downloadUrl: "https://drive.google.com/file/d/1TEyhfOWEsJkPfwrEE3scqdHinSYwXtXm/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Leptospirose", downloadUrl: "https://drive.google.com/file/d/1TPzooMZ4qbEmJ-GhYlMI0AGG4dxw2Pmy/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 3: Malária (Contagem Atualizada)
+            {
+                title: "Malária",
+                description: "Aula sobre Malária.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Malária", driveVideoUrl: "https://drive.google.com/file/d/1UzXWfo-G60sn6jbsnzz7GaqEPMj75UDB/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Malária", downloadUrl: "https://drive.google.com/file/d/1Ub6pEmcLFhp-_a9EXfNqFc-7eNpxRDMO/preview?usp=drive_link" },
+                        { title: "Flashcards - Malária", downloadUrl: "https://drive.google.com/file/d/1xilyXZSbryOYTdtZhKDPhig6uqeHuUYo/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Malária", downloadUrl: "https://drive.google.com/file/d/1SQHtKLMaojflKLL-S0qYoLsQJ2sBfgp7/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Malária", downloadUrl: "https://drive.google.com/file/d/1-mPJkFFEpBHC5xShkLJDOalHi8HmJoa_/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Malária", downloadUrl: "https://drive.google.com/file/d/1vW2iNxa3X5SVy2ezGkr1eZws-GbKp8RF/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 4: Animais Peçonhentos (Contagem Atualizada)
+            {
+                title: "Animais Peçonhentos",
+                description: "Aula sobre Animais Peçonhentos.",
+                subItems: {
+                    'Videoaulas': [ // 4 Itens
+                        { title: "Animais Peçonhentos - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1AIA7i6uQcu01B2zjfwTO7LpeMlfapnAv/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Animais Peçonhentos - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1eP9pBfj2s9s26R9QXwuCgFm3Nkqu-C1d/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Animais Peçonhentos - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1OubhIxGGkf35euLySHjEg7AnSjSgm3eY/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Animais Peçonhentos - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1cIowydZh9lu3_bdtxFtz5RuRT1toCEUa/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Animais Peçonhentos", downloadUrl: "https://drive.google.com/file/d/13j0BX4WATDJ17xSiveup7AmyOgVfSGyU/preview?usp=drive_link" },
+                        { title: "Flashcards - Animais Peçonhentos", downloadUrl: "https://drive.google.com/file/d/1Wz0FA7LiWsXadAozWMCv3u0lKkvoQuwg/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Animais Peçonhentos", downloadUrl: "https://drive.google.com/file/d/1yNwuSw4wbqxJJQYf8blrWsUntJLxyE3M/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Animais Peçonhentos", downloadUrl: "https://drive.google.com/file/d/1Qm12ykLUkZirNT-j8s_GOgGUa736JbW1/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Animais Peçonhentos", downloadUrl: "https://drive.google.com/file/d/1X5TQtM10eg3Jeln_KyS0VFNsV74dftdv/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 5: Influenza (Contagem Atualizada)
+            {
+                title: "Influenza",
+                description: "Aula sobre Influenza.",
+                subItems: {
+                    'Videoaulas': [ // 3 Itens
+                        { title: "Influenza - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1q8dhAEcljFJ5sHnHvKnUhyVTS2eBRE8C/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Influenza - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1W3DKUQqXNVU_v7heMm9OM5dhc-7uuHZ3/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Influenza - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1vG4Z-570S2vpNBJrgO-YWlsonJQ1qhkK/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Influenza", downloadUrl: "https://drive.google.com/file/d/1vatESYH1dMryyxCFpsRAPIS5oLQ6RAJj/preview?usp=drive_link" },
+                        { title: "Flashcards - Influenza", downloadUrl: "https://drive.google.com/file/d/1Ss9X5kxKm0EerZH9CkLVmHCkm1os08a2/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Influenza", downloadUrl: "https://drive.google.com/file/d/1Alyv3zq3MFZWhVoJyO-m_HKpPJTXWQaM/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Influenza", downloadUrl: "https://drive.google.com/file/d/17fJI2v1SRQCSB5_CdhM1bXYDu0wkVnAc/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Influenza", downloadUrl: "https://drive.google.com/file/d/1CSvS-smknlfmAD-PvHtEM_i2pugQq5r1/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 6: HIV (Contagem Atualizada)
+            {
+                title: "HIV",
+                description: "Aula sobre HIV.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "HIV", driveVideoUrl: "https://drive.google.com/file/d/1htcu_ea_IboepuzflOBMK7_csCxJ8vSP/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "HIV", downloadUrl: "https://drive.google.com/file/d/1FCgbx7mtVaBpd9dEKiu-1mDWTtfdc-a9/preview?usp=drive_link" },
+                        { title: "Flashcards - HIV", downloadUrl: "https://drive.google.com/file/d/12p-VhczkqNn45jb6baq5gtUHsZxrNNye/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "HIV", downloadUrl: "https://drive.google.com/file/d/1OHxOKgCVOOqApSXej-RItk1TB77eeoD3/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "HIV", downloadUrl: "https://drive.google.com/file/d/1B743v2eS287me83Zg00n4vDosPOshkAK/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "HIV", downloadUrl: "https://drive.google.com/file/d/1nbrUW-8AxuD8eqivpbDlEJFiTus6JNwz/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 7: Sepse (Contagem Atualizada)
+            {
+                title: "Sepse",
+                description: "Aula sobre Sepse.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Sepse", driveVideoUrl: "https://drive.google.com/file/d/14cg5hF9zCaFwSxYEtZmUHVudG9-wqGLB/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Sepse", downloadUrl: "https://drive.google.com/file/d/11IjmjF4vQcowbNnYW3CfqvAflReE0PCz/preview?usp=drive_link" },
+                        { title: "Flashcards - Sepse", downloadUrl: "https://drive.google.com/file/d/1KPRG0TAvGGFAodbcjepazj6drQxmT40C/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Sepse", downloadUrl: "https://drive.google.com/file/d/17Azd44SCJbNNICvMX7pWrcvS8uzbBmqu/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Sepse", downloadUrl: "https://drive.google.com/file/d/10QxPfRkLL09HwK6Nex2DPp78SrqaMWsM/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Sepse", downloadUrl: "https://drive.google.com/file/d/17eamDqv2deHNgf9tZpvypK8rTPMeEVvn/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 8: Antibióticos (Contagem Atualizada)
+            {
+                title: "Antibióticos",
+                description: "Aula sobre Antibióticos.",
+                subItems: {
+                    'Videoaulas': [ // 13 Itens
+                        { title: "Antibióticos - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1KAdj7n-PuPb1-tRVoLompk43SqLHRQDn/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1r4hFiLjW580WX90XKqt2YO5jpSE7tsZu/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1jSqUHQnth1MgXWv2_Ya2T28GVzGy-kyA/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1nB9yjc3O82AIEC9pBhkArB7JVbWwk083/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1Fi0BehSCKDSpO0sTQhEnPb32iulANdwt/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/13WzFLJQDrpJ5m8eOwyUCbl0U4yVWxj8C/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte VII", driveVideoUrl: "https://drive.google.com/file/d/10ZlW7ts5oQooAZ8bWKkmdtvA44WSOlno/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte VIII", driveVideoUrl: "https://drive.google.com/file/d/1VXFAP62j8gLH4VSiuHIMRwZcv90trKQj/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte IX", driveVideoUrl: "https://drive.google.com/file/d/1NA4n9O0sk0zpe81MKkMDSJvZAr9jw_0J/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte X", driveVideoUrl: "https://drive.google.com/file/d/1XuqSp-Yd6gRzuFqLlBSmhcFyqmtUvDKz/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte XI", driveVideoUrl: "https://drive.google.com/file/d/1By6HS6PPqBIBtZ3GHmvFAdu4wP5o1SbR/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte XII", driveVideoUrl: "https://drive.google.com/file/d/1tGbhDcknp6TcAhLo97ivkB7-0xUiosez/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Antibióticos - Parte XIII", driveVideoUrl: "https://drive.google.com/file/d/1vHKnGV8PxIsdv6WjKw5f141ZZLiANRp2/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Antibióticos", downloadUrl: "https://drive.google.com/file/d/1VZEspbMOMpWzZ5VYeOaRIjHvOIA5oREv/preview?usp=drive_link" },
+                        { title: "Flashcards - Antibióticos", downloadUrl: "https://drive.google.com/file/d/1pD4dAwW7zjUy4KNT40Zqr3rTw5usTDCS/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Antibióticos", downloadUrl: "https://drive.google.com/file/d/1K_AJDSDpEbskuaSmDC_4LMvek8lNCwN6/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Antibióticos", downloadUrl: "https://drive.google.com/file/d/1zJPhtOjICPd9Nu8nGDdxfmYp_90QG2K4/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Antibióticos", downloadUrl: "https://drive.google.com/file/d/19w2uIWt7u1GVbRPt_KdcH8z9USBo4399/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 9: Arboviroses (Contagem Atualizada)
+            {
+                title: "Arboviroses (Dengue, Chikungunya e Zika)",
+                description: "Aula sobre Arboviroses.",
+                subItems: {
+                    'Videoaulas': [ // 3 Itens
+                        { title: "Arboviroses - Dengue", driveVideoUrl: "https://drive.google.com/file/d/1r8g3UfAq4uVtkF6J2bDOY_K84CNv0q3r/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Arboviroses - Zika e Outras Arboviroses", driveVideoUrl: "https://drive.google.com/file/d/1mlaKBGiQBdpdpr0IcOQwKy9FFkaxIwNO/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Arboviroses - Chikungunya", driveVideoUrl: "https://drive.google.com/file/d/1R-NEU9ERAoYYZuDanPz3LP5oyWYL9_SU/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Arboviroses (Dengue, Chikungunya e Zika)", downloadUrl: "https://drive.google.com/file/d/1_tpA2d5mXlD-N9z9U0oHHEqB4Q4Z92K-/preview?usp=drive_link" },
+                        { title: "Flashcards - Arboviroses (Dengue, Chikungunya e Zika)", downloadUrl: "https://drive.google.com/file/d/1MRmKTLzdjZLVskcuxQE-WpeeahhPPMXS/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Arboviroses (Dengue, Chikungunya e Zika)", downloadUrl: "https://drive.google.com/file/d/11dqP3ngaBnBbDtG0eb5C-CY_6tsGlfuS/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 3 Itens
+                        { title: "Arboviroses - Dengue", downloadUrl: "https://drive.google.com/file/d/1otxQgKjGVA9fWykuBcxrznVTVyaphFTg/preview?usp=drive_link" },
+                        { title: "Arboviroses - Chikungunya", downloadUrl: "https://drive.google.com/file/d/1SkZxaPpVg6LMonpsrVnN3QY9fHd2-C5k/preview?usp=drive_link" },
+                        { title: "Arboviroses - Zika e Outras Arboviroses", downloadUrl: "https://drive.google.com/file/d/13WmITStXqJxGjKmt-WK3xugqavTKKyvm/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Arboviroses", downloadUrl: "https://drive.google.com/file/d/1blCBLdYnjl1sgBZVTzs3gWUaX5aD36Vw/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 10: Micoses Invasivas (Contagem Atualizada)
+            {
+                title: "Micoses Invasivas",
+                description: "Aula sobre Micoses Invasivas.",
+                subItems: {
+                    'Videoaulas': [ // 10 Itens
+                        { title: "Micoses Invasivas - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1Phdetwipf3KBIVHwMkA3s_Ek3NoL3wem/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1SRBDzCuy9J5OXj50cX6NbBO0r1D0UIJe/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1Jh_ntp8EcPM7kb5Nxx3_P7CMQ17MTAhp/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1N22PP_mrJKlKl4HcTFkH7CKo3bSdKLCU/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1-7YRKBcjcM0vqbthSdgfPM_PKXa5tEBG/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1G12u8FcrJypsyosDY-kndL3yq4E2tuv8/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte VII", driveVideoUrl: "https://drive.google.com/file/d/1mPyIIke6pVNDv3zMwOHvs0HufyV7v1iH/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte VIII", driveVideoUrl: "https://drive.google.com/file/d/1NjZo_ztPiXkKK2upc1uTZmpG_k08Ul_7/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte IX", driveVideoUrl: "https://drive.google.com/file/d/1iUm8mNgH9IRYQPtEHC4zAHHyJcltcplb/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Micoses Invasivas - Parte X", driveVideoUrl: "https://drive.google.com/file/d/1F9XRMy2iNo4VfdWAcEGhMaw4atV-R8Vr/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Micoses Invasivas", downloadUrl: "https://drive.google.com/file/d/1_YgWM63ALQkHPaNgE2w9mrRQL-YsM1bp/preview?usp=drive_link" },
+                        { title: "Flashcards - Micoses Invasivas", downloadUrl: "https://drive.google.com/file/d/1LyDYBDln71Sa1YskRz3w7LykgLs1Q-N_/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Micoses Invasivas", downloadUrl: "https://drive.google.com/file/d/1W8t-a2gCaDD_w4Q6FwtWB39ixhcYFDPZ/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Micoses Invasivas", downloadUrl: "https://drive.google.com/file/d/1VZ4nvPTCr2XYEmi2smVCEHgE6kTvsBOc/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Micoses Invasivas", downloadUrl: "https://drive.google.com/file/d/1RBbGTQX-AvF0CZuX3XEr1rC30prR1yIL/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 11: Tuberculose (Contagem Atualizada)
+            {
+                title: "Tuberculose",
+                description: "Aula sobre Tuberculose.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Tuberculose", driveVideoUrl: "https://drive.google.com/file/d/16nFif9sD4NSKphqbdjHzcLQSqviC03Yj/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Tuberculose", downloadUrl: "https://drive.google.com/file/d/1BemXVSbM5JFcQ6MikU3MxdM4NQZevSvt/preview?usp=drive_link" },
+                        { title: "Flashcards - Tuberculose", downloadUrl: "https://drive.google.com/file/d/1tsUa0mC_yeFkcUCu--Mij5-648Ijs_Vc/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Tuberculose", downloadUrl: "https://drive.google.com/file/d/1aI426XKeCVNMoNCxoDIO96Gp1YOvV2Vc/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Tuberculose", downloadUrl: "https://drive.google.com/file/d/1-fFf2xhiTF3yMK8XJyftySlrdcw4Sp1y/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Tuberculose", downloadUrl: "https://drive.google.com/file/d/1SCeoAJfGg4rZeWS2R1f7yiCuq6g1OawN/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 12: Parasitoses (Contagem Atualizada)
+            {
+                title: "Parasitoses",
+                description: "Aula sobre Parasitoses.",
+                subItems: {
+                    'Videoaulas': [ // 6 Itens
+                        { title: "Parasitoses - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1sl9LM9z3TK5hrmE0-ct0CZUCYShsmTMs/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Parasitoses - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1nxLn7YT-bVVHtZLp6HbHz1h8hU0vMDXi/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Parasitoses - Parte III", driveVideoUrl: "https://drive.google.com/file/d/113Z0ETGJ5YGVSa8HQGhpiqSJo35mJz7l/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Parasitoses - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1V8Bng4owUc9BD6aGDFw6XIw__X_ImnV4/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Parasitoses - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1KGvhuQU_KHEMIRnXJkws_eD-K3i9WOlC/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Parasitoses - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1VEmhTHkPS-ZliVNQcMyYpidivumBAkvP/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Parasitoses", downloadUrl: "https://drive.google.com/file/d/1frPxIWCU3gWV2td0afFxqK0s9hbP-45y/preview?usp=drive_link" },
+                        { title: "Flashcards - Parasitoses", downloadUrl: "https://drive.google.com/file/d/1b1hdaLdLxtL86vGLg6diNTmHoe0xAs3V/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Parasitoses", downloadUrl: "https://drive.google.com/file/d/1eL6O_1bA9jw34v0vsrPo_199kPBSOrMq/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Parasitoses", downloadUrl: "https://drive.google.com/file/d/17oGdYZ9V8QFf66S2VirlGi5ohYnlqG8L/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Parasitoses", downloadUrl: "https://drive.google.com/file/d/17PijOTX4OC5CEpq4n9B6LCdbYvTFcREx/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 13: Neutropenia Febril e Febre de Origem Indeterminada (Contagem Atualizada)
+            {
+                title: "Neutropenia Febril e Febre de Origem Indeterminada",
+                description: "Aula sobre Neutropenia Febril e FOI.",
+                subItems: {
+                    'Videoaulas': [ // 6 Itens
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte I", driveVideoUrl: "https://drive.google.com/file/d/19ezXh7DL8oKkMAAgXdCdZTNeuPfaRwNr/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1MfIYbAdlhWS2e3JtLFc2wzdrsMjbaKBA/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1KdZxuhh9T-c_VanaGyvu9_HZbnLzfVDF/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1Gcjt9hHmfReaVCKKEmtNko605gWtd7Wh/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte V", driveVideoUrl: "https://drive.google.com/file/d/13P1ZVCxY908ZZ3Gvd-IwqTpFSNIHkS5B/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada - Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1BHhZR8_NfU5bn8jzKOQzY7xfiFRsNdYp/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada", downloadUrl: "https://drive.google.com/file/d/1lxvRmJasoBvETySsJElxu5K5yacxiQ15/preview?usp=drive_link" },
+                        { title: "Flashcards - Neutropenia Febril e Febre de Origem Indeterminada", downloadUrl: "https://drive.google.com/file/d/1B58G9rOAXI8BUEpDguH9nR0NB1ttO4iT/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada", downloadUrl: "https://drive.google.com/file/d/1w6svpRlxWIgwk4TC4PQshGRPLhPc4vq_/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada", downloadUrl: "https://drive.google.com/file/d/1RUo3edcgh1lKQD8xzAbCyuoly4MBKAr8/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Neutropenia Febril e Febre de Origem Indeterminada", downloadUrl: "https://drive.google.com/file/d/1KFDyMmzP6VCuUKSB2F_-avHgYbwUYPyo/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 14: Endocardite Bacteriana - Endocardite Infecciosa (Contagem Atualizada)
+            {
+                title: "Endocardite Bacteriana - Endocardite Infecciosa",
+                description: "Aula sobre Endocardite Infecciosa.",
+                subItems: {
+                    'Videoaulas': [ // 2 Itens
+                        { title: "Endocardite Bacteriana - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1g8mZJ6anxPkQrbUQKVA1UpXQbcjhtIi1/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Endocardite Bacteriana - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Y4xtFXyMywukNp51wy65SuJD-88QVGfY/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Endocardite Bacteriana - Endocardite Infecciosa", downloadUrl: "https://drive.google.com/file/d/1xeW4puHc9VaXhEAcg1CZmXBE4gxGd88z/preview?usp=drive_link" },
+                        { title: "Flashcards - Endocardite Bacteriana: Endocardite Infecciosa", downloadUrl: "https://drive.google.com/file/d/18VEs3kaFAIEAtYyo65nkV-XNtkwYjcA_/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Endocardite Bacteriana - Endocardite Infecciosa", downloadUrl: "https://drive.google.com/file/d/1pPmPNrnyNyUN6rAxzdlFR4tWOycMbfZI/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 2 Itens
+                        { title: "Endocardite Bacteriana - Endocardite Infecciosa", downloadUrl: "https://drive.google.com/file/d/1dWJkcozpqtZmH1o8ezGjMIkYjPYgTbJh/preview?usp=drive_link" },
+                        { title: "Endocardite - Covos Critérios de Duke", downloadUrl: "https://drive.google.com/file/d/1uXe8oSjLk5CeHK_59xIWS7t9flrtpAMY/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Endocardite Bacteriana - Endocardite Infecciosa", downloadUrl: "https://drive.google.com/file/d/12KS1eEtHsl4w5dPr-7MZom_28qkOihdj/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 15: Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia (Contagem Atualizada)
+            {
+                title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia",
+                description: "Aula sobre IRAS.",
+                subItems: {
+                    'Videoaulas': [ // 8 Itens
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1dkHRz59D47eavyxH7JB5zFYZ0dMzLnVI/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1N8m2Ig1Kw7tdPexVR7R8HTS6KLM_V1VC/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte III", driveVideoUrl: "https://drive.google.com/file/d/16IA1cE5euuP3kzKTlfJlrYCBqETFT7kX/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1Y3l6NvzTp5ozwxWAOi3rGs50GyCT3Jrl/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte V", driveVideoUrl: "https://drive.google.com/file/d/1Zq6vsBlTGM3oOQ4kaXIvdevD1lpQvHrX/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte VI", driveVideoUrl: "https://drive.google.com/file/d/1NUY47Mki1w4kr4zEu9tbZ7CVDGwHYpIS/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte VII", driveVideoUrl: "https://drive.google.com/file/d/1Ovf7TG39p39wyvlpChWi4FoKZ73FrEyg/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Infecções Relacionadas à Assistência em Saúde - Infecção do Sítio Cirúrgico e Antibióticoprofilaxia: Parte VIII", driveVideoUrl: "https://drive.google.com/file/d/195bWBWlQ7hW4GB0dzPbleYk27tu3ZCjO/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "IRAS", downloadUrl: "https://drive.google.com/file/d/1RdvR934OX8tGkL4w2BnwlHKnPG4YgKDi/preview?usp=drive_link" },
+                        { title: "Flashcards - IRAS", downloadUrl: "https://drive.google.com/file/d/1mLUnN6fo4wi3bExCqZxDkddt-MRlUi7-/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "IRAS", downloadUrl: "https://drive.google.com/file/d/1InIBqwLtLkd7Jymw8crjzOZVF6qtGacM/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "IRAS", downloadUrl: "https://drive.google.com/file/d/1Epcf6ngNp6t3OS6rpLaeOJlg4MzKJAsQ/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "IRAS", downloadUrl: "https://drive.google.com/file/d/1K8Idyl5sUm_qoqhb4M32o2jVIEtVsHml/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 16: Hepatoesplenomegalias Infecciosas (Contagem Atualizada)
+            {
+                title: "Hepatoesplenomegalias Infecciosas",
+                description: "Aula sobre Hepatoesplenomegalias.",
+                subItems: {
+                    'Videoaulas': [ // 9 Itens
+                        { title: "Leishmaniose Visceral - Parte I", driveVideoUrl: "https://drive.google.com/file/d/18Sw1Qz1bezTtBT9AkySv3dV7fjJBUEe7/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Leishmaniose Visceral - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1YV2nouJpSMV2xS6iwU_luY6py9SVegzE/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Leishmaniose Visceral - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1ynnfA4ezu2nnUeLJ4iQZ40Cw0TPaJ-5Y/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Doença de Chagas - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1MfG-sbghi2QIIbQCpsJDArJEcdidzrwN/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Doença de Chagas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1ldnC8bEb0h0TeiP_GIN5aOhKgPVpBEqk/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Doença de Chagas - Parte III", driveVideoUrl: "https://drive.google.com/file/d/19rC_BeuTNhsjY4_Sy0mEFkhi6CV0lC6l/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Esquistossomose Mansônica - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1cJh9YzEUgtlaO_-nOz8NLdT6oKGNvZMk/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Esquistossomose Mansônica - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Kwm1u621xfzsxoYzT4z7EkwEhK7LBymI/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Febre Tifoide", driveVideoUrl: "https://drive.google.com/file/d/1Uj9cx7-mKD8Yn_aze2xgAziwmPQxJtSO/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Hepatoesplenomegalias Infecciosas", downloadUrl: "https://drive.google.com/file/d/1on4by7Hcjtwe5zrlxl11ESvo1lKJTP29/preview?usp=drive_link" },
+                        { title: "Flashcards - Hepatoesplenomegalias Infecciosas", downloadUrl: "https://drive.google.com/file/d/1_GryC5xtZxUi8ZXY4es02kJX5rc7dLHP/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Hepatoesplenomegalias Infecciosas", downloadUrl: "https://drive.google.com/file/d/1Vtsaoxp8gbrx9uQ557q79MMh7a_JgFog/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Hepatoesplenomegalias Infecciosas", downloadUrl: "https://drive.google.com/file/d/1bXpsKKV0pc7MIf5ZvhFykd8ZM9aI9D8N/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Hepatoesplenomegalias Infecciosas", downloadUrl: "https://drive.google.com/file/d/10NxgH4O0L1m5Z7_qToP4LFCyQXiKeFL-/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 17: Síndrome Febril Íctero-Hemorrágica (Contagem Atualizada)
+            {
+                title: "Síndrome Febril Íctero-Hemorrágica",
+                description: "Aula sobre Síndrome Febril Íctero-Hemorrágica.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Síndrome Febril Íctero-Hemorrágica", driveVideoUrl: "https://drive.google.com/file/d/1KIzEEtgxyNHp0HXLeKS2fydVDH7EmBgx/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Síndrome Febril Íctero-Hemorrágica", downloadUrl: "https://drive.google.com/file/d/1ks8r3SXdlxPPhmuoiu_JEhlcDLReOB_C/preview?usp=drive_link" },
+                        { title: "Flashcards - Síndrome Febril Íctero-Hemorrágica", downloadUrl: "https://drive.google.com/file/d/13vFSby9JJKzOSZ7w_ljy1BiseP4ucCLX/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Síndrome Febril Íctero-Hemorrágica", downloadUrl: "https://drive.google.com/file/d/1uormkaE4fKPdtCSOVEXqutWWxOOsuO3-/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Síndrome Febril Íctero-Hemorrágica", downloadUrl: "https://drive.google.com/file/d/1iPlJLr9_kw7OKZsc5MTTqzUUFeiHY325/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Síndrome Febril Íctero-Hemorrágica", downloadUrl: "https://drive.google.com/file/d/1VjNBXhRvv4XPGGcA7HhX-qCfVbjONlGI/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 18: Covid-19 (Contagem Atualizada)
+            {
+                title: "Covid-19",
+                description: "Aula sobre Covid-19.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Covid-19", driveVideoUrl: "https://drive.google.com/file/d/1Z4dp0ZsDR14FVwzbA_IGqNFThnccVwMp/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Covid-19", downloadUrl: "https://drive.google.com/file/d/1x_4YFu-vUXP2x2DaqTuhnWgOYy25jVDk/preview?usp=drive_link" },
+                        { title: "Flashcards - Covid-19", downloadUrl: "https://drive.google.com/file/d/1gu5JI2RO8E-sdY-u8S4rXtlJhTJNXsTI/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Covid-19", downloadUrl: "https://drive.google.com/file/d/15Tit7O83EKbmsKOUu1zcwgRfJTvuKftY/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Covid-19", downloadUrl: "https://drive.google.com/file/d/11GRSZzyz_GFOKLlOvTkgcnOx-SIjPQ-M/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Covid-19", downloadUrl: "https://drive.google.com/file/d/1hp7ge6BIEU66ATHlUuhNMoE8QLTWiJMg/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 19: Aula Bônus - Sífilis e Outras ISTs (Contagem Atualizada)
+            {
+                title: "Aula Bônus - Sífilis e Outras ISTs",
+                description: "Aula sobre Sífilis e ISTs.",
+                subItems: {
+                    'Videoaulas': [ // 1 Item
+                        { title: "Sífilis e Outras ISTs", driveVideoUrl: "https://drive.google.com/file/d/1diZy58PsOijRWV-TdOxQ49KB0hsZ9Kj1/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Lista Bônus - Sífilis e Outras ISTs", downloadUrl: "https://drive.google.com/file/d/1zKqrS4Omh8yjhTngogEl5MIJsWLbrslO/preview?usp=drive_link" },
+                        { title: "Flaschards - Sífilis e Outras ISTs", downloadUrl: "https://drive.google.com/file/d/1s4hz0nv8-21Ilsp-KmDPw22jCiHXaciN/preview?usp=drive_link" }
+                    ], // 0 Itens
+                    'Resumos': [],
+                    'Slides': [ // 1 Item
+                        { title: "Sífilis e Outras ISTs", downloadUrl: "https://drive.google.com/file/d/1YZBPSgjFuMkKkcgpQPQIeyjUTavfuK5x/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Sífilis e Outras ISTs", downloadUrl: "https://drive.google.com/file/d/15OIK8Atq966JpliPYbDaMhmowRGz0H6p/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            // Módulo 20: Pneumonias Bacterianas (Contagem Atualizada)
+            {
+                title: "Pneumonias Bacterianas",
+                description: "Aula sobre Pneumonias Bacterianas.",
+                subItems: {
+                    'Videoaulas': [ // 3 Itens
+                        { title: "Aula Resumo - Pneumonias Bacterianas", driveVideoUrl: "https://drive.google.com/file/d/1QEvRDGHZr9OPzOcS0Q3J8rk6XO3r1clj/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Pneumonias Bacterianas - Parte I", driveVideoUrl: "https://drive.google.com/file/d/14RtzAaIJKcua6DLLqowNlDROU5_laE6S/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Pneumonias Bacterianas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1euZB_luNaRR07lRcffRFIeCq4orV3o0K/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1o8LIvPJO45cen3UIJou1kr-1OETr_GH_/preview?usp=drive_link" },
+                        { title: "Flashcards - Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1RzPKR_alWtWQgOMZjnWl_4AkpLu8QQvD/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1hSx2I7SVbu5xwXOmy0rZCIVw9OP8nD5H/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 2 Itens
+                        { title: "Aula Resumo - Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1clyuMwTFufcFZTJ5PYE9929soRK-QdrO/preview?usp=drive_link" },
+                        { title: "Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1RnPrbkJ0geYq7-PKnWdGa4xCR3rt4gB0/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [ // 1 Item
+                        { title: "Pneumonias Bacterianas", downloadUrl: "https://drive.google.com/file/d/1zXzMhLON-bgol_Ol0LHRzCqIr3JcCLbj/preview?usp=drive_link" }
+                    ]
+                }
+            },
+             // Módulo 21: Raiva, Tétano, Mordedura e Arranhadura Animal (Contagem Atualizada)
+            {
+                title: "Raiva, Tétano, Mordedura e Arranhadura Animal",
+                description: "Aula sobre Raiva, Tétano, etc.",
+                subItems: {
+                    'Videoaulas': [ // 5 Itens
+                        { title: "Mordedura e Ranhura Animal", driveVideoUrl: "https://drive.google.com/file/d/1DiII2du-rxzO4gptrg0ZZpB-CIqNuPuH/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Doença da Arranhadura do Gato", driveVideoUrl: "https://drive.google.com/file/d/1LJL8RsYf_1lfpdv3omDG7CqLMTfjADbU/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Raiva: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1Fh03bf2GRmDy3q3QBEgBx_gRi-Pj3Hx9/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Raiva: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1govKUViy17iAae70_68MYvzg18DWF27J/preview?usp=sharing", downloadUrl: "#" },
+                        { title: "Tétano Acidental", driveVideoUrl: "https://drive.google.com/file/d/1Zt47om69NC6_htH178i0KJgViGXxlXVm/preview?usp=sharing", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [ // 2 Itens
+                        { title: "Saúde do Idoso", downloadUrl: "https://drive.google.com/file/d/1NwNu1BQ8qob-DBUAodGCG9XMbesn2w4b/preview?usp=drive_link" },
+                        { title: "Flashcards - Saúde do Idoso", downloadUrl: "https://drive.google.com/file/d/1FHDk-s3YkwUe31Tvc-dKtX49EhkJN3Gt/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [ // 1 Item
+                        { title: "Saúde do Idoso", downloadUrl: "https://drive.google.com/file/d/1jMBO2Y2D5GE7g6SAQu8TlsUyAIRPo9WL/preview?usp=drive_link" }
+                    ],
+                    'Slides': [ // 1 Item
+                        { title: "Saúde do Idoso", downloadUrl: "https://drive.google.com/file/d/13IYP8p0Zu2Fy2eHKULGTB8q1HC_mzycQ/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [] // 0 Itens
+                }
+            }
+        ];
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros Digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas Mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros Digitais', 'Resumos', 'Slides', 'Mapas Mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) { /* ... */ }
+
+        // CORRIGIDO: Função createSubItemDetail para adicionar ícones corretamente e tratar links
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType]; // Pega o path do ícone
+
+            // Adiciona o ícone apropriado
+            if (iconPathData) {
+                 const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 // Define tamanho e margem (ícone de play é maior)
+                 const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                 iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                 // Define fill/stroke e viewBox baseado no tipo
+                 if (subItemType === 'Videoaulas') {
+                     iconContainer.setAttribute('fill', 'currentColor'); // Ícone de Play preenchido
+                     iconContainer.setAttribute('viewBox', '0 0 20 20');
+                 } else {
+                     iconContainer.setAttribute('fill', 'none'); // Outros ícones contornados
+                     iconContainer.setAttribute('stroke', 'currentColor');
+                     iconContainer.setAttribute('viewBox', '0 0 24 24');
+                 }
+
+                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                 path.setAttribute('d', iconPathData);
+                 // Define atributos específicos do path
+                 if (subItemType === 'Videoaulas') {
+                     path.setAttribute('fill-rule', 'evenodd');
+                     path.setAttribute('clip-rule', 'evenodd');
+                 } else { // Atributos para ícones contornados
+                     path.setAttribute('stroke-linecap', 'round');
+                     path.setAttribute('stroke-linejoin', 'round');
+                     path.setAttribute('stroke-width', '1.5'); // Ajuste a espessura se necessário
+                 }
+                 iconContainer.appendChild(path);
+                 itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild); // Insere o ícone
+            } else {
+                 // Se não houver ícone definido, garante que a margem do texto seja 0
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+
+            // Define o título
+            if (titleEl) {
+                if (subItemType === 'Videoaulas') {
+                    if (totalVideos === 1) {
+                        titleEl.textContent = mainTitle;
+                    } else {
+                        // Usa o título específico da videoaula se houver e não for genérico
+                        titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula"))
+                                               ? detailData.title
+                                               : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                    }
+                } else {
+                     titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                }
+            }
+
+            // Define o subtítulo (restaurado)
+            if (subtitleEl) {
+                 subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+
+            // Configura o link de download ou remove o ícone
+            if (downloadLink) {
+                // Mostra link se houver URL válida e não for placeholder genérico de vídeo
+                // O link já está no formato /preview
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#' && !detailData.downloadUrl.startsWith('#dl-')) {
+                    downloadLink.href = detailData.downloadUrl;
+                    downloadLink.title = `Baixar ${titleEl.textContent}`;
+                    downloadLink.setAttribute('target', '_blank'); // Abrir em nova aba
+                    downloadLink.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Evita que o clique no download carregue o item no iframe
+                    });
+                } else {
+                    downloadLink.remove(); // Remove o ícone/link de download se não houver URL
+                }
+            }
+
+             // CORRIGIDO: Adiciona atributos e classes para interatividade (carregar no iframe)
+             const itemDisplayTitle = titleEl.textContent; // Título que será mostrado na descrição
+             const videoUrl = detailData.driveVideoUrl;
+             const docUrl = detailData.downloadUrl; // Usar downloadUrl para documentos
+
+             // Verifica se é um vídeo clicável
+             if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                 detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Verifica se é um documento clicável (com link de preview, não só de download)
+             else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                 detailDiv.setAttribute('data-download-url', docUrl); // Usar data-download-url para carregar no iframe
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Se não for nenhum dos casos acima, não é clicável no iframe
+             else {
+                 detailDiv.classList.remove('cursor-pointer');
+             }
+
+
+             return detailDiv; // Retorna o elemento HTML do detalhe criado
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+             contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar."; // Mensagem inicial
+
+             // Limpa o menu existente antes de gerar o novo
+             menuListContainer.innerHTML = '';
+
+             // Itera sobre os dados de cada módulo para criar o menu
+             menuItemsData.forEach((itemData, mainIndex) => {
+                 const title = itemData.title; // Pega o título do módulo (já atualizado)
+                 const description = itemData.description; // Pega a descrição (atualizada ou placeholder)
+                 const subItems = itemData.subItems || {}; // Pega os subitens (atualizados para todos os módulos)
+                 // Cria um ID único para o conteúdo do acordeão principal
+                 const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                 // Cria o container principal para o item do acordeão
+                 const accordionItem = document.createElement('div');
+                 accordionItem.className = 'accordion-item';
+                 accordionItem.setAttribute('data-completed', 'false'); // Atributo para controle de status (concluído/não)
+                 accordionItem.setAttribute('data-main-description', description); // Guarda a descrição principal
+
+                 // Cria o botão do cabeçalho do acordeão principal
+                 const headerButton = document.createElement('button');
+                 headerButton.className = 'menu-item-header w-full accordion-header';
+                 headerButton.setAttribute('aria-expanded', 'false'); // Estado inicial: fechado
+                 headerButton.setAttribute('aria-controls', mainContentId); // Associa ao conteúdo
+
+                 // Cria o conteúdo interno do cabeçalho (título, subtítulo, botão de status)
+                 const headerContent = document.createElement('div');
+                 headerContent.className = 'text-left flex-grow mr-2 overflow-hidden'; // Layout flexível e esconde overflow
+                 headerContent.innerHTML = `
+                     <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3> <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                          <span>Estratégia Educacional</span> <button type="button" class="status-toggle flex-shrink-0"> <span>Concluído</span>
+                              <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                              <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                          </button>
+                      </div>`;
+
+                 // Cria o ícone de chevron (seta para baixo)
+                 const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                 chevronIcon.setAttribute('fill', 'none');
+                 chevronIcon.setAttribute('stroke', 'currentColor');
+                 chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                 chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                 // Adiciona o conteúdo e o ícone ao botão do cabeçalho
+                 headerButton.appendChild(headerContent);
+                 headerButton.appendChild(chevronIcon);
+
+                 // Cria a div que conterá os subitens (inicialmente escondida)
+                 const contentDiv = document.createElement('div');
+                 contentDiv.id = mainContentId;
+                 contentDiv.className = 'menu-item-content hidden'; // Classe 'hidden' para esconder
+
+                 // Gera os subitens (acordeões aninhados para cada tipo: Videoaulas, Livros, etc.)
+                 subItemOrder.forEach((subItemType, subIndex) => {
+                     const subItemArray = subItems[subItemType] || []; // Garante que seja um array
+                     const count = subItemArray.length; // Conta quantos itens existem
+                     // Cria um ID único para o conteúdo do acordeão aninhado
+                     const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                     // Cria o container para o subitem acordeão
+                     const subAccordionItem = document.createElement('div');
+                     subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`; // Adiciona margem superior se não for o primeiro
+
+                     // Cria o botão do cabeçalho do subitem acordeão
+                     const subHeaderButton = document.createElement('button');
+                     subHeaderButton.className = 'sub-accordion-header w-full';
+                     subHeaderButton.setAttribute('aria-expanded', 'false');
+                     subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                     if (count === 0) {
+                         subHeaderButton.disabled = true; // Desabilita se não houver itens
+                     }
+                     // Conteúdo do cabeçalho do subitem (Nome do tipo e contagem)
+                     subHeaderButton.innerHTML = `
+                         <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                         <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     `;
+
+                     // Cria a div que conterá os detalhes (vídeos, links de download)
+                     const subContentDiv = document.createElement('div');
+                     subContentDiv.id = nestedContentId;
+                     subContentDiv.className = 'sub-accordion-content hidden'; // Inicialmente escondida
+
+                     // Se houver detalhes, cria e adiciona cada um
+                     if (count > 0) {
+                         const totalVideos = (subItemType === 'Videoaulas') ? count : 0; // Para numerar corretamente as partes dos vídeos
+                         subItemArray.forEach((detailData, detailIndex) => {
+                             // Chama a função auxiliar para criar o elemento HTML do detalhe
+                             const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                             if (detailElement) {
+                                 subContentDiv.appendChild(detailElement); // Adiciona ao container de conteúdo do subitem
+                             }
+                         });
+                     }
+
+                     // Adiciona o cabeçalho e o conteúdo ao container do subitem acordeão
+                     subAccordionItem.appendChild(subHeaderButton);
+                     subAccordionItem.appendChild(subContentDiv);
+                     // Adiciona o subitem acordeão completo ao conteúdo do acordeão principal
+                     contentDiv.appendChild(subAccordionItem);
+                 });
+
+                 // Adiciona o cabeçalho e o conteúdo ao item principal do acordeão
+                 accordionItem.appendChild(headerButton);
+                 accordionItem.appendChild(contentDiv);
+                 // Adiciona o item principal completo à lista do menu
+                 menuListContainer.appendChild(accordionItem);
+             });
+
+             // --- Lógica dos Acordeões (Principal e Aninhado) ---
+             // RESTAURADO: Listeners individuais para permitir múltiplos abertos
+             const accordionHeaders = document.querySelectorAll('.accordion-header');
+             accordionHeaders.forEach(header => {
+                 header.addEventListener('click', (event) => {
+                     if (event.target.closest('.status-toggle')) return;
+                     const content = header.nextElementSibling; // Pega o div de conteúdo irmão
+                     if (!content || !content.classList.contains('menu-item-content')) return;
+                     const expanded = header.getAttribute('aria-expanded') === 'true';
+                     const chevronIcon = header.querySelector('.chevron-icon');
+                     header.setAttribute('aria-expanded', !expanded);
+                     content.classList.toggle('hidden');
+                     if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                 });
+             });
+
+
+             const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+             subAccordionHeaders.forEach(subHeader => {
+                 if (!subHeader.disabled) {
+                     subHeader.addEventListener('click', (event) => {
+                         event.stopPropagation();
+                         const content = subHeader.nextElementSibling;
+                         if (!content || !content.classList.contains('sub-accordion-content')) return;
+                         const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                         const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                         subHeader.setAttribute('aria-expanded', !expanded);
+                         content.classList.toggle('hidden');
+                         if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                     });
+                 }
+             });
+
+             // --- Lógica para Marcar/Desmarcar como Concluído ---
+             // RESTAURADO: Listener individual para cada botão
+             const statusToggles = document.querySelectorAll('.status-toggle');
+             statusToggles.forEach(toggle => {
+                 toggle.addEventListener('click', (event) => {
+                     event.stopPropagation(); // Impede que o clique acione o acordeão pai
+                     const accordionItem = toggle.closest('.accordion-item');
+                     if (!accordionItem) return;
+                     const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                     accordionItem.setAttribute('data-completed', !isCompleted);
+                     toggle.classList.toggle('is-completed', !isCompleted);
+                     console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                 });
+             });
+
+             // --- Lógica para Carregar Conteúdo (Vídeo ou PDF) ---
+             // RESTAURADO: Listener no container pai
+             menuListContainer.addEventListener('click', (event) => {
+                 const detailItem = event.target.closest('.sub-item-details');
+
+                 // Ignora cliques no link/ícone de download
+                 if (event.target.closest('.download-link')) {
+                     return;
+                 }
+
+                 if (detailItem && contentViewer && contentDescription) {
+                     const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                     const downloadUrl = detailItem.getAttribute('data-download-url');
+                     const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                     const parentAccordionItem = detailItem.closest('.accordion-item');
+                     const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo'; // Pega o título do módulo
+
+                     // Verifica se o item é clicável
+                     if (driveVideoUrl || downloadUrl) {
+                         document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                             activeItem.classList.remove('is-active');
+                         });
+                         detailItem.classList.add('is-active');
+
+                         if (driveVideoUrl) {
+                             contentViewer.src = driveVideoUrl;
+                             // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                             console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                         } else if (downloadUrl) {
+                             contentViewer.src = downloadUrl;
+                              // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                             console.log(`Carregando documento: ${downloadUrl}`);
+                         }
+                     }
+                 }
+             });
+
+
+             // --- Lógica para o botão de Like ---
+             // RESTAURADO: Listener individual
+             if(likeButton) {
+                 likeButton.addEventListener('click', () => {
+                     likeButton.classList.toggle('is-liked');
+                     const isLiked = likeButton.classList.contains('is-liked');
+                     console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                 });
+             }
+
+             // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+             const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+             if (firstClickableDetail) {
+                 setTimeout(() => {
+                     const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                     if (parentHeader) {
+                         const content = parentHeader.nextElementSibling;
+                         const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                         if (content && content.classList.contains('hidden')) {
+                             parentHeader.setAttribute('aria-expanded', 'true');
+                             content.classList.remove('hidden');
+                             if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                         }
+                         const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                         if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                             const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                             if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                                 parentSubHeader.click();
+                             }
+                         }
+                         firstClickableDetail.click();
+                     }
+                 }, 100);
+             } else {
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+             }
+
+
+        } else {
+            console.error("Elementos essenciais não encontrados.");
+        }
+    </script>
+
+</body>
+</html>

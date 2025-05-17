@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Endocrinologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        /* Estilo para cabeçalho desabilitado */
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; } /* Remove hover de desabilitado */
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Endocrinologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        // MODIFICADO: Links dos módulos 21-26 atualizados
+        const menuItemsData = [
+            {
+                title: "Introdução ao Diabetes Mellitus",
+                description: "Aula sobre Introdução ao Diabetes Mellitus.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Introdução ao Diabetes Mellitus", driveVideoUrl: "https://drive.google.com/file/d/1cyRxWnFpYdhxAazaAc37Aq_TmfVMOW6Q/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Introdução ao Diabetes Mellitus", driveVideoUrl: "https://drive.google.com/file/d/1p4jI53YRcJSLQN2xbBvQyiZLYWDdA9vi/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1Kmi_Z-g8wsS8kGTSIopqTs5a5FQIEh-3/preview?usp=drive_link" },
+                    { title: "Flashcards - Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1AgnCKDkRoQVOkb3-2CTSla0zx3EnSDUD/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1saXF8HWqjrYTeyg4b8zaSmg2HN7HF7FD/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1GYZm_1iK_j0mCzcPlY9XRgA426kpVkhG/preview?usp=drive_link" },
+                    { title: "Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1WsfkgOJaZCDd38hVFyQpGxa10PnhrXPF/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Introdução ao Diabetes Mellitus", downloadUrl: "https://drive.google.com/file/d/1Rt6c5-8UAaEcJHt4TNfkY7auh8Q9jxHN/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Diabetes Mellitus Tipo II",
+                description: "Aula sobre Diabetes Mellitus Tipo II.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diabetes Mellitus Tipo II", driveVideoUrl: "https://drive.google.com/file/d/1YaxFeaFkN2gUm2LYoH_5U21X26RhfatQ/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus Tipo II", driveVideoUrl: "https://drive.google.com/file/d/1NK1K7HICjiiDhyX-9XZPNOBQRV_WmCgs/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/1f_EEaei35Q1vd-cREfO4INEHSOgtAzzE/preview?usp=drive_link" },
+                    { title: "Flashcards - Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/1LCLv0Pq0zAd8-ns9t5zhOjmjhHMAv0rp/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/18IpNQSq0kd_ejfhKRv5tQBRmPSCF7U6i/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/1MUF2bpFbNsWzNSY65pSnqj2b4qW7AVmD/preview?usp=drive_link" },
+                    { title: "Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/10Jw90Dfd3nLwqtbY6gtIBLGvSSe_gVsa/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Diabetes Mellitus Tipo II", downloadUrl: "https://drive.google.com/file/d/1ZWA7suWz2rjHJfm98GKfjt9aMKzA776I/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Diabetes Mellitus - Insulinoterapia e Cirurgia Metabólica",
+                description: "Aula sobre DM - Insulinoterapia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Insulinoterapia e Cirurgia Metabólica", driveVideoUrl: "https://drive.google.com/file/d/1DN27bIcewaRgSHeYJUFcpRnpdinzTLL6/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1E7tRbMqOZuIi8qMs9vDuIojzPHP08xrI/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica - Parte II", driveVideoUrl: "https://drive.google.com/file/d/19z_AjKzlAVw652HIgaEiTBQhWmognD0m/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1ikI7fcIGWO74t8PowVUISrxJuqd0ERvS/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1JTSTTS4fNFopA2xAE-FpAN66OAMAWu_O/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1DNsjOcr181Z4RkIQJX5o5KTGCoz9zV1e/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/1ETsa3ss_7VQBxCnIX6JPtuCZZMOpwSlN/preview?usp=drive_link" },
+                    { title: "Flashcards - Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/1ctLOxM-WOoAHCr81RRYNUY27bGshYA7a/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/1O7KPsDH9-L0mhq62SCdB-xh0YnAK_kMU/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/1MaVY8Z-WqGwn0jp4b8shdwN2_UPYkPed/preview?usp=drive_link" },
+                    { title: "Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/1pEi0e3Z2Ra6j_2WGxmm2DJwH5QHZAKrS/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Insulinoterapia e Cirurgia Metabólica", downloadUrl: "https://drive.google.com/file/d/13hDETrrm9az55I9zPsJg8iHVE7Ekvk0m/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Diabetes Mellitus - Complicações Agudas",
+                description: "Aula DM - Complicações Agudas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diabetes Mellitus: Complicações Agudas", driveVideoUrl: "https://drive.google.com/file/d/199e-1TPW7O4NkXNyoOGLwvysGC1wX1M6/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Agudas: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1TW9w-NfBtBhJO1arEvK6k4PZEUQTGNiL/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Agudas: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1XhUNbjip9Td16fNn-wgIpZIx5_fVVgat/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Agudas: Parte III", driveVideoUrl: "https://drive.google.com/file/d/17e5y3Mpg2KdVIF6W7w0LAbKZ2SJH5e2Z/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diabetes Mellitus - Complicações Agudas", downloadUrl: "https://drive.google.com/file/d/1YUfwvY6UDdtOUr_CoNQp3vc82id6pxXA/preview?usp=drive_link" },
+                    { title: "Flashcards - Diabetes Mellitus: Complicações Agudas", downloadUrl: "https://drive.google.com/file/d/1LwTHtCI8aRlNPa0sDrG-hOWgUokNB0cD/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diabetes Mellitus - Complicações Agudas", downloadUrl: "https://drive.google.com/file/d/1CNJBSZkoioqXmD1Ydj6yoqz55jROPWIb/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Diabetes Mellitus - Complicações Agudas", downloadUrl: "https://drive.google.com/file/d/1A6pKFnpJn5UR02tY9p8mwIvW2rOBh1s_/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Diabetes Mellitus - Complicações Agudas", downloadUrl: "https://drive.google.com/file/d/1ksJZpIvruG3bUYymC8am9t8zUwoeoNuE/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Diabetes Mellitus - Complicações Crônicas",
+                description: "Aula sobre DM - Complicações Crônicas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diabetes Mellitus: Complicações Crônicas", driveVideoUrl: "https://drive.google.com/file/d/1476nRtboP0cw1Bmga47LPl4mPwrN5rBd/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas: Parte I", driveVideoUrl: "https://drive.google.com/file/d/19ytKLhyNPhPcC79HFBEDunWz943RgOMI/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1vto13uA4-Y8dAfSMeTxuMO7Uc6-7GKRB/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1w0inT2XWIOaV13BNAwT9_4ZWvRs9gJuz/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas: Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1LVv_ajRUqmCj5SeZ1P-BVCkD3kZk1d97/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas: Parte V", driveVideoUrl: "https://drive.google.com/file/d/1q5MGl3zHfz5LqrxuxfDJbyotmpYiLqhh/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diabetes Mellitus - Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/1PODg47vOxEXd3HvKVrQ7q4dT8eHjQhTL/preview?usp=drive_link" },
+                    { title: "Flashcards - Diabetes Mellitus: Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/1fwFVmICnV7Ya_jNJU5K8_s6ktz1d_iBI/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diabetes Mellitus - Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/1zmwi0pSUuq5GbHXJ2IdhKXW8QoEchexg/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Diabetes Mellitus: Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/147j5AUBZlIus_hxx5s92AXVlvSgtrgAv/preview?usp=drive_link" },
+                    { title: "Diabetes Mellitus - Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/1YzGuvs5U2znP2KXOjazrZvQDrDXyDqFE/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Diabetes Mellitus - Complicações Crônicas", downloadUrl: "https://drive.google.com/file/d/1grQRxkpPx7DzucnyoyXcXrElznC1m9Wm/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Diabetes Mellitus - Hiperglicemia Hospitalar",
+                description: "Aula sobre DM - Hiperglicemia Hospitalar.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Diabetes Mellitus: Hiperglicemia Hospitalar", driveVideoUrl: "https://drive.google.com/file/d/1zjpeungt1P9NQQs9Xv_8jlNhpFLLVSUq/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Diabetes Mellitus - Hiperglicemia Hospitalar", driveVideoUrl: "https://drive.google.com/file/d/1GI-ecDnjNj8ENAiG3RFeiRoVUmShlQGb/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Diabetes Mellitus - Hiperglicemia Hospitalar", downloadUrl: "https://drive.google.com/file/d/1Gx84Od5Z0FOdbcIo0Aa96lQb2JA5OVp5/preview?usp=drive_link" },
+                    { title: "Flashcards - Diabetes Mellitus: Hiperglicemia Hospitalar", downloadUrl: "https://drive.google.com/file/d/1s_P1sfhyc7Is_3qb6T3Y9-8BVbppVADO/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Diabetes Mellitus - Hiperglicemia Hospitalar", downloadUrl: "https://drive.google.com/file/d/1nzgCfnLvdjfXas9TvtbD_lwJ0AKkHJ9L/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Diabetes Mellitus: Hiperglicemia Hospitalar", downloadUrl: "https://drive.google.com/file/d/1lQHTWbLJ7-fjZmjPBc7lgyyyO9wWOg5j/preview?usp=drive_link" },
+                    { title: "Diabetes Mellitus - Hiperglicemia Hospitalar", downloadUrl: "https://drive.google.com/file/d/1g7N8eH0bBErjAO8b8YTwTQnqDC-ONqZ8/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica",
+                description: "Aula sobre Tireoide - Fisiologia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Tireoide: Fisiologia, Semiologia e Avaliação Diagnóstica", driveVideoUrl: "https://drive.google.com/file/d/1j6eAkvS5ff2rrI2cJJZypcvLO5XSqQSh/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica", driveVideoUrl: "https://drive.google.com/file/d/1H5JfygFqIxj_IedCOoJszQp0Uh7XpDA7/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/1M2U4IhiVgZJwwOwU9gk1bFYQTjnvgMA4/preview?usp=drive_link" },
+                    { title: "Flashcards - Tireoide: Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/11K5RPyPhywhhJqzt0i3ahD6bj22ta49F/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/16ZPySPiyBCNQt0AAEk7e5caonQfVAi7V/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Tireoide: Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/1khfaW2intkE40sgf41dvOgE8vyr343Od/preview?usp=drive_link" },
+                    { title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/1qMgTlPBAH3KNVTKroFKGXL4PXcgt22jM/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Tireoide - Fisiologia, Semiologia e Avaliação Diagnóstica", downloadUrl: "https://drive.google.com/file/d/1nOuQWGsZXLzjejgJy71KiioNUZZR5y-V/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Tireoide - Hipotireoidismo",
+                description: "Aula sobre Tireoide - Hipotireoidismo.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Tireoide: Hipotireoidismo", driveVideoUrl: "https://drive.google.com/file/d/1LC0L7ujCMVi7MHusv4wHC4eQfgPLZz7y/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Hipotireoidismo", driveVideoUrl: "https://drive.google.com/file/d/11MRIPJTECydm09tLUwrZZDB0gsbtF1o4/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Tireoide - Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/17erMkM4TYawUqUJ-oTh0vM173-EzqfiV/preview?usp=drive_link" },
+                    { title: "Flashcards - Tireoide: Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/1H-XEMkbD2mIf_BRYPOKRmEkAYkoFPilK/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Tireoide - Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/167ksn66gIyBnbdeRuG7JsCXJ2SXeMw-w/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Tireoide: Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/1y3W1jC6e1qoRrCa4TkiUsFoTNqcwLlU7/preview?usp=drive_link" },
+                    { title: "Tireoide - Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/1mjNtMkioWDSHQupx8_JVEuHD52UQ7Df9/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Tireoide - Hipotireoidismo", downloadUrl: "https://drive.google.com/file/d/1Jarv-iw5f5qWKTWjY39Ex67P0QbktCIX/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica",
+                description: "Aula sobre Tireoide - Tireotoxicose.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Tireoide: Tireotoxicose - Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", driveVideoUrl: "https://drive.google.com/file/d/1jyNcFRm1ko94-bY17EEbsWWjqCraqkHf/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica - Parte I", driveVideoUrl: "https://drive.google.com/file/d/17qdPTYCG89Oy3P8TYoYLJHRv5dcsGP6z/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1OgTl3s9SxmNffbG3lmx59pqinVuEQpSy/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica - Parte III", driveVideoUrl: "https://drive.google.com/file/d/1sm0JyWIWhI1cWY5cEuY_vKF7j--IZkbe/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1r_-6YHtOB2ZzyAABEEJLyckm4fzzpKM4/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica - Parte V", driveVideoUrl: "https://drive.google.com/file/d/18jgHW54OnedHBrsBeQlxbnhPjDF87G85/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1Tr2R7UHp1EFihETvyFaqXa-NqpTbop6D/preview?usp=drive_link" },
+                    { title: "Flashcards - Tireoide: Tireotoxicose - Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1kPzVGf0GL5C1pBd2utmIKnJcUHqNN1vn/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1CUi1Hpss0ctt7IN8VrNKLaz4rA5v9ulh/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Tireoide: Tireotoxicose - Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1EJKZDNaywVBgQset2r6a8P6rxCa_A4RG/preview?usp=drive_link" },
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1qmHwpu-UUnsV4gK3ZwIQimiJk8VRXUTw/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Tireoide - Tireotoxicose: Diagnóstico, Etiologia, Tratamento, Tireotoxicose na Gestação e Crise Tireotóxica", downloadUrl: "https://drive.google.com/file/d/1Gde_ti68c3v2aDabmHv2DGkkKTzLnjo3/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Obesidade - Obesidade e Síndrome Metabólica",
+                description: "Aula sobre Obesidade - Síndrome Metabólica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Obesidade: Obesidade e Síndrome Metabólica", driveVideoUrl: "https://drive.google.com/file/d/1I5_nK67zTsZgxP6wPMlSVS_MzTnCa6Gj/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1DGe9v8iMqGWk3rSdgsW8g0OosNYDLA_n/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1bUGsSzLxNkh38qMCukirQhNdXlTzYRiA/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica: Parte III", driveVideoUrl: "https://drive.google.com/file/d/1l2FD5WsK8_E4NOlb2Tts4mWTM65sdAld/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica", downloadUrl: "https://drive.google.com/file/d/1lyTJ_aD47q0-cZKiaiLH2ZbFptt2Ha4p/preview?usp=drive_link" },
+                    { title: "Flashcards - Obesidade: Obesidade e Síndrome Metabólica", downloadUrl: "https://drive.google.com/file/d/14YUI0bd65id6stKUF0uSWqyUqazS54FF/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica", downloadUrl: "https://drive.google.com/file/d/1fUuwEXuHCwcRM4lURf3UF7-F821dQ6ro/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica", downloadUrl: "https://drive.google.com/file/d/1uLteMH6amfO3Bg30ESNTmSNyI35L3Uvw/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Obesidade - Obesidade e Síndrome Metabólica", downloadUrl: "https://drive.google.com/file/d/1RDkxWVfN3fxJE4srToLuD-x4GHGYocSW/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Cirurgia Bariátrica e Metabólica (Tratamento Cirúrgico da Obesidade)",
+                description: "Aula sobre Cirurgia Bariátrica.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Situação Atual, Indicações e Contraindicações, Mecanismos de Ação - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1PwFnZ7_TXp9TRqOVFewvYCyfm9zERt4n/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cirurgias Restritivas - Parte II", driveVideoUrl: "https://drive.google.com/file/d/121XzgmsX1iReDeOkaH2GFRvcJ0E5wF-z/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cirurgias Predominantemente Disabsortivas - Parte III", driveVideoUrl: "https://drive.google.com/file/d/13hs2JnTqEV-2bYHZtg3EixPEI_xP0rd3/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Cirurgias Predominantemente Restritiva - Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1QcwIr_ShNf-SQtiveFqzidbF47adJoSG/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Balão Intra-Gástrico - Parte V", driveVideoUrl: "https://drive.google.com/file/d/1H7LGBND2u02axO1UlAHDSOkEhsjBPgP0/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Cirurgia Bariátrica e Metabólica (Tratamento Cirúrgico da Obesidade)", downloadUrl: "https://drive.google.com/file/d/1cBbEEHRYg8qve1FGqcvj9oabdxwL_DC5/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Cirurgia Bariátrica e Metabólica (Tratamento Cirúrgico da Obesidade)", downloadUrl: "https://drive.google.com/file/d/1UrzZ96yxGKpXyqICrmtP7jUphzHdHa8L/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Cirurgia Bariátrica e Metabólica (Tratamento Cirúrgico da Obesidade)", downloadUrl: "https://drive.google.com/file/d/1pwejWxrTQ9Z-DP3XEhkRqTa7XUVF4J5f/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia",
+                description: "Aula sobre Metabolismo Ósseo - Fisiologia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Princípios e Fisiologia", driveVideoUrl: "https://drive.google.com/file/d/1YCysHe1n6455VPUN7Fydcog-0OFFnym4/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia: Parte I", driveVideoUrl: "https://drive.google.com/file/d/10ED4KswLFAcjrBuvlezSRSFonweU2qUi/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1eysqMnePH0JupgZGcgmaHvQV0zxev9Zx/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia", downloadUrl: "https://drive.google.com/file/d/1z8sIOFGCkihQ06f1FhCqB2TEQ93BZ_a0/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Princípios e Fisiologia", downloadUrl: "https://drive.google.com/file/d/1T9IAavb8s93C63W-jcmorV0k8x1GO4kF/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia", downloadUrl: "https://drive.google.com/file/d/13OJwBFTttGBuYff6ZCn1wGt7iLJTnqmQ/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Princípios e Fisiologia", downloadUrl: "https://drive.google.com/file/d/1uoK_OiRRNjjTdho9PCAE6OA1OliOKl1Q/preview?usp=drive_link" },
+                    { title: "Metabolismo Ósseo e Mineral - Princípios e Fisiologia", downloadUrl: "https://drive.google.com/file/d/1JP9BYgXx1L21zrLezWiIjeg3DMHJTw9r/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Hipercalcemia",
+                description: "Aula sobre Metabolismo Ósseo - Hipercalcemia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Hipercalcemia", driveVideoUrl: "https://drive.google.com/file/d/1MssEQhlwwyeOdggUTMT9hu_40kK049N7/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Hipercalcemia", driveVideoUrl: "https://drive.google.com/file/d/1G205iZRGnVyP97xREiflDL5Z-0ewcqNG/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/1MvMBGE0TlrzSl9jyjkXHX549oYZnZ9Lv/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/1hJd5yCEkTmLMMIDnaQ8s2xvYViud4XEO/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/1RTOPtsf4AMURY8a7HyoB4YZJn5FzVi_T/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/1IdCAw_PGXM9K-eyAaLfTSy4WC9BMfV9e/preview?usp=drive_link" },
+                    { title: "Metabolismo Ósseo e Mineral - Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/16CP48C7BQa2soSOj94HIAYrP46OD_dJE/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipercalcemia", downloadUrl: "https://drive.google.com/file/d/1k5tTw-rI8mZH_RYRnzw_qPDFqu7S4Re8/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Hipocalcemia",
+                description: "Aula sobre Metabolismo Ósseo - Hipocalcemia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Hipocalcemia", driveVideoUrl: "https://drive.google.com/file/d/1V_-uQA6zlfzCPYcN1vypjm27xYBH1YEy/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Hipocalcemia", driveVideoUrl: "https://drive.google.com/file/d/1h8IwVaRPnhR8sU5riKy-ixWQGFznikiq/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/1zVwDe3N_El-tbsGsoEzZSgSrnUbWbuWN/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/1ohsuuEYzSial8Bsa9QboC1Wpl30dwilD/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/11P4x7aKp4BQLZBsPLnufwd5R_4E3YcoV/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/1fhzPczw3RSBWC72DyWYg1hR6m8OcK7bo/preview?usp=drive_link" },
+                    { title: "Metabolismo Ósseo e Mineral - Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/1yB-aBfQlsV_R_OJJ9H2RXNBwEF5lqEAe/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Metabolismo Ósseo e Mineral - Hipocalcemia", downloadUrl: "https://drive.google.com/file/d/1vHlFGfwk9l82B89zawwR5IIavB2_kvIH/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato",
+                description: "Aula sobre Metabolismo Ósseo - Mg/Fosfato.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Magnésio e Fosfato", driveVideoUrl: "https://drive.google.com/file/d/1lUfwmzReDL5ODtwGqq75rMGcG3VIHtzR/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1M-IsrLipb9yb5b9klGMoxzk5r2Q-fzp9/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1IjpnEV1e6taEynpfW1tvHRPxOKUWhsP8/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato: Parte III", driveVideoUrl: "https://drive.google.com/file/d/10v3tGatiaA8IhG6uAaNCJpmX8l1y7K1Z/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato: Parte IV", driveVideoUrl: "https://drive.google.com/file/d/1zJaURRsffu1zQ4MO6p0DPy2k4reklE4X/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato", downloadUrl: "https://drive.google.com/file/d/1-Jls2CbJVEBJouTXEy72_E4fdMdNgmZi/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Magnésio e Fosfato", downloadUrl: "https://drive.google.com/file/d/1NHeYNJ0_EAKFrUDiyGsNZJ5tNns5TTDc/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato", downloadUrl: "https://drive.google.com/file/d/1GEtZ9fJR2tVOcECIZf1GLdnCH2Uvd6Ix/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Magnésio e Fosfato", downloadUrl: "https://drive.google.com/file/d/1gN2xoi82nPamtwoEh0TjoBfQvXBduX5y/preview?usp=drive_link" },
+                    { title: "Metabolismo Ósseo e Mineral - Magnésio e Fosfato", downloadUrl: "https://drive.google.com/file/d/1zxDZsYqQZM3oDB2Wwk4jNZEb4kdrxZkR/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia",
+                description: "Aula sobre Metabolismo Ósseo - Vit D.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Vitamina D e Osteomalácia", driveVideoUrl: "https://drive.google.com/file/d/1x67XjEKStDmSjnDKFiyCqwPKWWwBbT9O/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1pdxKfX3__bKIIHH30GvJOGaRZuoexIeJ/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1nhgyaIND2C-Pjn9VcEx8Z6uPt_P32pCo/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia", downloadUrl: "https://drive.google.com/file/d/1dIyFNpi54NYnguOiC3Ei2jvpLotZcSTY/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Vitamina D e Osteomalácia", downloadUrl: "https://drive.google.com/file/d/1uKGbifLrpKoEqRiiSemXgTuY4OIxofZj/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia", downloadUrl: "https://drive.google.com/file/d/1qNCYu2ww01t63cKIFCe3EU8M3nOr0iCw/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Vitamina D e Osteomalácia", downloadUrl: "https://drive.google.com/file/d/1zhzPUX1mrqdS-YUWv9YUhwqq47_rqRnW/preview?usp=drive_link" },
+                    { title: "Metabolismo Ósseo e Mineral - Vitamina D e Osteomalácia", downloadUrl: "https://drive.google.com/file/d/1qslVaT8c1QpXoe7PI44A2_iquMrEz4f9/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Raquitismo",
+                description: "Aula sobre Metabolismo Ósseo - Raquitismo.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Metabolismo Ósseo e Mineral - Raquitismo", driveVideoUrl: "https://drive.google.com/file/d/1pV9ZL_yLi13eCAfGCutHdkIG6kvIivJ2/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Raquitismo", downloadUrl: "https://drive.google.com/file/d/1iOBmT4ooSObl06sFcGYREv52PinIma4y/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Raquitismo", downloadUrl: "https://drive.google.com/file/d/19QFtnrezaOyb3j9o7ueZ8tb3ubWYGGhG/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Raquitismo", downloadUrl: "https://drive.google.com/file/d/1sDGALyBXg0KtiQ0gjdFzeNG6E295hetB/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Metabolismo Ósseo e Mineral - Raquitismo", downloadUrl: "https://drive.google.com/file/d/1-OQ6qLjEH47dZV8a5MR89EA1WRQMhzbp/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget",
+                description: "Aula sobre Metabolismo Ósseo - Osteoporose.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Metabolismo Ósseo e Mineral: Osteoporose e Doença Óssea de Paget", driveVideoUrl: "https://drive.google.com/file/d/1lzWzTV6HdAJEmvjD9gY0NzXR5GvDkJ4l/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget", driveVideoUrl: "https://drive.google.com/file/d/1ftC6GvaCtTu-GeSiB2l90e7NEmKj9IDM/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget", downloadUrl: "https://drive.google.com/file/d/1OjBs0MqQ6-JFW8HBWLdgpbcTp3umEox5/preview?usp=drive_link" },
+                    { title: "Flashcards - Metabolismo Ósseo e Mineral: Osteoporose e Doença Óssea de Paget", downloadUrl: "https://drive.google.com/file/d/1eGA3CXcV0PzX3ddgQ5aamXCCgGENXNa0/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget", downloadUrl: "https://drive.google.com/file/d/1zor9iRO-UwJxbyu1OMvyH1BqM8-b0PHR/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget", downloadUrl: "https://drive.google.com/file/d/1h4pSF7vlEDMdjzyoyFSXLBVUoNIUpvFC/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Metabolismo Ósseo e Mineral - Osteoporose e Doença Óssea de Paget", downloadUrl: "https://drive.google.com/file/d/1DdAofgG5bX1hZnQYu4Vlw8w4vx2j0KsK/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Adrenal - Morfofisiologia Adrenal",
+                description: "Aula sobre Adrenal - Morfofisiologia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Adrenal: Morfofisiologia Adrenal", driveVideoUrl: "https://drive.google.com/file/d/1a26S9AWYP1FrweCUjjplvwyWJR5kiDsf/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Adrenal - Morfofisiologia Adrenal", driveVideoUrl: "https://drive.google.com/file/d/1cvGtsR1cUKvsexPHzDfFQ7AUqjc2LUgX/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Adrenal - Morfofisiologia Adrenal", downloadUrl: "https://drive.google.com/file/d/172J38yllcVhsgp3SUn-7_ZjWscnJptAY/preview?usp=drive_link" },
+                    { title: "Flashcards - Adrenal: Morfofisiologia Adrenal", downloadUrl: "https://drive.google.com/file/d/1n9DZPhtWPdq5vlpUH13g8XQoQGgeS1_9/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Adrenal - Morfofisiologia Adrenal", downloadUrl: "https://drive.google.com/file/d/1IllTZUVV2LPLOEIxIW2AZi43zIC5c7I1/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Adrenal - Morfofisiologia Adrenal", downloadUrl: "https://drive.google.com/file/d/1JJe_tUD2fzpVnaphHMSi_yn6yXW2PNUa/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)",
+                description: "Aula sobre Adrenal - Hipocortisolismo.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Adrenal: Hipocortisolismo (Insuficiência Adrenal)", driveVideoUrl: "https://drive.google.com/file/d/15wKFu6FHHMiaULgEetF9aLy9pVkM3630/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)", driveVideoUrl: "https://drive.google.com/file/d/1l_0HAMHbD0HE5lQ5XVzPVbhU65Mwoov0/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/1SubLCDnIX9dWTwxGhPzzlAWUrbUKAPZ3/preview?usp=drive_link" },
+                    { title: "Flashcards - Adrenal: Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/1rg1teLqdkMBiJXj9zXMCYIqC6fgpZfAw/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/19BiRK8UJBBgGp1Mlp-VGhynguzTb5i3t/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Adrenal: Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/1C2LXJb7TA4kZPbOJxGZx3Fhj45fGkZK4/preview?usp=drive_link" },
+                    { title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/18kymX_sNufH9uJbe1cPpb8eXXYv_qFYr/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Adrenal - Hipocortisolismo (Insuficiência Adrenal)", downloadUrl: "https://drive.google.com/file/d/1s55jdBeTTbB8YthC1P1jPvMLWq1nGFBC/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)",
+                description: "Aula sobre Adrenal - Hipercortisolismo.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)", driveVideoUrl: "https://drive.google.com/file/d/192PGkcKyjqcH5cNLCsdP8whVVHgS60-j/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)", downloadUrl: "https://drive.google.com/file/d/1sYaoKvQ8BiDhp1ZJVjpfjEQXUo3rsyZm/preview?usp=drive_link" },
+                    { title: "Flashcards - Adrenal: Hipercortisolismo (Síndrome de Cushing)", downloadUrl: "https://drive.google.com/file/d/1BRW8W4crHijtzAPIb0GdG5cYLAbxihlW/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)", downloadUrl: "https://drive.google.com/file/d/1XANNaw8dmC4Lk0uupuhGmwmF8TQ3IaAc/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)", downloadUrl: "https://drive.google.com/file/d/1QDyjze68nWHltOltHIiGlFRdqIQk21wF/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Adrenal - Hipercortisolismo (Síndrome de Cushing)", downloadUrl: "https://drive.google.com/file/d/1PPfj8_XFGYlMgBbf2HCanSrELopl2tB4/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal",
+                description: "Aula sobre Adrenal - Feocromocitoma.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Adrenal: Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", driveVideoUrl: "https://drive.google.com/file/d/18kSoV1fYXjDmlzGbiNz6aCeno24DAeSK/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal: Parte I", driveVideoUrl: "https://drive.google.com/file/d/1xHbEPT_1BwdLAqkYY-jupXQhA3YM0hzN/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal: Parte II", driveVideoUrl: "https://drive.google.com/file/d/1qPcHuAQnWCHhIZAOV8UQPvBNV4j7d59N/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/14aBVbo8sgkUq0BBwgFavMxfi5P_519Vb/preview?usp=drive_link" },
+                    { title: "Flashcards - Adrenal: Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/1CRL4iHHEyZx88D5acLXmxm-_9rbIrXlR/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/1gGcGn5kQuO0Z6tUv93Iz0NszPPSkKHaU/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Adrenal: Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/1adj7tOUEJaF-eLytyCpDciIdDsos467q/preview?usp=drive_link" },
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/1Pl7_jNvePZ09ZJxtcmgwNuhLmV5nlCpq/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Adrenal - Feocromocitoma, Hiperaldosteronismo e Incidentaloma Adrenal", downloadUrl: "https://drive.google.com/file/d/1vhjfDyWkzH2mjRahDj5XGbBiB94VoLGb/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Perioperatório - Controle Glicêmico e Manejo dos Glicocorticóides",
+                description: "Aula sobre Perioperatório - Glicemia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Perioperatório - Controle Glicêmico e Manejo dos Glicocorticóides", driveVideoUrl: "https://drive.google.com/file/d/12V5J5Wm5qLWmrlNg2QMdlPnDsNffYyUx/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Perioperatório - Controle Glicêmico e Manejo dos Glicocorticóides", downloadUrl: "https://drive.google.com/file/d/1jJAmCCLsRxEoJpPFxsExCfVk8vyLdQSW/preview?usp=drive_link" },
+                    { title: "Flashcards - Perioperatório: Controle Glicêmico e Manejo dos Glicocorticóides", downloadUrl: "https://drive.google.com/file/d/1fJ0KE29w4O2xh35p4sYLuv7-zdZ_rM-D/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Perioperatório - Controle Glicêmico e Manejo dos Glicocorticóides", downloadUrl: "https://drive.google.com/file/d/1XP-p7lDo7T6yj5zNVYfOv8rqhxQ1Ae2Y/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Perioperatório - Controle Glicêmico e Manejo dos Glicocorticóides", downloadUrl: "https://drive.google.com/file/d/1DE74ocVSqXVjgCYXwIluAn6Fx5IBIS0z/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hipófise - Fisiologia da Hipófise e Hipopituitarismo",
+                description: "Aula Hipófise - Fisiologia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Hipófise: Fisiologia da Hipófise e Hipopituitarismo", driveVideoUrl: "https://drive.google.com/file/d/1fUBCb2Lgf0hW--L2w-KT6d_jGc7gd074/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Hipófise - Fisiologia da Hipófise e Hipopituitarismo", driveVideoUrl: "https://drive.google.com/file/d/1tIHWV_gjRzpC_y2c9Cmp3vPG3pv_tYB0/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipófise - Fisiologia da Hipófise e Hipopituitarismo", downloadUrl: "https://drive.google.com/file/d/1s0Wyl5mjeJJqObkzKz1d88m2rKGDc6y6/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipófise: Fisiologia da Hipófise e Hipopituitarismo", downloadUrl: "https://drive.google.com/file/d/17hEF7E73cwKaY0O_VPISOXzRY5A6w-Ay/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipófise - Fisiologia da Hipófise e Hipopituitarismo", downloadUrl: "https://drive.google.com/file/d/1AmxbxHhzNes1rRciVJkC0mPlss8u4Q22/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipófise: Fisiologia da Hipófise e Hipopituitarismo", downloadUrl: "https://drive.google.com/file/d/1cnT6V567koYNL1btfIyH5R1RHY5BgedT/preview?usp=drive_link" },
+                    { title: "Hipófise - Fisiologia da Hipófise e Hipopituitarismo", downloadUrl: "https://drive.google.com/file/d/1fdq9jQ-_p2fu4VAvOfepUhngjaJrqT_W/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hipófise - Acromegalia e Incidentaloma Hipofisário",
+                description: "Aula sobre Hipófise - Acromegalia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Hipófise: Acromegalia e Incidentaloma Hipofisário", driveVideoUrl: "https://drive.google.com/file/d/1VInH0pO4qjtSpDbgeDl0wRdm00Lw9yoG/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Hipófise - Acromegalia e Incidentaloma Hipofisário", driveVideoUrl: "https://drive.google.com/file/d/1HvUb2S7YMyObVswCXSxVM3W3EVB8DjD_/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipófise - Acromegalia e Incidentaloma Hipofisário", downloadUrl: "https://drive.google.com/file/d/1ZQuiRZBKBVETeed3FF4c-pEZMTgHDi0p/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipófise: Acromegalia e Incidentaloma Hipofisário", downloadUrl: "https://drive.google.com/file/d/1STw_QOI7JeM0E5kSK7bGvdj1TW9iIDiN/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipófise - Acromegalia e Incidentaloma Hipofisário", downloadUrl: "https://drive.google.com/file/d/1L2WrOdQHgeakm6d5Hz8nymz6uC0VNhh7/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipófise: Acromegalia e Incidentaloma Hipofisário", downloadUrl: "https://drive.google.com/file/d/16bzYh5Yq8eW6mwC6frsPgSrpwffyTewk/preview?usp=drive_link" },
+                    { title: "Hipófise - Acromegalia e Incidentaloma Hipofisário", downloadUrl: "https://drive.google.com/file/d/1Xzwl_AolLamWhSPh0Yza7gPoI2KMd9mU/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hipófise - Hiperprolactinemia",
+                description: "Aula sobre Hipófise - Hiperprolactinemia.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Hipófise: Hiperprolactinemia", driveVideoUrl: "https://drive.google.com/file/d/1295_24zBDESpmOfxnF7js52Ps3VRRjVT/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Hipófise - Hiperprolactinemia", driveVideoUrl: "https://drive.google.com/file/d/1fQZuNkocP9vDM5uHPMevC9J6jaeJiotI/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipófise - Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/1e2maiM7KA9yUZNbbTLjEXT9UTMgkpgLo/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipófise: Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/1_LLEc_WEObMUWNudbeEuaF4uSvr34NdW/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipófise - Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/1y2AVXN1vKR1_TkANs5EWaDDIYVTd0GmO/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipófise: Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/1cFHpEWwYbHOhx326vM9dETalRWiTCRDn/preview?usp=drive_link" },
+                    { title: "Hipófise - Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/1MjF4DHtDZ5hUWZtiGG7yLjDf4Bsp9Xrs/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': [
+                    { title: "Hipófise - Hiperprolactinemia", downloadUrl: "https://drive.google.com/file/d/13sWcpLVIPCuU0eHF76VnTSyrS1COEcNZ/preview?usp=drive_link" }
+                    ]
+                }
+            },
+            {
+                title: "Neoplasias Endócrinas Múltiplas",
+                description: "Aula sobre Neoplasias Endócrinas.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Neoplasias Endócrinas Múltiplas", driveVideoUrl: "https://drive.google.com/file/d/18b_pg_fJNU8WMzbmcETTeK4Nr0SC6q8y/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Neoplasias Endócrinas Múltiplas", driveVideoUrl: "https://drive.google.com/file/d/1WTqNwraD-YlKfn-LrFhoB-YOt-vRBo-u/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Neoplasias Endócrinas Múltiplas", downloadUrl: "https://drive.google.com/file/d/1Ttcht_1JeW9sUF-qomemltI2ej7OoD5W/preview?usp=drive_link" },
+                    { title: "Flashcards - Neoplasias Endócrinas Múltiplas", downloadUrl: "https://drive.google.com/file/d/1HIuRtbgHHaipjgNX7GpzMFUrsLQ7NCUt/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Neoplasias Endócrinas Múltiplas", downloadUrl: "https://drive.google.com/file/d/1wv7RoL2v8-2t7X5LAaV9Lm3WyUHb2o-L/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Neoplasias Endócrinas Múltiplas", downloadUrl: "https://drive.google.com/file/d/1pYdxZX5ilZikElTI3GLBIUBRxNcnJVrq/preview?usp=drive_link" },
+                    { title: "Neoplasias Endócrinas Múltiplas", downloadUrl: "https://drive.google.com/file/d/1yrr45h-3C-cKZkJZFeAkUfSrt73NV2tf/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Hipoglicemia no Paciente Não-Diabético",
+                description: "Aula sobre Hipoglicemia Não-DM.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Hipoglicemia no Paciente Não-Diabético", driveVideoUrl: "https://drive.google.com/file/d/19n4dVweXVN3NY73lqj_CgBVyxDSig2qK/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Hipoglicemia no Paciente Não-Diabético", driveVideoUrl: "https://drive.google.com/file/d/1touPdwooV7Rj94g1Vsn7KDIOc1jSCHCM/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Hipoglicemia no Paciente Não-Diabético", downloadUrl: "https://drive.google.com/file/d/13ml0vMN8FgbdCthNaUmerbxfLaiknr4V/preview?usp=drive_link" },
+                    { title: "Flashcards - Hipoglicemia no Paciente Não-Diabético", downloadUrl: "https://drive.google.com/file/d/1KTptz9amuw4ZS8W7sp1RQ-SSzQgqoc00/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Hipoglicemia no Paciente Não-Diabético", downloadUrl: "https://drive.google.com/file/d/1xszJqhRDWW1I4eWTwWhyHvQ0qXk1ll-V/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Hipoglicemia no Paciente Não-Diabético", downloadUrl: "https://drive.google.com/file/d/1QEgtuFOlglthp8kuUo5quVfVjY01p2xa/preview?usp=drive_link" },
+                    { title: "Hipoglicemia no Paciente Não-Diabético", downloadUrl: "https://drive.google.com/file/d/1IqqqhVv0jtBozU_gcbk1s6XMWejaiyT-/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            },
+            {
+                title: "Incongruência de Gênero",
+                description: "Aula sobre Incongruência de Gênero.",
+                subItems: {
+                    'Videoaulas': [
+                    { title: "Aula Resumo - Incongruência de Gênero", driveVideoUrl: "https://drive.google.com/file/d/1NoV3oaWvZtdITJsfNs2r6TrvPiJUtHKN/preview?usp=drive_link", downloadUrl: "#" },
+                    { title: "Incongruência de Gênero", driveVideoUrl: "https://drive.google.com/file/d/1bY4k6RX_3PVm0P_AEspvXXr-IrK5TR29/preview?usp=drive_link", downloadUrl: "#" }
+                    ],
+                    'Livros Digitais': [
+                    { title: "Incongruência de Gênero", downloadUrl: "https://drive.google.com/file/d/1-44z3KtO7tPnieQPYn6zGgG9JN10-GPX/preview?usp=drive_link" },
+                    { title: "Flashcards - Incongruência de Gênero", downloadUrl: "https://drive.google.com/file/d/1DB9T1hOcUcf9bGLwWZ0PKJ27ZRbOBqYJ/preview?usp=drive_link" }
+                    ],
+                    'Resumos': [
+                    { title: "Incongruência de Gênero", downloadUrl: "https://drive.google.com/file/d/16Rx0o9W7y-1ZfAUlB6_NHaP16HxeXqgT/preview?usp=drive_link" }
+                    ],
+                    'Slides': [
+                    { title: "Aula Resumo - Incongruência de Gênero", downloadUrl: "https://drive.google.com/file/d/1PNcFVQWuAFtbn_Yg37qCEUPjuvF7VunX/preview?usp=drive_link" },
+                    { title: "Incongruência de Gênero", downloadUrl: "https://drive.google.com/file/d/1DsxRrWTOks-6d6jaaXMaBrhkJDQnjM9f/preview?usp=drive_link" }
+                    ],
+                    'Mapas Mentais': []
+                }
+            }
+        ];
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros Digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas Mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros Digitais', 'Resumos', 'Slides', 'Mapas Mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num;
+             const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+             let roman = '', i;
+             for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+             return roman;
+        }
+
+        // CORRIGIDO: Função createSubItemDetail para adicionar ícones corretamente e tratar links
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link'); // Seleciona o link de download do template
+            const iconPathData = subItemIcons[subItemType]; // Pega o path do ícone
+
+            // Adiciona o ícone apropriado
+            if (iconPathData) {
+                 const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 // Define tamanho e margem (ícone de play é maior)
+                 const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                 iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                 // Define fill/stroke e viewBox baseado no tipo
+                 if (subItemType === 'Videoaulas') {
+                     iconContainer.setAttribute('fill', 'currentColor'); // Ícone de Play preenchido
+                     iconContainer.setAttribute('viewBox', '0 0 20 20');
+                 } else {
+                     iconContainer.setAttribute('fill', 'none'); // Outros ícones contornados
+                     iconContainer.setAttribute('stroke', 'currentColor');
+                     iconContainer.setAttribute('viewBox', '0 0 24 24');
+                 }
+
+                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                 path.setAttribute('d', iconPathData);
+                 // Define atributos específicos do path
+                 if (subItemType === 'Videoaulas') {
+                     path.setAttribute('fill-rule', 'evenodd');
+                     path.setAttribute('clip-rule', 'evenodd');
+                 } else { // Atributos para ícones contornados
+                     path.setAttribute('stroke-linecap', 'round');
+                     path.setAttribute('stroke-linejoin', 'round');
+                     path.setAttribute('stroke-width', '1.5'); // Ajuste a espessura se necessário
+                 }
+                 iconContainer.appendChild(path);
+                 itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild); // Insere o ícone
+            } else {
+                 // Se não houver ícone definido, garante que a margem do texto seja 0
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+
+            // Define o título
+            if (titleEl) {
+                if (subItemType === 'Videoaulas') {
+                    if (totalVideos === 1) {
+                        titleEl.textContent = mainTitle;
+                    } else {
+                        // Usa o título específico da videoaula se houver e não for genérico
+                        titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula"))
+                                               ? detailData.title
+                                               : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                    }
+                } else {
+                     titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                }
+            }
+
+            // Define o subtítulo (restaurado)
+            if (subtitleEl) {
+                 subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+
+            // CORRIGIDO: Configura o link de download ou remove o ícone
+            if (downloadLink) {
+                // Mostra link de download para QUALQUER item que tenha um downloadUrl válido (não #)
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    // Se for um link real (não #dl-), configura para abrir em nova aba
+                    if (!detailData.downloadUrl.startsWith('#dl-')) {
+                         downloadLink.href = detailData.downloadUrl;
+                         downloadLink.setAttribute('target', '_blank'); // Abrir em nova aba
+                         downloadLink.addEventListener('click', (e) => {
+                             e.stopPropagation(); // Evita que o clique no download carregue o item no iframe
+                         });
+                    } else {
+                         // Se for #dl-, mantém o href mas remove target e listener
+                         downloadLink.href = detailData.downloadUrl; // Mantém o href para identificação, se necessário
+                         downloadLink.removeAttribute('target');
+                    }
+                     downloadLink.title = `Baixar ${titleEl.textContent}`; // Define o title em ambos os casos
+                }
+                // Remove o ícone de download se não houver link válido
+                else {
+                    downloadLink.remove();
+                }
+            }
+
+             // CORRIGIDO: Adiciona atributos e classes para interatividade (carregar no iframe)
+             const itemDisplayTitle = titleEl.textContent; // Título que será mostrado na descrição
+             const videoUrl = detailData.driveVideoUrl;
+             const docUrl = detailData.downloadUrl; // Usar downloadUrl para documentos
+
+             // Verifica se é um vídeo clicável
+             if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                 detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Verifica se é um documento clicável (com link de preview, não só de download)
+             else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                 detailDiv.setAttribute('data-download-url', docUrl); // Usar data-download-url para carregar no iframe
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             }
+             // Se não for nenhum dos casos acima, não é clicável no iframe
+             else {
+                 // Remove cursor-pointer apenas se não for videoaula (videoaulas são sempre clicáveis para play)
+                 if (subItemType !== 'Videoaulas') {
+                    detailDiv.classList.remove('cursor-pointer');
+                 }
+             }
+
+
+             return detailDiv; // Retorna o elemento HTML do detalhe criado
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+             contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar."; // Mensagem inicial
+
+             // Limpa o menu existente antes de gerar o novo
+             menuListContainer.innerHTML = '';
+
+             // Itera sobre os dados de cada módulo para criar o menu
+             menuItemsData.forEach((itemData, mainIndex) => {
+                 const title = itemData.title; // Pega o título do módulo (já atualizado)
+                 const description = itemData.description; // Pega a descrição (atualizada ou placeholder)
+                 const subItems = itemData.subItems || {}; // Pega os subitens (atualizados para todos os módulos)
+                 // Cria um ID único para o conteúdo do acordeão principal
+                 const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                 // Cria o container principal para o item do acordeão
+                 const accordionItem = document.createElement('div');
+                 accordionItem.className = 'accordion-item';
+                 accordionItem.setAttribute('data-completed', 'false'); // Atributo para controle de status (concluído/não)
+                 accordionItem.setAttribute('data-main-description', description); // Guarda a descrição principal
+
+                 // Cria o botão do cabeçalho do acordeão principal
+                 const headerButton = document.createElement('button');
+                 headerButton.className = 'menu-item-header w-full accordion-header';
+                 headerButton.setAttribute('aria-expanded', 'false'); // Estado inicial: fechado
+                 headerButton.setAttribute('aria-controls', mainContentId); // Associa ao conteúdo
+
+                 // Cria o conteúdo interno do cabeçalho (título, subtítulo, botão de status)
+                 const headerContent = document.createElement('div');
+                 headerContent.className = 'text-left flex-grow mr-2 overflow-hidden'; // Layout flexível e esconde overflow
+                 headerContent.innerHTML = `
+                     <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3> <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                          <span>Estratégia Educacional</span> <button type="button" class="status-toggle flex-shrink-0"> <span>Concluído</span>
+                              <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                              <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                          </button>
+                      </div>`;
+
+                 // Cria o ícone de chevron (seta para baixo)
+                 const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                 chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                 chevronIcon.setAttribute('fill', 'none');
+                 chevronIcon.setAttribute('stroke', 'currentColor');
+                 chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                 chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                 // Adiciona o conteúdo e o ícone ao botão do cabeçalho
+                 headerButton.appendChild(headerContent);
+                 headerButton.appendChild(chevronIcon);
+
+                 // Cria a div que conterá os subitens (inicialmente escondida)
+                 const contentDiv = document.createElement('div');
+                 contentDiv.id = mainContentId;
+                 contentDiv.className = 'menu-item-content hidden'; // Classe 'hidden' para esconder
+
+                 // Gera os subitens (acordeões aninhados para cada tipo: Videoaulas, Livros, etc.)
+                 subItemOrder.forEach((subItemType, subIndex) => {
+                     const subItemArray = subItems[subItemType] || []; // Garante que seja um array
+                     const count = subItemArray.length; // Conta quantos itens existem
+                     // Cria um ID único para o conteúdo do acordeão aninhado
+                     const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                     // Cria o container para o subitem acordeão
+                     const subAccordionItem = document.createElement('div');
+                     subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`; // Adiciona margem superior se não for o primeiro
+
+                     // Cria o botão do cabeçalho do subitem acordeão
+                     const subHeaderButton = document.createElement('button');
+                     subHeaderButton.className = 'sub-accordion-header w-full';
+                     subHeaderButton.setAttribute('aria-expanded', 'false');
+                     subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                     if (count === 0) {
+                         subHeaderButton.disabled = true; // Desabilita se não houver itens
+                     }
+                     // Conteúdo do cabeçalho do subitem (Nome do tipo e contagem)
+                     subHeaderButton.innerHTML = `
+                         <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                         <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     `;
+
+                     // Cria a div que conterá os detalhes (vídeos, links de download)
+                     const subContentDiv = document.createElement('div');
+                     subContentDiv.id = nestedContentId;
+                     subContentDiv.className = 'sub-accordion-content hidden'; // Inicialmente escondida
+
+                     // Se houver detalhes, cria e adiciona cada um
+                     if (count > 0) {
+                         const totalVideos = (subItemType === 'Videoaulas') ? count : 0; // Para numerar corretamente as partes dos vídeos
+                         subItemArray.forEach((detailData, detailIndex) => {
+                             // Chama a função auxiliar para criar o elemento HTML do detalhe
+                             const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                             if (detailElement) {
+                                 subContentDiv.appendChild(detailElement); // Adiciona ao container de conteúdo do subitem
+                             }
+                         });
+                     }
+
+                     // Adiciona o cabeçalho e o conteúdo ao container do subitem acordeão
+                     subAccordionItem.appendChild(subHeaderButton);
+                     subAccordionItem.appendChild(subContentDiv);
+                     // Adiciona o subitem acordeão completo ao conteúdo do acordeão principal
+                     contentDiv.appendChild(subAccordionItem);
+                 });
+
+                 // Adiciona o cabeçalho e o conteúdo ao item principal do acordeão
+                 accordionItem.appendChild(headerButton);
+                 accordionItem.appendChild(contentDiv);
+                 // Adiciona o item principal completo à lista do menu
+                 menuListContainer.appendChild(accordionItem);
+             });
+
+             // --- Lógica dos Acordeões (Principal e Aninhado) ---
+             // RESTAURADO: Listeners individuais para permitir múltiplos abertos
+             const accordionHeaders = document.querySelectorAll('.accordion-header');
+             accordionHeaders.forEach(header => {
+                 header.addEventListener('click', (event) => {
+                     if (event.target.closest('.status-toggle')) return;
+                     const content = header.nextElementSibling; // Pega o div de conteúdo irmão
+                     if (!content || !content.classList.contains('menu-item-content')) return;
+                     const expanded = header.getAttribute('aria-expanded') === 'true';
+                     const chevronIcon = header.querySelector('.chevron-icon');
+                     header.setAttribute('aria-expanded', !expanded);
+                     content.classList.toggle('hidden');
+                     if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                 });
+             });
+
+
+             const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+             subAccordionHeaders.forEach(subHeader => {
+                 if (!subHeader.disabled) {
+                     subHeader.addEventListener('click', (event) => {
+                         event.stopPropagation();
+                         const content = subHeader.nextElementSibling;
+                         if (!content || !content.classList.contains('sub-accordion-content')) return;
+                         const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                         const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                         subHeader.setAttribute('aria-expanded', !expanded);
+                         content.classList.toggle('hidden');
+                         if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                     });
+                 }
+             });
+
+             // --- Lógica para Marcar/Desmarcar como Concluído ---
+             // RESTAURADO: Listener individual para cada botão
+             const statusToggles = document.querySelectorAll('.status-toggle');
+             statusToggles.forEach(toggle => {
+                 toggle.addEventListener('click', (event) => {
+                     event.stopPropagation(); // Impede que o clique acione o acordeão pai
+                     const accordionItem = toggle.closest('.accordion-item');
+                     if (!accordionItem) return;
+                     const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                     accordionItem.setAttribute('data-completed', !isCompleted);
+                     toggle.classList.toggle('is-completed', !isCompleted);
+                     console.log(`Item ${accordionItem.querySelector('h3').innerText} marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                 });
+             });
+
+             // --- Lógica para Carregar Conteúdo (Vídeo ou PDF) ---
+             // RESTAURADO: Listener no container pai
+             menuListContainer.addEventListener('click', (event) => {
+                 const detailItem = event.target.closest('.sub-item-details');
+
+                 // Ignora cliques no link/ícone de download
+                 if (event.target.closest('.download-link')) {
+                     return;
+                 }
+
+                 if (detailItem && contentViewer && contentDescription) {
+                     const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                     const downloadUrl = detailItem.getAttribute('data-download-url');
+                     const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                     const parentAccordionItem = detailItem.closest('.accordion-item');
+                     const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo'; // Pega o título do módulo
+
+                     // Verifica se o item é clicável
+                     if (driveVideoUrl || downloadUrl) {
+                         document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                             activeItem.classList.remove('is-active');
+                         });
+                         detailItem.classList.add('is-active');
+
+                         if (driveVideoUrl) {
+                             contentViewer.src = driveVideoUrl;
+                             // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                             console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                         } else if (downloadUrl) {
+                             contentViewer.src = downloadUrl;
+                              // Atualiza a descrição
+                             contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                             console.log(`Carregando documento: ${downloadUrl}`);
+                         }
+                     }
+                 }
+             });
+
+
+             // --- Lógica para o botão de Like ---
+             // RESTAURADO: Listener individual
+             if(likeButton) {
+                 likeButton.addEventListener('click', () => {
+                     likeButton.classList.toggle('is-liked');
+                     const isLiked = likeButton.classList.contains('is-liked');
+                     console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                 });
+             }
+
+             // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+             const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+             if (firstClickableDetail) {
+                 setTimeout(() => {
+                     const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                     if (parentHeader) {
+                         const content = parentHeader.nextElementSibling;
+                         const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                         if (content && content.classList.contains('hidden')) {
+                             parentHeader.setAttribute('aria-expanded', 'true');
+                             content.classList.remove('hidden');
+                             if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                         }
+                         const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                         if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                             const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                             if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                                 parentSubHeader.click();
+                             }
+                         }
+                         firstClickableDetail.click();
+                     }
+                 }, 100);
+             } else {
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+             }
+
+
+        } else {
+            console.error("Elementos essenciais não encontrados.");
+        }
+    </script>
+
+</body>
+</html>

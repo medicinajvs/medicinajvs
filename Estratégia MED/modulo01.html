@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Atualizações Para Residência Médica e Revalida</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .menu-item-header { border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 0.375rem; background-color: white; cursor: pointer; transition: background-color 0.2s ease-in-out; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; text-align: left; width: 100%; }
+        .menu-item-header:hover { background-color: #f8fafc; }
+        .menu-item-content { padding: 0.5rem 1rem 1rem 1rem; background-color: white; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; margin-bottom: 0.75rem; }
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        /* Cursor pointer apenas para itens clicáveis (vídeo ou PDF/download) */
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        /* Estilo para item ativo */
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; } /* Ícone ativo só para vídeo */
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        /* Ajuste para quando o ícone está presente */
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; } /* Adiciona margem se o ícone existir antes */
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        /* Estilos para o botão de like */
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; /* red-500 */ }
+        /* Animação simples de "pulso" ao curtir */
+        .like-button.is-liked .heart-filled {
+            animation: pulse 0.3s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Atualizações Para Residência Médica e Revalida</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+
+            <div class="w-full md:flex-1 min-w-[300px]">
+                 <div class="video-container-yt">
+                     <iframe
+                         id="content-viewer" src="" title="Visualizador de Conteúdo"
+                         frameborder="0"
+                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                         referrerpolicy="strict-origin-when-cross-origin"
+                         allowfullscreen>
+                     </iframe>
+                 </div>
+                 <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                     Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                 </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                     <div class="sub-item-details">
+                         <div class="item-details-content">
+                             <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                 <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                             </div>
+                         </div>
+                         <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                         </a>
+                     </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        const menuItemsData = [
+            // (Lista completa de dados mantida como na versão anterior)
+            { title: "Atualização - Cetoacidose Diabética", description: "Aula sobre Cetoacidose Diabética.", subItems: {'Videoaulas': [{ title: "Videoaula Ceto 1", driveVideoUrl: "https://drive.google.com/file/d/18dLl258dDQHzsMTXIfC6NqG7NWrW4uft/preview?usp=drive_link", downloadUrl: "#dl-ceto-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "MPOX", description: "Aula sobre MPOX.", subItems: {'Videoaulas': [{ title: "Videoaula MPOX", driveVideoUrl: "https://drive.google.com/file/d/1ONnSsncRJkEzpgAbTYG3IS5t-WwkrjQA/preview?usp=drive_link", downloadUrl: "#dl-mpox-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Critérios de Elegibilidade dos Métodos Anticoncepcionais", description: "Aula sobre Critérios de Elegibilidade.", subItems: {'Videoaulas': [{ title: "Videoaula Critérios Anticoncepção", driveVideoUrl: "https://drive.google.com/file/d/1PnyWf6qJQnyyLadj500Y7e5DDGDICPha/preview?usp=drive_link", downloadUrl: "#dl-anticoncep-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Febre Oropouche e Febre Oropouche na Gestação", description: "Aula sobre Febre Oropouche.", subItems: {'Videoaulas': [{ title: "Videoaula Oropouche 1", driveVideoUrl: "https://drive.google.com/file/d/16qHgShpKYV_2N8CF7_PjYPueVYumz7Ph/preview?usp=drive_link", downloadUrl: "#dl-oropouche-v1" }, { title: "Videoaula Oropouche 2 (Gestação)", driveVideoUrl: "https://drive.google.com/file/d/1dZisiDTzrFDLi9NesVp76wrAfD1ENArr/preview?usp=drive_link", downloadUrl: "#dl-oropouche-v2" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Prevenção da Conjuntivite Neonatal", description: "Aula sobre Conjuntivite Neonatal.", subItems: {'Videoaulas': [{ title: "Videoaula Conjuntivite", driveVideoUrl: "https://drive.google.com/file/d/1LBJHznVduDqHWX9uS5P1VKbiTOUKRNu2/preview?usp=drive_link", downloadUrl: "#dl-conj-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Quimioprofilaxia e Vacinação Seletiva na Coqueluche", description: "Aula sobre Coqueluche.", subItems: {'Videoaulas': [{ title: "Videoaula Coqueluche", driveVideoUrl: "https://drive.google.com/file/d/1MaL1SHsg8TvzHLKTkt2QKvTV2YlHDaEg/preview?usp=drive_link", downloadUrl: "#dl-coq-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Atualização - Vacina HPV", description: "Aula sobre Vacina HPV.", subItems: {'Videoaulas': [{ title: "Videoaula HPV 1", driveVideoUrl: "https://drive.google.com/file/d/1kP9-clqurgoIw4y9FXbjxFccZkXnc37Y/preview?usp=drive_link", downloadUrl: "#dl-hpv-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }}, // Primeiro HPV
+            { title: "Atualizações - Diretriz SBD: Diabetes Mellitus", description: "Aula sobre Diretriz SBD Diabetes.", subItems: {'Videoaulas': [{ title: "Videoaula SBD DM 1", driveVideoUrl: "https://drive.google.com/file/d/1o51QCAh9p9Vo-gy1R-LkFSjCdqFIPzj5/preview?usp=drive_link", downloadUrl: "#dl-sbd-dm-v1" }, { title: "Videoaula SBD DM 2", driveVideoUrl: "https://drive.google.com/file/d/1AeELqMj8_3kLLuAVCoXMpbWHs1Su1P2n/preview?usp=drive_link", downloadUrl: "#dl-sbd-dm-v2" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Diretriz SBD", downloadUrl: "https://drive.google.com/file/d/1OANuxDLVN9drl7AwloVlFaP2pZx4ZFXp/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Atualização - Climatério e Terapia Hormonal: SOBRAC 2024", description: "Aula sobre Climatério e TH.", subItems: {'Videoaulas': [{ title: "Videoaula Climaterio", driveVideoUrl: "https://drive.google.com/file/d/127mkNWvFpUs7g-Kd2UfQHfpuJThHkeeA/preview?usp=drive_link", downloadUrl: "#dl-clim-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Campanha Nacional de Vacinação Contra Poliomielite 2024", description: "Aula sobre Campanha Pólio.", subItems: {'Videoaulas': [{ title: "Videoaula Polio", driveVideoUrl: "https://drive.google.com/file/d/1Wox7RWwsK0RyPZBS22RrvUDHfe1V06hW/preview?usp=drive_link", downloadUrl: "#dl-polio-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Atualização - GINA 2024: O Que Há de Novo Sobre Asma?", description: "Aula sobre GINA 2024 Asma.", subItems: {'Videoaulas': [{ title: "Videoaula GINA", driveVideoUrl: "https://drive.google.com/file/d/1lgugNmJBqeYic0sdypaii38SPH6_M0I-/preview?usp=drive_link", downloadUrl: "#dl-gina-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Atualização - Profilaxia Pós-Exposição HIV", description: "Aula sobre Profilaxia Pós-Exposição HIV.", subItems: {'Videoaulas': [{ title: "Videoaula PEP HIV", driveVideoUrl: "https://drive.google.com/file/d/1mHIophmUtvyuIAxaUL2wBBDxhEuWVOKO/preview?usp=drive_link", downloadUrl: "#dl-pep-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "PEP - HIV", downloadUrl: "https://drive.google.com/file/d/1ksV-QsceKrTbKMDNMN1gULpn3EKJJ9oC/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Nova Diretriz Brasileira de Medida de Pressão Arterial", description: "Aula sobre Diretriz Pressão Arterial.", subItems: {'Videoaulas': [{ title: "Videoaula PA", driveVideoUrl: "https://drive.google.com/file/d/1CsZ61Pwyx5pydQHX0VlYAhgDZgyyRWAg/preview?usp=drive_link", downloadUrl: "#dl-pa-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Diretriz Pressão Arterial", downloadUrl: "https://drive.google.com/file/d/18y9oGqZ1FyNx8Uq_H7nUnTLi1_36Htmv/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Critérios Diagnósticos - Diabetes Mellitus", description: "Aula sobre Critérios Diagnósticos Diabetes.", subItems: {'Videoaulas': [{ title: "Videoaula Criterios DM", driveVideoUrl: "https://drive.google.com/file/d/1PMM43podxheWTEQYt3fSPoOtNqdiw75g/preview?usp=drive_link", downloadUrl: "#dl-critdm-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Novo Financiamento da APS (Atenção Primária à Saúde)", description: "Aula sobre Financiamento APS.", subItems: {'Videoaulas': [{ title: "Videoaula APS", driveVideoUrl: "https://drive.google.com/file/d/15jYMuAFBlsObKKPUpwrLrT_ST5lZAigf/preview?usp=drive_link", downloadUrl: "#dl-aps-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Financiamento APS", downloadUrl: "https://drive.google.com/file/d/1Lcsn1roO8go7k9epdoQGLdnVQoa8-uRz/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Nova Vacina Para Gestantes", description: "Aula sobre Vacina Gestantes.", subItems: {'Videoaulas': [{ title: "Videoaula Vac Gest", driveVideoUrl: "https://drive.google.com/file/d/1rCKMzyGVx3e6ByYoFJUR6Azp8u-0DRPN/preview?usp=drive_link", downloadUrl: "#dl-vacgest-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Vacina - Gestante", downloadUrl: "https://drive.google.com/file/d/1MC6av7SjYLMBT20B-FpbzhN_4bUHpdJ4/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Escore de Sepse de Phoenix - Sepse na Pediatria", description: "Aula sobre Escore Phoenix Sepse Pediátrica.", subItems: {'Videoaulas': [{ title: "Videoaula Phoenix", driveVideoUrl: "https://drive.google.com/file/d/16Tf1jhn0vAfE2RoxKXuEP46sDFKEreOM/preview?usp=drive_link", downloadUrl: "#dl-phoenix-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Vacinação Contra Dengue - Ampliação da Faixa Etária", description: "Aula sobre Vacinação Dengue.", subItems: {'Videoaulas': [{ title: "Videoaula Dengue Vac", driveVideoUrl: "https://drive.google.com/file/d/1RyuyMk0Mo62KNILmmrmP217QNtoauO69/preview?usp=drive_link", downloadUrl: "#dl-denguevac-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Vacinação Contra o Coronavirus na Pediatria", description: "Aula sobre Vacinação Coronavírus Pediatria.", subItems: {'Videoaulas': [{ title: "Videoaula Covid Ped", driveVideoUrl: "https://drive.google.com/file/d/1Y13LTSKtqpkXszqw6q0e0AjuL_wRO7hG/preview?usp=drive_link", downloadUrl: "#dl-covidped-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Novo Protocolo de HIV do Ministério da Saúde", description: "Aula sobre Novo Protocolo HIV.", subItems: {'Videoaulas': [{ title: "Videoaula Prot HIV", driveVideoUrl: "https://drive.google.com/file/d/1Q-thgFfjkIUwvkoY2CmmfAsE6w6LTOoh/preview?usp=drive_link", downloadUrl: "#dl-prothiv-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Protocolo de Dengue do Ministério da Saúde", description: "Aula sobre Protocolo Dengue MS.", subItems: {'Videoaulas': [{ title: "Videoaula Prot Dengue", driveVideoUrl: "https://drive.google.com/file/d/1-_CK2e7KtCuPQZZtJM1kXEezzSK-R84-/preview?usp=drive_link", downloadUrl: "#dl-protdengue-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Protocolo - Dengue", downloadUrl: "https://drive.google.com/file/d/1zQcSrGDVM0yLiuNPeRx0Xm0iarF0KdGf/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Clinica Médica - Critérios de SDRA/SARA", description: "Aula sobre Critérios SDRA/SARA.", subItems: {'Videoaulas': [{ title: "Videoaula SDRA", driveVideoUrl: "https://drive.google.com/file/d/1wcAw2wQjuEMgm-TosoyP1ohfPcecbOYf/preview?usp=drive_link", downloadUrl: "#dl-sdra-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Imunizações: Vacinação de Grupos Especiais", description: "Aula sobre Vacinação Grupos Especiais.", subItems: {'Videoaulas': [{ title: "Videoaula Vac Grupos", driveVideoUrl: "https://drive.google.com/file/d/1VqNd-337vPi9RS_OsB7YNYOC9hqOt4FJ/preview?usp=drive_link", downloadUrl: "#dl-vacgrupos-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Dados do Datasus 2022", description: "Aula sobre Dados Datasus 2022.", subItems: {'Videoaulas': [{ title: "Videoaula Datasus", driveVideoUrl: "https://drive.google.com/file/d/1yS5s1RKXhqCpDfVlveTkRGiMx5juVPer/preview?usp=drive_link", downloadUrl: "#dl-datasus-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Atualização - Tratamento de Diabetes Mellitus Gestacional SBD 2023", description: "Aula sobre Tratamento DMG SBD 2023.", subItems: {'Videoaulas': [{ title: "Videoaula DMG", driveVideoUrl: "https://drive.google.com/file/d/1b4wir7kz_S9dIWTdL4DA2xMH0FFFvPZ2/preview?usp=drive_link", downloadUrl: "#dl-dmg-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "DMG SBD - 2023", downloadUrl: "https://drive.google.com/file/d/1OANuxDLVN9drl7AwloVlFaP2pZx4ZFXp/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Atualização - Sindrome dos Ovários Policísticos", description: "Aula sobre SOP.", subItems: {'Videoaulas': [{ title: "Videoaula SOP", driveVideoUrl: "https://drive.google.com/file/d/1fbwq6fEQ-9YFDAagXvJgV8GVa2pZEedH/preview?usp=drive_link", downloadUrl: "#dl-sop-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "SOP", downloadUrl: "https://drive.google.com/file/d/1eTaWjviqBFHSVdM10nP50ZEzuwOAzQuo/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Atualizações - Tratamento da Hepatite B", description: "Aula sobre Tratamento Hepatite B.", subItems: {'Videoaulas': [{ title: "Videoaula HepB", driveVideoUrl: "https://drive.google.com/file/d/1-uLFyNOod5QJpTD0I5YQPv9G573bMMSa/preview?usp=drive_link", downloadUrl: "#dl-hepb-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Novas Recomendações para Suplementação de Micronutrientes em Crianças", description: "Aula sobre Suplementação Micronutrientes Crianças.", subItems: {'Videoaulas': [{ title: "Videoaula Micro", driveVideoUrl: "https://drive.google.com/file/d/156dfWeQEiHsE9V7PYcRLP8NtG3tggU5-/preview?usp=drive_link", downloadUrl: "#dl-micro-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Novo Censo Demográfico e Tendências da População Brasileira", description: "Aula sobre Novo Censo Demográfico.", subItems: {'Videoaulas': [{ title: "Videoaula Censo", driveVideoUrl: "https://drive.google.com/file/d/17zI7mgkfUxTnEnYEPXjM8AjMOYcPkwNz/preview?usp=drive_link", downloadUrl: "#dl-censo-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Mudanças no Tratamento da Sífilis na Gestação", description: "Aula sobre Tratamento Sífilis Gestação.", subItems: {'Videoaulas': [{ title: "Videoaula Sifilis Gest", driveVideoUrl: "https://drive.google.com/file/d/1npy9Af8SV9eKM0_ht5NXFuyx2UvvZXEf/preview?usp=drive_link", downloadUrl: "#dl-sifgest-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Dengue na Gestação", description: "Aula sobre Dengue na Gestação.", subItems: {'Videoaulas': [{ title: "Videoaula Dengue Gest", driveVideoUrl: "https://drive.google.com/file/d/1-SN09fQ86cWBOwjO0OgpGW6ve5CJjNKt/preview?usp=drive_link", downloadUrl: "#dl-denguegest-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Dengue - Gestação", downloadUrl: "https://drive.google.com/file/d/1HB6TEdDfm9hEWhaN8dPE0AiqrVA0hOv5/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Mudanças no Protocolo Asma do GINA", description: "Aula sobre Mudanças Protocolo Asma GINA.", subItems: {'Videoaulas': [{ title: "Videoaula Asma GINA", driveVideoUrl: "https://drive.google.com/file/d/1CAR_4emeVEO169efgkR3WmgEVGgaUwVD/preview?usp=drive_link", downloadUrl: "#dl-asmagina-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Asma - GINA", downloadUrl: "https://drive.google.com/file/d/1OWepS9joAU9C8UwsWGGaE06VfX1q241m/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Triagem para Homocistinúria Clássica no Teste do Pezinho", description: "Aula sobre Triagem Homocistinúria.", subItems: {'Videoaulas': [{ title: "Videoaula Homocist", driveVideoUrl: "https://drive.google.com/file/d/1zKSxaMmGYoY2-cJkuLLid-QnlYR_x0VH/preview?usp=drive_link", downloadUrl: "#dl-homocist-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Novos Critérios de Duke para o Diagnóstico de Endocardite", description: "Aula sobre Novos Critérios Duke Endocardite.", subItems: {'Videoaulas': [{ title: "Videoaula Duke", driveVideoUrl: "https://drive.google.com/file/d/10Q1csOqWpcjxzyQiea0MjSUECb4iY1H6/preview?usp=drive_link", downloadUrl: "#dl-duke-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Mudanças no Protocolo de Pré-Eclâmpsia (2023)", description: "Aula sobre Mudanças Protocolo Pré-Eclâmpsia 2023.", subItems: {'Videoaulas': [{ title: "Videoaula PE 2023", driveVideoUrl: "https://drive.google.com/file/d/1iwWms4Ecasnfz96UmGuHMzitT3mkBCSI/preview?usp=drive_link", downloadUrl: "#dl-pe2023-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "Pré-Eclâmpsia - 2023", downloadUrl: "https://drive.google.com/file/d/1_m6P0uw4TpmPl8HzDVZpt4FNxAx4UAJV/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            { title: "Atualização - Manejo do Paciente com Diarreia", description: "Aula sobre Manejo Diarreia.", subItems: {'Videoaulas': [{ title: "Videoaula Diarreia", driveVideoUrl: "https://drive.google.com/file/d/1LyHI5aysh_oqEH8ypgbXksHj_RwjE2RO/preview?usp=drive_link", downloadUrl: "#dl-diarreia-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            { title: "Atualização - Vacinação HPV", description: "Aula sobre Atualização Vacinação HPV.", subItems: {'Videoaulas': [{ title: "HPV - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1Inl15luSwKa0AGqgjBzegXHjVh-l4G3g/preview?usp=drive_link", downloadUrl: "#dl-hpv-v1" }, { title: "HPV - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1jR-7fxZIGZ047PF2av9d8i8MyZtoIhqO/preview?usp=drive_link", downloadUrl: "#dl-hpv2-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [{ title: "HPV", downloadUrl: "https://drive.google.com/file/d/1YDIE2f54Qdme6E2z6G54jrIlg2q57D3Q/preview?usp=drive_link.pdf" }], 'Mapas mentais': [] }},
+            {
+                title: "Atualização - Lei da Laqueadura",
+                description: "Aula sobre Lei da Laqueadura.",
+                subItems: {
+                    'Videoaulas': [ { title: "Laqueadura", driveVideoUrl: "https://drive.google.com/file/d/111uU-mHfnwBiEyQ7D9ZP5HOOzxTDlp2C/preview?usp=drive_link", downloadUrl: "#dl-laq-v1" } ],
+                    'Livros digitais': [],
+                    'Resumos': [],
+                    'Slides': [ { title: "Laqueadura", youtubeId: null, downloadUrl: "https://drive.google.com/file/d/1cFKrBkD3QQB9nselqEoVeUIWvUA6olkn/preview?usp=drive_link.pdf" } ],
+                    'Mapas mentais': []
+                }
+             },
+            { title: "Atualização no Tratamento de ILTB", description: "Aula sobre Tratamento ILTB.", subItems: {'Videoaulas': [{ title: "ILTB", driveVideoUrl: "https://drive.google.com/file/d/1qJeU5dk-AWoa_6HGE6JLMVz86rPHKSAo/preview?usp=drive_link", downloadUrl: "#dl-iltb-v1" }], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': [] }},
+            {
+                title: "Lista Nacional de Notificação Compulsória",
+                description: "Aula sobre Lista de Notificação Compulsória.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Notificação - Parte I", driveVideoUrl: "https://drive.google.com/file/d/1LXNIQoHUpKLReYQK9HQJjCpvvinDRNJs/preview?usp=drive_link", downloadUrl: "#dl-notif-v1" },
+                        { title: "Notificação - Parte II", driveVideoUrl: "https://drive.google.com/file/d/1Et6oGDkzHVAZ58Cx9NFNape4LujcW7k1/preview?usp=drive_link", downloadUrl: "#dl-notif-v2" }
+                    ],
+                    'Livros digitais': [], 'Resumos': [],
+                    'Slides': [ { title: "Notificação", youtubeId: null, downloadUrl: "https://drive.google.com/file/d/1DMu1gClKEAMy6fLNTF3y01JG6VVdXPjS/preview?usp=drive_link.pdf" } ],
+                    'Mapas mentais': []
+                }
+             },
+            {
+                title: "As Mais Importantes Atualizações Médicas para Residência Médica em 2023",
+                description: "Livro Digital sobre Atualizações Residência 2023.",
+                subItems: {
+                    'Videoaulas': [],
+                    'Livros digitais': [{ title: "Atualizações - Residência", youtubeId: null, downloadUrl: "https://drive.google.com/file/d/1amXuV-06Juyly9_mg3hPYlMCy643yTb5/preview?usp=drive_link.pdf" } ],
+                    'Resumos': [],
+                    'Slides': [],
+                    'Mapas mentais': []
+                }
+             }
+        ];
+
+        // Configuração dos ícones (agora com ícone genérico para documentos)
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+             if (isNaN(num) || num < 1) return num; // Retorna o próprio número se inválido ou menor que 1
+             var digits = String(+num).split(""),
+                 key = ["","I","II","III","IV","V","VI","VII","VIII","IX", // Unidades
+                        "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC", // Dezenas
+                        "","C","CC","CCC","CD","D","DC","DCC","DCCC","CM"], // Centenas
+                 roman = "",
+                 i = 3;
+             while (i--)
+                 roman = (key[+digits.pop() + (i * 10)] || "") + roman;
+             return Array(+digits.join("") + 1).join("M") + roman; // Milhares
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+             if (!detailsTemplate || !detailData) return null;
+             const detailNode = detailsTemplate.content.cloneNode(true);
+             const detailDiv = detailNode.querySelector('.sub-item-details');
+             const itemDetailsContent = detailNode.querySelector('.item-details-content');
+             const titleEl = detailNode.querySelector('.item-title');
+             const downloadLink = detailNode.querySelector('.download-link');
+             const iconPathData = subItemIcons[subItemType]; // Pega o path do ícone
+
+             // Adiciona o ícone apropriado
+             if (iconPathData) {
+                  const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                  const iconSizeClass = (subItemType === 'Videoaulas') ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                  iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                  if (subItemType === 'Videoaulas') {
+                       iconContainer.setAttribute('fill', 'currentColor');
+                       iconContainer.setAttribute('viewBox', '0 0 20 20');
+                  } else {
+                       iconContainer.setAttribute('fill', 'none');
+                       iconContainer.setAttribute('stroke', 'currentColor');
+                       iconContainer.setAttribute('viewBox', '0 0 24 24');
+                  }
+                  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                  path.setAttribute('d', iconPathData);
+                  if (subItemType === 'Videoaulas') {
+                       path.setAttribute('fill-rule', 'evenodd');
+                       path.setAttribute('clip-rule', 'evenodd');
+                  } else {
+                       path.setAttribute('stroke-linecap', 'round');
+                       path.setAttribute('stroke-linejoin', 'round');
+                       path.setAttribute('stroke-width', '1.5');
+                  }
+                  iconContainer.appendChild(path);
+                  itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+             } else {
+                  titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+             }
+
+             // Define o título
+             if (titleEl) {
+                 if (subItemType === 'Videoaulas') {
+                     if (totalVideos === 1) {
+                         titleEl.textContent = mainTitle;
+                     } else {
+                         // Usa o título específico da videoaula se houver e não for genérico
+                         titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula"))
+                                               ? detailData.title
+                                               : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                     }
+                 } else {
+                      titleEl.textContent = detailData.title || `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                 }
+             }
+
+             // Configura o link de download ou remove o ícone
+             if (downloadLink) {
+                 if (detailData.downloadUrl && detailData.downloadUrl !== '#' && !detailData.downloadUrl.startsWith('#dl-')) {
+                     downloadLink.href = detailData.downloadUrl;
+                     downloadLink.title = `Baixar ${titleEl.textContent}`;
+                     downloadLink.setAttribute('target', '_blank');
+                     downloadLink.addEventListener('click', (e) => {
+                         e.stopPropagation();
+                     });
+                 } else {
+                     downloadLink.remove();
+                 }
+             }
+
+              // Adiciona atributos e classes para interatividade
+              const itemDisplayTitle = titleEl.textContent;
+             if (subItemType === 'Videoaulas' && detailData.driveVideoUrl && detailData.driveVideoUrl.includes('/d/')) {
+                 detailDiv.setAttribute('data-drive-video-url', detailData.driveVideoUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             } else if (detailData.downloadUrl && detailData.downloadUrl !== '#' && detailData.downloadUrl.includes('/d/')) {
+                 detailDiv.setAttribute('data-download-url', detailData.downloadUrl);
+                 detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                 detailDiv.classList.add('cursor-pointer');
+             } else {
+                  detailDiv.classList.remove('cursor-pointer');
+             }
+
+             return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+              contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+
+              // Limpa o menu existente antes de gerar o novo
+              menuListContainer.innerHTML = '';
+
+              menuItemsData.forEach((itemData, mainIndex) => {
+                   const title = itemData.title;
+                   const description = itemData.description;
+                   const subItems = itemData.subItems || {};
+                   const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                   const accordionItem = document.createElement('div');
+                   accordionItem.className = 'accordion-item';
+                   accordionItem.setAttribute('data-completed', 'false');
+                   accordionItem.setAttribute('data-main-description', description);
+
+                   const headerButton = document.createElement('button');
+                   headerButton.className = 'menu-item-header w-full accordion-header';
+                   headerButton.setAttribute('aria-expanded', 'false');
+                   headerButton.setAttribute('aria-controls', mainContentId);
+
+                   const headerContent = document.createElement('div');
+                   headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                   headerContent.innerHTML = `
+                       <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                       <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                            <span>Estratégia Educacional</span>
+                            <button type="button" class="status-toggle flex-shrink-0">
+                                <span>Concluído</span>
+                                <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                                <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                            </button>
+                       </div>`;
+
+                   const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                   chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                   chevronIcon.setAttribute('fill', 'none');
+                   chevronIcon.setAttribute('stroke', 'currentColor');
+                   chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                   chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                   headerButton.appendChild(headerContent);
+                   headerButton.appendChild(chevronIcon);
+
+                   const contentDiv = document.createElement('div');
+                   contentDiv.id = mainContentId;
+                   contentDiv.className = 'menu-item-content hidden';
+
+                   // Gera os subitens acordeões
+                   subItemOrder.forEach((subItemType, subIndex) => {
+                       const subItemArray = subItems[subItemType] || [];
+                       const count = subItemArray.length;
+                       const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                       const subAccordionItem = document.createElement('div');
+                       subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                       const subHeaderButton = document.createElement('button');
+                       subHeaderButton.className = 'sub-accordion-header w-full';
+                       subHeaderButton.setAttribute('aria-expanded', 'false');
+                       subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                       if (count === 0) {
+                           subHeaderButton.disabled = true;
+                       }
+                       subHeaderButton.innerHTML = `
+                            <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                            <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                       `;
+
+                       const subContentDiv = document.createElement('div');
+                       subContentDiv.id = nestedContentId;
+                       subContentDiv.className = 'sub-accordion-content hidden';
+
+                       if (count > 0) {
+                           const totalVideos = (subItemType === 'Videoaulas') ? count : 0;
+                           subItemArray.forEach((detailData, detailIndex) => {
+                               const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                               if (detailElement) {
+                                   subContentDiv.appendChild(detailElement);
+                               }
+                           });
+                       }
+
+                       subAccordionItem.appendChild(subHeaderButton);
+                       subAccordionItem.appendChild(subContentDiv);
+                       contentDiv.appendChild(subAccordionItem);
+                   });
+
+                   accordionItem.appendChild(headerButton);
+                   accordionItem.appendChild(contentDiv);
+                   menuListContainer.appendChild(accordionItem);
+              });
+
+              // --- Lógica de Funcionamento do Acordeão Principal (MODIFICADO PARA EXCLUSIVO) ---
+              const allAccordionHeaders = document.querySelectorAll('.accordion-header'); // Pega todos os cabeçalhos principais
+              allAccordionHeaders.forEach(header => {
+                  header.addEventListener('click', (event) => {
+                      // Ignora o clique se foi no botão de status
+                      if (event.target.closest('.status-toggle')) return;
+
+                      const currentContentId = header.getAttribute('aria-controls');
+                      const currentContent = document.getElementById(currentContentId);
+                      const currentChevronIcon = header.querySelector('.chevron-icon');
+                      const isOpening = header.getAttribute('aria-expanded') === 'false'; // Verifica se este item está fechado e será aberto
+
+                      // Fecha TODOS os outros itens ANTES de abrir/fechar o clicado
+                      allAccordionHeaders.forEach(otherHeader => {
+                          if (otherHeader !== header) { // Não executa no próprio item que foi clicado
+                              const otherContentId = otherHeader.getAttribute('aria-controls');
+                              const otherContent = document.getElementById(otherContentId);
+                              const otherChevronIcon = otherHeader.querySelector('.chevron-icon');
+
+                              if (otherHeader.getAttribute('aria-expanded') === 'true') { // Se o outro item estiver aberto...
+                                  // ...fecha ele
+                                  otherHeader.setAttribute('aria-expanded', 'false');
+                                  if(otherContent) otherContent.classList.add('hidden');
+                                  if(otherChevronIcon) otherChevronIcon.classList.remove('rotate-180');
+                              }
+                          }
+                      });
+
+                      // Agora, abre ou fecha o item que foi clicado
+                      if (!currentContent) return; // Segurança caso o conteúdo não exista
+                      header.setAttribute('aria-expanded', isOpening); // Define o novo estado (true se estava fechado, false se estava aberto)
+                      currentContent.classList.toggle('hidden', !isOpening); // Mostra se isOpening=true, esconde se isOpening=false
+                      if (currentChevronIcon) currentChevronIcon.classList.toggle('rotate-180', isOpening); // Gira se isOpening=true, volta se isOpening=false
+                  });
+              });
+
+
+              // --- Lógica de Funcionamento do Acordeão Aninhado ---
+              // (Não precisa mudar, continua independente dentro de cada item principal)
+              const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+              subAccordionHeaders.forEach(subHeader => {
+                  if (!subHeader.disabled) {
+                      subHeader.addEventListener('click', (event) => {
+                          event.stopPropagation(); // Impede que o clique feche o acordeão pai
+                          const contentId = subHeader.getAttribute('aria-controls');
+                          const content = document.getElementById(contentId);
+                          if (!content) return;
+                          const expanded = subHeader.getAttribute('aria-expanded') === 'true';
+                          const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                          subHeader.setAttribute('aria-expanded', !expanded);
+                          content.classList.toggle('hidden');
+                          if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                      });
+                  }
+              });
+
+              // --- Lógica para Marcar/Desmarcar como Concluído ---
+              // (Não precisa mudar)
+              const statusToggles = document.querySelectorAll('.status-toggle');
+              statusToggles.forEach(toggle => {
+                  toggle.addEventListener('click', (event) => {
+                      event.stopPropagation();
+                      const accordionItem = toggle.closest('.accordion-item');
+                      if (!accordionItem) return;
+                      const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                      accordionItem.setAttribute('data-completed', !isCompleted);
+                      toggle.classList.toggle('is-completed', !isCompleted);
+                      console.log(`Item "${accordionItem.querySelector('h3').innerText}" marcado como ${!isCompleted ? 'concluído' : 'não concluído'}`);
+                  });
+              });
+
+               // --- Lógica para Carregar Conteúdo (Vídeo ou PDF/Documento) no Iframe ---
+               // (Não precisa mudar)
+               menuListContainer.addEventListener('click', (event) => {
+                   const detailItem = event.target.closest('.sub-item-details');
+                   if (event.target.closest('.download-link')) { // Ignora clique no link de download
+                       return;
+                   }
+                   if (detailItem && contentViewer && contentDescription) {
+                       const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                       const downloadUrl = detailItem.getAttribute('data-download-url');
+                       const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                       const parentAccordionItem = detailItem.closest('.accordion-item');
+                       const mainDescription = parentAccordionItem ? parentAccordionItem.getAttribute('data-main-description') : 'Descrição não disponível.';
+
+                       // Verifica se o item é clicável (possui URL válida)
+                       if (driveVideoUrl || downloadUrl) {
+                            document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                                activeItem.classList.remove('is-active');
+                            });
+                            detailItem.classList.add('is-active');
+
+                           if (driveVideoUrl) {
+                                contentViewer.src = driveVideoUrl;
+                                contentDescription.textContent = `${mainDescription} - Assistindo: ${itemTitle}`;
+                                console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                           } else if (downloadUrl) {
+                                contentViewer.src = downloadUrl;
+                                contentDescription.textContent = `${mainDescription} - Visualizando: ${itemTitle}`;
+                                console.log(`Carregando documento: ${downloadUrl}`);
+                           }
+                       }
+                   }
+               });
+
+
+               // --- Lógica para o botão de Like ---
+               if(likeButton) {
+                   likeButton.addEventListener('click', () => {
+                       likeButton.classList.toggle('is-liked');
+                       const isLiked = likeButton.classList.contains('is-liked');
+                       console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                   });
+               }
+
+               // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+               const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url], #menu-items-list .sub-item-details[data-download-url]');
+               if (firstClickableDetail) {
+                   // Procura o cabeçalho pai do primeiro item clicável
+                   const parentHeader = firstClickableDetail.closest('.accordion-item')?.querySelector('.accordion-header');
+                   if (parentHeader) {
+                       // Abre o acordeão pai primeiro (sem fechar os outros, pois é o carregamento inicial)
+                       const contentId = parentHeader.getAttribute('aria-controls');
+                       const content = document.getElementById(contentId);
+                       const chevronIcon = parentHeader.querySelector('.chevron-icon');
+                       if (content && content.classList.contains('hidden')) {
+                            parentHeader.setAttribute('aria-expanded', 'true');
+                            content.classList.remove('hidden');
+                            if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                       }
+                       // Abre o sub-acordeão se necessário
+                       const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                       if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                           const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                           if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') parentSubHeader.click();
+                       }
+                       // Clica no item para carregar o conteúdo
+                       firstClickableDetail.click();
+                   }
+               } else {
+                 // Se nenhum item for clicável inicialmente, limpa o viewer e a descrição
+                 contentViewer.src = '';
+                 contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+               }
+
+
+        } else {
+            console.error("Erro: Elementos essenciais do DOM não foram encontrados.");
+        }
+    </script>
+
+</body>
+</html>

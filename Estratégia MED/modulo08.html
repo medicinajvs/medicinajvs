@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Gastroenterologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+
+        .accordion-item {
+             margin-bottom: 0.0625rem; /* Espaçamento de 1px (se 1rem = 16px) entre os módulos */
+        }
+        .accordion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .menu-item-header {
+            border: 1px solid #e2e8f0; /* Cinza Tailwind 300 */
+            padding: 0.75rem 1rem; /* p-3 e px-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, border-radius 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            width: 100%;
+        }
+        .menu-item-header:hover { background-color: #f8fafc; } /* Cinza Tailwind 50 */
+
+        .menu-item-header[aria-expanded="true"] {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+        }
+
+        .menu-item-content {
+            padding: 0.5rem 1rem 1rem 1rem; /* py-2 px-4 pb-4 */
+            background-color: white;
+            border-left: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0.375rem; /* rounded-b-md */
+            border-bottom-right-radius: 0.375rem; /* rounded-b-md */
+        }
+
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; }
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; }
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; }
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; }
+        .like-button.is-liked .heart-filled { animation: pulse 0.3s ease-out; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Gastroenterologia</h1>
+                <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                <div class="video-container-yt">
+                    <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                    <div class="sub-item-details">
+                        <div class="item-details-content">
+                            <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                            </div>
+                        </div>
+                        <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+        // MODIFICADO: Links do módulo 16 atualizados
+        const menuItemsData = [
+            {
+                title: "Hemorragia Digestiva Alta Não-Varicosa",
+                description: "Descrição Hemorragia Digestiva Alta Não-Varicosa.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/13s8JJQwEGs7_zPcnVlw26QaH_7IcASIs/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1YopyhZWFbjCiPuATQ9ifKc-zQz2xbK6w/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/19PfjgiofTTIniXGIzNdGWMXgLBF-68P6/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/14qPBAdmhGPGU4Bz-PAJXcfKcOQXJTy08/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1PEfVK2DoZhicGXCn7L90Ck8K3C__o7gT/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/161Pw2LccixAEMJNaKRpOnT00HqAbVd6e/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1TZ0OBdqtRg_dccH04SwoxF6JGFKbKoVs/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1Lms_DC-3zHyx4X28-HNWgg4rnvykt9OY/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1XomGMRdGC5c08y4XNxecm0wi264vFpP2/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Hemorragia Digestiva Alta Varicosa",
+                description: "Descrição Hemorragia Digestiva Alta Varicosa.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1KKnsiiUdDzZn9gvoIWV0ugD1jltmriHH/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1bhog8PsYBA4-9rBSVNW7gdyHHOALjW_F/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1JS8M7nOqVE-FKzTpkO93BEqyjWodb8xv/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/18qyaMwm7wjATBMhY2a4ftXVWh3F89-iE/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1c9Ywm5jmg1cytaSVnUkSvEy-6cxgDMWo/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1x39ndJXu7EKqwlRELWjG-LXDND-4HISg/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1XX2RouJKL6LpDC8KZ0EL1utSBB4UJ0dJ/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1e589-OAIMBMQESL8ZoaONu33pyjX5wec/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Hemorragia Digestiva Baixa",
+                description: "Descrição Hemorragia Digestiva Baixa.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1LgGef8wORtov9nUabF2iBxCXRR-8Zesc/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1pKR1CyUmvrmPqaXr7i-kI0ebNodAHs2x/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/15QWlrs3gCywuGOXwIUfrsUYbvwcaX2XJ/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1Lw6FHxKhIyeC5oxtSOYVlRxi-Ha1_bmb/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1ahgo1_kx1JtgGXji6AxGVFezGWVaqjSL/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1zQAbuSBtin2YwoLwy7Zqi2YWncZacSOA/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1M-iKMPdRAkbhkXUIfJN_LzNoON-ZouJY/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/18jx91zed0GJG0aAEx5Vfa5SwFtIE9_Ph/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Doença do Refluxo Gastroesofágico, Esofagites Não-Pépticas e Ingestão de Corpo Estranho",
+                description: "Descrição DRGE, Esofagites e Corpo Estranho.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1BitpjC6kd231DI6E9lyQ7qWlaqJLuiSN/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1okkRwOR1vQJxmddZtLYAf5s8jYXpM6rP/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1Q9-PEr2LS5EiZAd7nMXZCSPBUW6_BY7N/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1Hk99iycpWgr1vFXqrFBMgHc5T7vhpyc0/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/1kc5LRuzR-ZaWgrwj_mD1kQ1Q1i-Z9U9E/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1MdxNw5MwhucUlD5OJo5_VQ2kI7tsTBlv/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1mIRa0f7CRtPh7SjKjnNO4Obs2iYqy7ed/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1gWwVTdnUNdXQkYQN3ZfrrYTQvhsGl1PC/preview" },
+                        { title: "Resumo 2", downloadUrl: "https://drive.google.com/file/d/1t3ffox4xlW58qigvUuleBrNWNMXQgFNW/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1YIOI8IqNku3UjrQzTEgc7ahi3579Q7Yt/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1AhWJ2cRMsl1xiTv4OSVuLR-QJcfU1gJ_/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1KdYQ-RClECkEmYhmOtvpI_ElYnV80FfB/preview" },
+                        { title: "Mapa Mental 2", downloadUrl: "https://drive.google.com/file/d/1CHk5a3vtgYOgA97Ywn6GlPYfr3wE7XiB/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Disfagia, Alterações Estruturais e Distúrbios da Motilidade do Esôfago",
+                description: "Descrição Disfagia e Distúrbios do Esôfago.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/10f3w5hjKEqTQfLiRDiECDuq8cmYhvKsx/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1k5cLpVLAAYC4I07IvQBrAczFDhGrH6ZN/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1T0QZs5IocGN88UxwumjH8Mt7gWsk2ikt/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1Kb3QZfCoZQzSkHkc4Ydi_QPyqD_Z2lei/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/1CJgchm8pWzCthju4H7e-DwPXGFdhZ8Io/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 6", driveVideoUrl: "https://drive.google.com/file/d/1ujctnpXuk35C5880bZIgoQ4-szFHy8-K/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1ZStOR5K_NoUdxc5diMxE-_ZUxI6TdeWP/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1rUatPWtttXl2c8_rgg7hFhd1AlJhM4fg/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1pr4qwt6Gm5d4FMmM4JM_7P5cS5yumh5W/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1dssg0VsNBqipTRzQslgRaIvYxTe-Lm2h/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1hwmPa1I3vGJ0GGm2ViJXLajvQ8b0UDa0/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Anatomofisiologia Gástrica, Gastrites, Gastroparesia e Dispepsia Funcional",
+                description: "Descrição Anatomofisiologia Gástrica e Dispepsia.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1OUiWBTfabgUQgTLAlxtM3FV0LRF2SelV/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1ccxQb6sdDyXQ8pTC6mujemfHEW3QdaXI/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1h3YmdLFvaBle-LPV88V1wNRo7dha9fCt/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/18uHzaKDNXQJYVZ-QOuoSl4XRPTUgCO2X/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/11FNTRTWF2dNCzgXrzMKBzOhm9kghKPtx/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1kbRQ-BUWCKS4AQZ1rdvAjuqa9SsWmU4J/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Doença Ulcerosa Péptica, Inibidores de Bomba de Prótons (IBP) e Helicobacter Pylori",
+                description: "Descrição Doença Ulcerosa Péptica, IBP e H. Pylori.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1xz3GKZP0RrsyR5Bxw7_bXfT9y3vmRWjW/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1bY29iT1lc-aeNGs_cZxYkuSqIiZ-a8v6/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1zXGmU0qVN6ZF00T-c43LNUg_KKGNagCI/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1HNN1FAtU59tunUCPMk5dirxIdIM3nom-/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/1p4AtaQith6QJSNG9a2Wq-JwjzsUhSHMA/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1mfCikbYZ26sVaawtqhPBuCbgOVkyeuDf/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1SijV6djzdMtRv28WCT-_BDJBMfCriqF3/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1bKJ5fFKYHxgo_qFn2MbqzHovUoT9V9W5/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1mU2REEre8cI2CCk019SwcmidPVLIAWy0/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1ewxy2hZoeaxM0Sp-owjrApXLph3EUoGC/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1V231WDAIl9FSPoq4wbgrkeO9kik4YFP4/preview" },
+                        { title: "Mapa Mental 2", downloadUrl: "https://drive.google.com/file/d/16H6iS7p7PnR2v2WAtBglQ6lJpsaCLZLY/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Pancreatite Aguda e Crônica (Pancreatites)",
+                description: "Descrição Pancreatites.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1scTh6pmOA3bGm_FeqklbUWimrFqEtR7W/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/151l3FcI7vLgzcnb0FOKseWafQWOLUlmO/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1BCp720tt_TdwcioIdi6-SJyGT2kL2nVr/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1JIL-xiWJJijhqG8TitCXPwZp6gBO_MQg/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/1OEb7jDsgpDrke9QdlM9RPWlr0C51hour/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 6", driveVideoUrl: "https://drive.google.com/file/d/147ZLX40m45iOR_oYfK9Z5ZCPmnh6DBYu/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/186VcNcZ-TXc9Xife8yOIBbXhUauJwkbe/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1I49zfPSWrCsSRwgJAuTttm48Ck3XOeXx/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1oEnnPn4DhapIryj0EXiCqkv9Lk2CNjQM/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1ZpklH_h1uYPRxygmaKH7RLEhOLoUl3SM/preview" },
+                         { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/14B8En_UrHI3hbilI3_vwOUszdRWVbrQr/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1QfpTTjM2SQa-GMTGhbCGxD9eAHRhbw0-/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Anatomia do Intestino e Síndrome do Intestino Irritável",
+                description: "Descrição Anatomia Intestinal e SII.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1eXNA0L-XgnnwgJkwRwmCUrhzc4e1oT_s/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1rdBmAxiR4h06DkA0vT7REZz-xgfCyAjQ/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1jsJWK6xqlZlRRHEjHbEbiQqF-lmi_ddI/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1uSdAbMNgpC6dw6mJKdtuhJf7ITOlXsly/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1zfEYba1hV9LblJUOqwEkNRPBZglzYRvH/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/12i4twA_QdB1GEZdAV2NUfHRCLKgBGtbg/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Doença Inflamatória Intestinal",
+                description: "Descrição Doença Inflamatória Intestinal.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1AZiqZukTkCe3clRvq_QAupXnv5lw-pMu/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1Z09jIYJDZHpCIjpDzy8BVBMbgLt3kpWF/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1VlmZ-yzPPJG47ngo6CEI_YA_pv7AQ3Xl/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1SPeJxRvGas2SWulK_oZawBBhdqFZHOHW/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1T2HSZkmlXIFRu-6zc2dV-aBKlFEnzte3/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1JLFfivuwm9mkU-6FbIvMO5yowUcaA-SG/preview" }
+                    ],
+                    'Slides': [],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1fVmQcRE2PEiePR0vaI5JrsrFk8zJnlzh/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Síndromes Disabsortivas",
+                description: "Descrição Síndromes Disabsortivas.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/126TEFxv4Stjs5kt_keL3Kh9BMcplBtQu/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1cItLmGIo7lTAIYGKWTQE4QKuC6YfwVYh/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/10rmCIIgg06pPIBVQJqg57B267bpedrxJ/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1szvYYTi78WRuyNsD-NQa0UjIOMYSohLF/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1rN_3qxUeoR225ly-yvPHERp82l9Oy2Rd/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1R1EVbRlRYYPu932PmrKREjrtHssIEVt-/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1ECp4FSjHZG8VMKnUjteV5HXoqbXyOor9/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Divertículos Colônicos e Divertículo de Meckel",
+                description: "Descrição Divertículos Colônicos e Meckel.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1ScMaPFjkSpi1RGccWgHqQU8RZBhVPVG0/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1OZHEsTIIlj6-rnwANhVYqw-_rqVIx75S/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1d_TF66g4vV5AmmSTTAOsMybCGq9s0Eax/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1oyAe1gTgn-oOVV2Wok1Bjb7so5yVsAdF/preview" }
+                    ],
+                    'Slides': [],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1F4Uhs7GM4xP-oRS_m5wOkH2XMvrS-44H/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Polipose Intestinal e Câncer Colorretal",
+                description: "Descrição Polipose Intestinal e Câncer Colorretal.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1vpKEWRE3n1QcQcxuR3igv1KOpHoltof8/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/10KxhUj7aI6SUEAvqLDza_oG4eBDWHlUz/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1wctd3LREv-0B4egm8Mi5IVA2oVegzoKZ/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1fQf9IO24uQ3rnp70Hf014SxCSSfRJrMd/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1jM5LjXVNVOOKQ_ZnV32ccEEMec06uHGz/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/10uJK6ElwvClGqtsotbvP2rIte4ufGAvo/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1R5lKI5yHquOAHuyh7-agctRcX7GGNIU1/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/17GD_3sIzIMU4D2hVB65ku4IQm-_97htf/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Neoplasias de Estômago e Esôfago",
+                description: "Descrição Neoplasias de Estômago e Esôfago.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1WZdbFD0IVuWF8kBi0FuEFMWh1x_odhHp/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1njsVw2XeIWfGdrqlnNG_yNGFssTh6I_h/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1q6NBKlwx2CLG2SVuY3BxO_-qHXtygxvy/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1nird_oYNkxS9Osu3677TXfbo6jUqT6iv/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/17t7zMLBMsBsUKqynNn3uZItW-2A-lpmh/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/10ZbYUyvS4_qtuSyZC0kahq2khXYqVfVd/preview" },
+                        { title: "Livro Digital 2", downloadUrl: "https://drive.google.com/file/d/1KtlU9ByQC4JE84IXbp0fKaJXoFUcGVlc/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1LFZs6RaunhQTTaOKlpmx5_VfzoSTCN0E/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1-DVvUsmALyiSGrRa-EH8PsoBScPO3rQD/preview" },
+                        { title: "Slide 2", downloadUrl: "https://drive.google.com/file/d/1mQ2xvC21EQslADg1__5LR2zTKkcjwxu-/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/14RMdcp17wHGKQ-i6wfETVTbZuRKdEq_D/preview" },
+                        { title: "Mapa Mental 2", downloadUrl: "https://drive.google.com/file/d/1-IsLnQGJLMTD4rW23Bd-vjylgJFdRWbj/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Anatomia e Fisiologia do Pâncreas e Neoplasias Pancreáticas",
+                description: "Descrição Anatomia, Fisiologia e Neoplasias Pancreáticas.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/17rUbZWXA8e8IQea8JawRQUiPKD594OHz/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1Hk7SFb9peQu6O7FDdSycAURMr01Lvuy8/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 3", driveVideoUrl: "https://drive.google.com/file/d/1Ar4eneeUpkhy4Vd4E0NkucevqgiyMhJd/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 4", driveVideoUrl: "https://drive.google.com/file/d/1n642wmGZkfz78aaT-ciElfuT96AjJZNx/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 5", driveVideoUrl: "https://drive.google.com/file/d/119soTEVkhsbfd_Ds-uomiuE-T2Qj7lYw/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1k6m0fD3Zv_PSvc1zVQU_BiVQbt-X1LOK/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1nc4nrGJY3tOGS8SGu_juzmTqTaWrJB5Q/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1xxaQg5ti_-AHy3Z1seVOJ-5REiKXUkMH/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/13GYhs7GHibmW6jhfxOo9OEX342__PtN0/preview" },
+                        { title: "Mapa Mental 2", downloadUrl: "https://drive.google.com/file/d/1VBPCAVAHkL9Fk7H044YLk3ixUHBn4S2u/preview" }
+                    ]
+                }
+            },
+            {
+                title: "Tumores Neuroendócrinos",
+                description: "Descrição Tumores Neuroendócrinos.",
+                subItems: {
+                    'Videoaulas': [
+                        { title: "Videoaula Parte 1", driveVideoUrl: "https://drive.google.com/file/d/1T9LRkDaRSUrZOZPrAIhb1XMHdKAyGxi9/preview", downloadUrl: "#" },
+                        { title: "Videoaula Parte 2", driveVideoUrl: "https://drive.google.com/file/d/1SnQY00QFBlC-to9txCCS7JPT8d9fHZVv/preview", downloadUrl: "#" }
+                    ],
+                    'Livros digitais': [
+                        { title: "Livro Digital 1", downloadUrl: "https://drive.google.com/file/d/1FiVJNIoFE_aCBVddjpaMkdL_8b17uusF/preview" }
+                    ],
+                    'Resumos': [
+                        { title: "Resumo 1", downloadUrl: "https://drive.google.com/file/d/1lVlcwUsZnnhQSL7-z3gVkNbWNrCjjbvR/preview" }
+                    ],
+                    'Slides': [
+                        { title: "Slide 1", downloadUrl: "https://drive.google.com/file/d/1qbaY5wLh6QjjdpbOFefk0RjVRkgsbr0N/preview" }
+                    ],
+                    'Mapas mentais': [
+                        { title: "Mapa Mental 1", downloadUrl: "https://drive.google.com/file/d/1QFsHeqVI_hCZnFLEGy2QlGt48Y9mLax5/preview" }
+                    ]
+                }
+            }
+        ];
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+            if (isNaN(num) || num < 1) return num;
+            const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+            let roman = '', i;
+            for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+            return roman;
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+            if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const isVideo = subItemType === 'Videoaulas';
+                const iconSizeClass = isVideo ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                iconContainer.setAttribute('fill', isVideo ? 'currentColor' : 'none');
+                iconContainer.setAttribute('stroke', isVideo ? 'none' : 'currentColor');
+                iconContainer.setAttribute('viewBox', isVideo ? '0 0 20 20' : '0 0 24 24');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', iconPathData);
+                if (isVideo) {
+                    path.setAttribute('fill-rule', 'evenodd');
+                    path.setAttribute('clip-rule', 'evenodd');
+                } else {
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.setAttribute('stroke-linejoin', 'round');
+                    path.setAttribute('stroke-width', '1.5');
+                }
+                iconContainer.appendChild(path);
+                itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+            if (titleEl) {
+                if (subItemType === 'Videoaulas') {
+                    if (totalVideos === 1 && (!detailData.title || detailData.title.toLowerCase().startsWith("videoaula") || detailData.title.toLowerCase().startsWith("videoaula placeholder"))) {
+                         titleEl.textContent = mainTitle;
+                    } else {
+                        titleEl.textContent = (detailData.title && !detailData.title.toLowerCase().startsWith("videoaula") && !detailData.title.toLowerCase().startsWith("videoaula placeholder"))
+                            ? detailData.title
+                            : `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                    }
+                } else {
+                    titleEl.textContent = detailData.title && !detailData.title.toLowerCase().includes("placeholder")
+                        ? detailData.title
+                        : `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                }
+            }
+
+
+            if (subtitleEl) {
+                subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+            if (downloadLink) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#') {
+                    if (!detailData.downloadUrl.startsWith('#dl-')) {
+                        downloadLink.href = detailData.downloadUrl;
+                        downloadLink.setAttribute('target', '_blank');
+                        downloadLink.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    } else {
+                         downloadLink.href = detailData.downloadUrl;
+                         downloadLink.removeAttribute('target');
+                    }
+                    downloadLink.title = `Baixar ${titleEl.textContent}`;
+                }
+                else {
+                    downloadLink.remove();
+                }
+            }
+
+            const itemDisplayTitle = titleEl.textContent;
+            const videoUrl = detailData.driveVideoUrl;
+            const docUrl = detailData.downloadUrl;
+
+            if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                detailDiv.setAttribute('data-download-url', docUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            else {
+                 if (subItemType !== 'Videoaulas') {
+                     detailDiv.classList.remove('cursor-pointer');
+                 }
+            }
+
+            return detailDiv;
+        }
+
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+            contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+            menuListContainer.innerHTML = '';
+
+            menuItemsData.forEach((itemData, mainIndex) => {
+                const title = itemData.title;
+                const description = itemData.description;
+                const subItems = itemData.subItems || {};
+                const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)}`;
+
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.setAttribute('data-completed', 'false');
+                accordionItem.setAttribute('data-main-description', description);
+
+                const headerButton = document.createElement('button');
+                headerButton.className = 'menu-item-header w-full accordion-header';
+                headerButton.setAttribute('aria-expanded', 'false');
+                headerButton.setAttribute('aria-controls', mainContentId);
+
+                const headerContent = document.createElement('div');
+                headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                headerContent.innerHTML = `
+                    <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                    <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                        <span>Estratégia Educacional</span>
+                        <button type="button" class="status-toggle flex-shrink-0" title="Marcar como concluído"> <span class="mr-1">Concluído</span> <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                            <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>`;
+
+                const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                chevronIcon.setAttribute('fill', 'none');
+                chevronIcon.setAttribute('stroke', 'currentColor');
+                chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                headerButton.appendChild(headerContent);
+                headerButton.appendChild(chevronIcon);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = mainContentId;
+                contentDiv.className = 'menu-item-content hidden';
+
+                subItemOrder.forEach((subItemType, subIndex) => {
+                    const subItemArray = subItems[subItemType] || [];
+                    const count = subItemArray.length;
+                    const nestedContentId = `nested-content-${mainIndex}-${subIndex}`;
+
+                    const subAccordionItem = document.createElement('div');
+                    subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                    const subHeaderButton = document.createElement('button');
+                    subHeaderButton.className = 'sub-accordion-header w-full';
+                    subHeaderButton.setAttribute('aria-expanded', 'false');
+                    subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                    if (count === 0) {
+                        subHeaderButton.disabled = true;
+                    }
+                    subHeaderButton.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                        <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    `;
+
+                    const subContentDiv = document.createElement('div');
+                    subContentDiv.id = nestedContentId;
+                    subContentDiv.className = 'sub-accordion-content hidden';
+
+                    if (count > 0) {
+                        const totalVideos = (subItemType === 'Videoaulas') ? count : 0;
+                        subItemArray.forEach((detailData, detailIndex) => {
+                            const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideos);
+                            if (detailElement) {
+                                subContentDiv.appendChild(detailElement);
+                            }
+                        });
+                    }
+
+                    subAccordionItem.appendChild(subHeaderButton);
+                    subAccordionItem.appendChild(subContentDiv);
+                    contentDiv.appendChild(subAccordionItem);
+                });
+
+                accordionItem.appendChild(headerButton);
+                accordionItem.appendChild(contentDiv);
+                menuListContainer.appendChild(accordionItem);
+            });
+
+            // --- Lógica dos Acordeões ---
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    if (event.target.closest('.status-toggle')) return;
+                    const content = header.nextElementSibling;
+                    if (!content || !content.classList.contains('menu-item-content')) return;
+                    const isExpanded = header.getAttribute('aria-expanded') === 'true';
+                    const chevronIcon = header.querySelector('.chevron-icon');
+                    header.setAttribute('aria-expanded', String(!isExpanded));
+                    content.classList.toggle('hidden');
+                    if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                });
+            });
+
+            const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+            subAccordionHeaders.forEach(subHeader => {
+                if (!subHeader.disabled) {
+                    subHeader.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const content = subHeader.nextElementSibling;
+                        if (!content || !content.classList.contains('sub-accordion-content')) return;
+                        const isExpanded = subHeader.getAttribute('aria-expanded') === 'true';
+                        const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+                        subHeader.setAttribute('aria-expanded', String(!isExpanded));
+                        content.classList.toggle('hidden');
+                        if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                    });
+                }
+            });
+
+            // --- Lógica para Marcar/Desmarcar como Concluído ---
+            const statusToggles = document.querySelectorAll('.status-toggle');
+            statusToggles.forEach(toggle => {
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const accordionItem = toggle.closest('.accordion-item');
+                    if (!accordionItem) return;
+                    const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                    const newCompletedState = !isCompleted;
+                    accordionItem.setAttribute('data-completed', String(newCompletedState));
+                    toggle.classList.toggle('is-completed', newCompletedState);
+                    toggle.title = newCompletedState ? 'Marcar como não concluído' : 'Marcar como concluído';
+                    console.log(`Item "${accordionItem.querySelector('h3').innerText}" marcado como ${newCompletedState ? 'concluído' : 'não concluído'}`);
+                });
+            });
+
+            // --- Lógica para Carregar Conteúdo ---
+            menuListContainer.addEventListener('click', (event) => {
+                const detailItem = event.target.closest('.sub-item-details');
+                if (event.target.closest('.download-link')) { return; }
+
+                if (detailItem && contentViewer && contentDescription) {
+                    const driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                    const downloadUrl = detailItem.getAttribute('data-download-url');
+                    const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+                    const parentAccordionItem = detailItem.closest('.accordion-item');
+                    const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+
+                    if (driveVideoUrl || downloadUrl) {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                            activeItem.classList.remove('is-active');
+                        });
+                        detailItem.classList.add('is-active');
+                        let contentType = '';
+                        if (driveVideoUrl) {
+                            contentViewer.src = driveVideoUrl;
+                            contentType = 'Assistindo';
+                            console.log(`Carregando vídeo do Drive: ${driveVideoUrl}`);
+                        }
+                        else if (downloadUrl) {
+                            contentViewer.src = downloadUrl;
+                            contentType = 'Visualizando';
+                            console.log(`Carregando documento: ${downloadUrl}`);
+                        }
+                        contentDescription.textContent = `Aula sobre ${mainTitle} - ${contentType}: ${itemTitle}`;
+                    }
+                }
+            });
+
+            // --- Lógica para o botão de Like ---
+            if(likeButton) {
+                likeButton.addEventListener('click', () => {
+                    likeButton.classList.toggle('is-liked');
+                    const isLiked = likeButton.classList.contains('is-liked');
+                    console.log(`Item ${isLiked ? 'curtido' : 'descurtido'}`);
+                });
+            }
+
+            // --- Carregar o Primeiro Conteúdo Clicável ao Iniciar ---
+            const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url]:not([data-drive-video-url="#"]), #menu-items-list .sub-item-details[data-download-url]:not([data-download-url="#"]):not([data-download-url^="#dl-"])');
+            if (firstClickableDetail) {
+                 setTimeout(() => {
+                    const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                    const parentHeader = parentAccordionItem?.querySelector('.accordion-header');
+                    if (parentHeader && parentHeader.getAttribute('aria-expanded') === 'false') {
+                        if(typeof parentHeader.click === 'function') parentHeader.click();
+                    }
+                    const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                    if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                        const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                        if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                             parentSubHeader.click();
+                        }
+                    }
+                    if(typeof firstClickableDetail.click === 'function'){
+                         firstClickableDetail.click();
+                    }
+                 }, 100);
+            } else {
+                contentViewer.src = '';
+                contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+                console.log("Nenhum item inicial clicável encontrado para carregar.");
+            }
+
+        } else {
+            console.error("Erro: Elementos essenciais do DOM não foram encontrados.");
+        }
+    </script>
+
+</body>
+</html>

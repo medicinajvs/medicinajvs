@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estratégia MED - Oftalmologia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e específicos */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+
+        .accordion-item {
+            margin-bottom: 0.0625rem; /* Espaçamento de 1px (se 1rem = 16px) entre os módulos */
+        }
+        .accordion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .menu-item-header {
+            border: 1px solid #e2e8f0; /* Cinza Tailwind 300 */
+            padding: 0.75rem 1rem; /* p-3 e px-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, border-radius 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            width: 100%;
+        }
+        .menu-item-header:hover { background-color: #f8fafc; } /* Cinza Tailwind 50 */
+
+        .menu-item-header[aria-expanded="true"] {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+        }
+
+        .menu-item-content {
+            padding: 0.5rem 1rem 1rem 1rem; /* py-2 px-4 pb-4 */
+            background-color: white;
+            border-left: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0.375rem; /* rounded-b-md */
+            border-bottom-right-radius: 0.375rem; /* rounded-b-md */
+        }
+
+        .sub-accordion-header { padding: 0.75rem 0.5rem; border-radius: 0.375rem; margin-top: 0.5rem; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; text-align: left; transition: background-color 0.2s ease-in-out; }
+        .sub-accordion-header:hover { background-color: #f1f5f9; }
+        .sub-accordion-header:disabled { cursor: default; opacity: 0.6; background-color: #f8fafc; }
+        .sub-accordion-header:disabled:hover { background-color: #f8fafc; }
+
+        .sub-accordion-content { padding-left: 1rem; margin-top: 0.25rem; }
+        .sub-item-details { padding: 0.75rem 0.5rem 0.75rem 1rem; border-radius: 0.375rem; margin-top: 0.25rem; background-color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease-in-out; }
+        .sub-item-details[data-drive-video-url],
+        .sub-item-details[data-download-url] { cursor: pointer; }
+        .sub-item-details[data-drive-video-url]:hover,
+        .sub-item-details[data-download-url]:hover { background-color: #cbd5e1; }
+        .sub-item-details.is-active { background-color: #bfdbfe; }
+        .sub-item-details.is-active .item-icon { color: #3b82f6; }
+        .item-details-content { display: flex; align-items: center; flex-grow: 1; margin-right: 0.5rem; overflow: hidden; }
+        .item-details-content .item-icon + .overflow-hidden { margin-left: 0.75rem; }
+
+        .download-link { display: inline-flex; align-items: center; color: #6b7280; transition: color 0.2s ease-in-out; }
+        .download-link:hover { color: #1f2937; }
+        .status-toggle { cursor: pointer; display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem; border-radius: 0.25rem; transition: background-color 0.2s ease-in-out; }
+        .status-toggle:hover { background-color: #e5e7eb; }
+        .status-toggle .icon-completed { display: none; }
+        .status-toggle .icon-not-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-completed { display: inline-block; }
+        .status-toggle.is-completed .icon-not-completed { display: none; }
+        .video-container-yt { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #ccc; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        .video-container-yt iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .menu-container { flex-shrink: 0; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .menu-container::-webkit-scrollbar { width: 6px; }
+        .menu-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+        .menu-container::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
+        .hidden { display: none; }
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-transform { transition: transform 0.2s ease-in-out; }
+
+        .like-button .heart-outline { display: inline-block; }
+        .like-button .heart-filled { display: none; }
+        .like-button.is-liked .heart-outline { display: none; }
+        .like-button.is-liked .heart-filled { display: inline-block; color: #ef4444; }
+        .like-button.is-liked .heart-filled { animation: pulse 0.3s ease-out; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md py-3 px-4 md:px-8 sticky top-0 z-10">
+        <div class="container mx-auto max-w-full flex justify-between items-center">
+            <div class="flex items-center gap-4 flex-wrap">
+                <a href="estrategiamed.html" class="flex items-center text-sm text-gray-600 hover:text-gray-900"> <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Voltar
+                </a>
+                <h1 class="text-lg font-semibold text-gray-700">Oftalmologia</h1> <div class="relative inline-block text-left">
+                    <button type="button" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                        2024
+                        <svg class="-mr-1 ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="like-button" class="like-button text-gray-500 hover:text-red-500 transition-colors duration-200">
+                    <svg class="heart-outline w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <svg class="heart-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                </button>
+                </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-full p-4 md:p-8">
+        <div class="flex flex-row flex-wrap gap-6 md:gap-8">
+            <div class="w-full md:flex-1 min-w-[300px]">
+                <div class="video-container-yt">
+                    <iframe
+                        id="content-viewer" src="" title="Visualizador de Conteúdo"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p id="content-description" class="mt-4 text-gray-600 text-sm md:text-base">
+                    Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.
+                </p>
+            </div>
+
+            <div class="w-full md:w-[350px] menu-container mt-6 md:mt-0 pr-2">
+
+                <template id="subitem-details-template">
+                    <div class="sub-item-details">
+                        <div class="item-details-content">
+                            <div class="overflow-hidden"> <div class="item-title text-sm font-medium text-gray-800 truncate">Placeholder Title</div>
+                                <div class="item-subtitle text-xs text-gray-500">Estratégia Educacional</div>
+                            </div>
+                        </div>
+                        <a href="#" class="download-link flex-shrink-0" title="Baixar">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </a>
+                    </div>
+                </template>
+
+                <div id="menu-items-list">
+                    </div>
+
+            </div> </div> </main>
+
+    <script>
+        // --- Dados e Configurações ---
+
+        // Definição dos placeholders para novos itens
+        const newVideoPlaceholder = { title: "Nova Videoaula Placeholder", driveVideoUrl: "https://drive.google.com/file/d/1placeholder_video_id_new/preview", downloadUrl: "#" };
+        const newLivroDigitalPlaceholder = { title: "Novo Livro Digital Placeholder", downloadUrl: "https://drive.google.com/file/d/1placeholder_livro_id_new/preview" };
+        const newResumoPlaceholder = { title: "Novo Resumo Placeholder", downloadUrl: "https://drive.google.com/file/d/1placeholder_resumo_id_new/preview" };
+        const newSlidePlaceholder = { title: "Novo Slide Placeholder", downloadUrl: "https://drive.google.com/file/d/1placeholder_slide_id_new/preview" };
+        const newMapaMentalPlaceholder = { title: "Novo Mapa Mental Placeholder", downloadUrl: "https://drive.google.com/file/d/1placeholder_mapa_id_new/preview" };
+
+        // Função para ajustar a quantidade de sub-itens
+        function adjustSubItems(currentItems, targetCount, placeholderItem) {
+            const newItems = Array.isArray(currentItems) ? [...currentItems] : [];
+            if (newItems.length > targetCount) {
+                return newItems.slice(0, targetCount);
+            }
+            while (newItems.length < targetCount) {
+                const newItem = { ...placeholderItem };
+                newItems.push(newItem);
+            }
+            return newItems;
+        }
+
+
+        const menuItemsData = [
+            { // Módulo 1
+                title: "Anatomia e Fisiologia do Aparelho Visual",
+                description: "Descrição Anatomia e Fisiologia do Aparelho Visual.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 2
+                title: "Córnea e Cristalino",
+                description: "Descrição Córnea e Cristalino.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 3
+                title: "Glaucoma",
+                description: "Descrição Glaucoma.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 4
+                title: "Distúrbios da Refração",
+                description: "Descrição Distúrbios da Refração.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 5
+                title: "Neuroftalmologia",
+                description: "Descrição Neuroftalmologia.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 6
+                title: "Traumatismos Oculares",
+                description: "Descrição Traumatismos Oculares.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 7
+                title: "Tumores Oculares Malignos",
+                description: "Descrição Tumores Oculares Malignos.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 8
+                title: "Síndrome do Olho Vermelho",
+                description: "Descrição Síndrome do Olho Vermelho.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            },
+            { // Módulo 9
+                title: "Doenças do Polo Posterior",
+                description: "Descrição Doenças do Polo Posterior.",
+                subItems: {
+                    'Videoaulas': [], 'Livros digitais': [], 'Resumos': [], 'Slides': [], 'Mapas mentais': []
+                }
+            }
+        ];
+
+        // --- Ajustando a quantidade de itens para cada módulo ---
+        // Módulo 1: "Anatomia e Fisiologia do Aparelho Visual" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[0].subItems['Videoaulas'] = adjustSubItems(menuItemsData[0].subItems['Videoaulas'], 2, newVideoPlaceholder);
+        menuItemsData[0].subItems['Livros digitais'] = adjustSubItems(menuItemsData[0].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[0].subItems['Resumos'] = adjustSubItems(menuItemsData[0].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[0].subItems['Slides'] = adjustSubItems(menuItemsData[0].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[0].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[0].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 2: "Córnea e Cristalino" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[1].subItems['Videoaulas'] = adjustSubItems(menuItemsData[1].subItems['Videoaulas'], 2, newVideoPlaceholder);
+        menuItemsData[1].subItems['Livros digitais'] = adjustSubItems(menuItemsData[1].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[1].subItems['Resumos'] = adjustSubItems(menuItemsData[1].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[1].subItems['Slides'] = adjustSubItems(menuItemsData[1].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[1].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[1].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 3: "Glaucoma" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[2].subItems['Videoaulas'] = adjustSubItems(menuItemsData[2].subItems['Videoaulas'], 2, newVideoPlaceholder);
+        menuItemsData[2].subItems['Livros digitais'] = adjustSubItems(menuItemsData[2].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[2].subItems['Resumos'] = adjustSubItems(menuItemsData[2].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[2].subItems['Slides'] = adjustSubItems(menuItemsData[2].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[2].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[2].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 4: "Distúrbios da Refração" (VA: 1, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[3].subItems['Videoaulas'] = adjustSubItems(menuItemsData[3].subItems['Videoaulas'], 1, newVideoPlaceholder);
+        menuItemsData[3].subItems['Livros digitais'] = adjustSubItems(menuItemsData[3].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[3].subItems['Resumos'] = adjustSubItems(menuItemsData[3].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[3].subItems['Slides'] = adjustSubItems(menuItemsData[3].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[3].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[3].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 5: "Neuroftalmologia" (VA: 2, LD: 1, R: 0, S: 1, MM: 0)
+        menuItemsData[4].subItems['Videoaulas'] = adjustSubItems(menuItemsData[4].subItems['Videoaulas'], 2, newVideoPlaceholder);
+        menuItemsData[4].subItems['Livros digitais'] = adjustSubItems(menuItemsData[4].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[4].subItems['Resumos'] = adjustSubItems(menuItemsData[4].subItems['Resumos'], 0, newResumoPlaceholder);
+        menuItemsData[4].subItems['Slides'] = adjustSubItems(menuItemsData[4].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[4].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[4].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 6: "Traumatismos Oculares" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[5].subItems['Videoaulas'] = adjustSubItems(menuItemsData[5].subItems['Videoaulas'], 2, newVideoPlaceholder);
+        menuItemsData[5].subItems['Livros digitais'] = adjustSubItems(menuItemsData[5].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[5].subItems['Resumos'] = adjustSubItems(menuItemsData[5].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[5].subItems['Slides'] = adjustSubItems(menuItemsData[5].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[5].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[5].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 7: "Tumores Oculares Malignos" (VA: 1, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[6].subItems['Videoaulas'] = adjustSubItems(menuItemsData[6].subItems['Videoaulas'], 1, newVideoPlaceholder);
+        menuItemsData[6].subItems['Livros digitais'] = adjustSubItems(menuItemsData[6].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[6].subItems['Resumos'] = adjustSubItems(menuItemsData[6].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[6].subItems['Slides'] = adjustSubItems(menuItemsData[6].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[6].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[6].subItems['Mapas mentais'], 0, newMapaMentalPlaceholder);
+
+        // Módulo 8: "Síndrome do Olho Vermelho" (VA: 6, LD: 1, R: 1, S: 1, MM: 1)
+        menuItemsData[7].subItems['Videoaulas'] = adjustSubItems(menuItemsData[7].subItems['Videoaulas'], 6, newVideoPlaceholder);
+        menuItemsData[7].subItems['Livros digitais'] = adjustSubItems(menuItemsData[7].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[7].subItems['Resumos'] = adjustSubItems(menuItemsData[7].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[7].subItems['Slides'] = adjustSubItems(menuItemsData[7].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[7].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[7].subItems['Mapas mentais'], 1, newMapaMentalPlaceholder);
+
+        // Módulo 9: "Doenças do Polo Posterior" (VA: 5, LD: 1, R: 1, S: 1, MM: 1)
+        menuItemsData[8].subItems['Videoaulas'] = adjustSubItems(menuItemsData[8].subItems['Videoaulas'], 5, newVideoPlaceholder);
+        menuItemsData[8].subItems['Livros digitais'] = adjustSubItems(menuItemsData[8].subItems['Livros digitais'], 1, newLivroDigitalPlaceholder);
+        menuItemsData[8].subItems['Resumos'] = adjustSubItems(menuItemsData[8].subItems['Resumos'], 1, newResumoPlaceholder);
+        menuItemsData[8].subItems['Slides'] = adjustSubItems(menuItemsData[8].subItems['Slides'], 1, newSlidePlaceholder);
+        menuItemsData[8].subItems['Mapas mentais'] = adjustSubItems(menuItemsData[8].subItems['Mapas mentais'], 1, newMapaMentalPlaceholder);
+
+        // --- Atualizando os links para os módulos ---
+
+        // Módulo 1: "Anatomia e Fisiologia do Aparelho Visual" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[0].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1S8-qs5yFXBLZJeD_UQnl74VA96pMfKLF/view?usp=sharing";
+        menuItemsData[0].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1bcZscGNIKldUDH5KpK4Kfw86WMbI2VwW/view?usp=sharing";
+        menuItemsData[0].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1auP8NxqXstQNZxVTElrtCkXxsI7_saJr/view?usp=drive_link";
+        menuItemsData[0].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1_JFt6c_coDgn_Uqs-wYzwNIP5kx_jdud/view?usp=drive_link";
+        menuItemsData[0].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1yyRKhWIPimjAQloRzSv3uDszlKCn2Gv8/view?usp=drive_link";
+
+        // Módulo 2: "Córnea e Cristalino" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[1].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1YLqSRj7oNtBM54hrZdEbUrFHEVvviJyn/view?usp=sharing";
+        menuItemsData[1].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1Np32g5Li4d4t-Lt9uU9Xe819qiTqWkqA/view?usp=sharing";
+        menuItemsData[1].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1JAW8qLi1E6vnpeSY3-PHF04W9WkvuzYX/view?usp=drive_link";
+        menuItemsData[1].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1PpNn8DWIQLn7x3ojWHdAdOmHMmAtyajl/view?usp=drive_link";
+        menuItemsData[1].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/10f4TjBjiBacpDfuzrs3ihWXPESOSazgL/view?usp=drive_link";
+
+        // Módulo 3: "Glaucoma" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[2].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/169AYEFSIPBEN8Up9Giu0ifPODDLmZ526/view?usp=sharing";
+        menuItemsData[2].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1jMKeYofUwLA_kRpQRN0B-H7qBDDFoiUm/view?usp=sharing";
+        menuItemsData[2].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1qCiBb3WQCSy_X57WyaHXYLAWES6ZHUIz/view?usp=drive_link";
+        menuItemsData[2].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1OPEzynw3TOEfLqNDEDR6n23jUVcIk6-s/view?usp=drive_link";
+        menuItemsData[2].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1w0x3JzAD7xJOZ2q_wWeWZzYk__edykLa/view?usp=drive_link";
+
+        // Módulo 4: "Distúrbios da Refração" (VA: 1, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[3].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1wYZ-ZI8Ewu0cCc6tSl2ZRoullME8n8fT/view?usp=drive_link";
+        menuItemsData[3].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1g5YBVuTtsIFhxihtbUHmgZWvGKnEdr8R/view?usp=sharing";
+        menuItemsData[3].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1uT_PookFGlAMxTfv9ce_0V00m_5MqM7f/view?usp=sharing";
+        menuItemsData[3].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1vFWMofftbdFupkMzJN0vr_h4dcyzl8vh/view?usp=sharing";
+
+        // Módulo 5: "Neuroftalmologia" (VA: 2, LD: 1, R: 0, S: 1, MM: 0)
+        menuItemsData[4].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1GyHpFkTaKKqIiGWsQ8gdBbf9voa2nwtw/view?usp=sharing";
+        menuItemsData[4].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1o_WezqTRInlUXw4tUkaSXb63G-bekFSj/view?usp=sharing";
+        menuItemsData[4].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1mBlnxD5V3HP5LGx_Ew_rvPPLxxpo9usf/view?usp=drive_link";
+        // Resumos é 0, então não há link
+        menuItemsData[4].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/11UjB2IGMvyYYoEEQob9TWl0swF0ZIOdL/view?usp=drive_link";
+
+        // Módulo 6: "Traumatismos Oculares" (VA: 2, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[5].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1cCUTlM6VgZleoltZ0SvkmMT1wS3kVyFE/view?usp=sharing";
+        menuItemsData[5].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1e8JjW63wOvfLnS9_1EMwhrQac0PaX1Wt/view?usp=sharing";
+        menuItemsData[5].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1iwimx91A038yAMIIbXnJp4MdeBqjRgFN/view?usp=drive_link";
+        menuItemsData[5].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1T9hjLr6mHtHAhuWYvImbtz2mI7EBrJBi/view?usp=drive_link";
+        menuItemsData[5].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1JIxFbsAV_AFxQUUbS8zLf-DHTzdqMyR6/view?usp=drive_link";
+
+        // Módulo 7: "Tumores Oculares Malignos" (VA: 1, LD: 1, R: 1, S: 1, MM: 0)
+        menuItemsData[6].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1udXhdVUOCVRf74zlRB63nLHLyfbSbrbS/view?usp=drive_link";
+        menuItemsData[6].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1UmZ7MJLCX5khbkUsU9H-EnGecFWpqhLe/view?usp=drive_link";
+        menuItemsData[6].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/10KsgN6LrneplIArPhtRjh790fJHHmd3o/view?usp=drive_link";
+        menuItemsData[6].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1EfziFb3fwxhCMTmoqfoaY-1JsfWUUJeA/view?usp=drive_link";
+
+        // Módulo 8: "Síndrome do Olho Vermelho" (VA: 6, LD: 1, R: 1, S: 1, MM: 1)
+        menuItemsData[7].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1Yo9vBDbOf2d6R-EGRaO2x208ijRyiLY4/view?usp=sharing";
+        menuItemsData[7].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1_gVDuB74W-noIJINy02sW9IWbfz3dnqy/view?usp=sharing";
+        menuItemsData[7].subItems['Videoaulas'][2].driveVideoUrl = "https://drive.google.com/file/d/1dk5b3ligneqCKy-7TnbglsLAl6wfnwh1/view?usp=sharing";
+        menuItemsData[7].subItems['Videoaulas'][3].driveVideoUrl = "https://drive.google.com/file/d/15-cj_O6OKJ8iuRCZmbszCf6NVYhsrUfj/view?usp=sharing";
+        menuItemsData[7].subItems['Videoaulas'][4].driveVideoUrl = "https://drive.google.com/file/d/1T0vORF-o9SUlFlNJ5LXElSLz7Cp1N_Fu/view?usp=sharing";
+        menuItemsData[7].subItems['Videoaulas'][5].driveVideoUrl = "https://drive.google.com/file/d/16NRPC7AyJf0p4F1wQsu100-6IHz_bLYY/view?usp=sharing";
+        menuItemsData[7].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1Pc4lEiED6oebk93XvF6CplTgUV3eLGde/view?usp=drive_link";
+        menuItemsData[7].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1AarxkagXt7m2LzzU9J522hLL6REsKgoT/view?usp=drive_link";
+        menuItemsData[7].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1iYKAuOsW8jjiAPGoJJei4-dTXTZ0duPP/view?usp=drive_link";
+        menuItemsData[7].subItems['Mapas mentais'][0].downloadUrl = "https://drive.google.com/file/d/1Xh2_9XWwITx3CwQ9oPUIRgK_mdfssrhh/view?usp=drive_link";
+
+        // Módulo 9: "Doenças do Polo Posterior" (VA: 5, LD: 1, R: 1, S: 1, MM: 1)
+        menuItemsData[8].subItems['Videoaulas'][0].driveVideoUrl = "https://drive.google.com/file/d/1-gniz12qwoP-VUXBWsnC5P3X9S2Sd10E/view?usp=sharing";
+        menuItemsData[8].subItems['Videoaulas'][1].driveVideoUrl = "https://drive.google.com/file/d/1ey7MGOXe5J-XSK0qlpaj3MixwxV-5Ute/view?usp=sharing";
+        menuItemsData[8].subItems['Videoaulas'][2].driveVideoUrl = "https://drive.google.com/file/d/1SixHkMURenHE17HX5iwFRfRALJP217u-/view?usp=sharing";
+        menuItemsData[8].subItems['Videoaulas'][3].driveVideoUrl = "https://drive.google.com/file/d/1F47GZJJXxSx0t_c1YDX2qhcsy4KQbsht/view?usp=sharing";
+        menuItemsData[8].subItems['Videoaulas'][4].driveVideoUrl = "https://drive.google.com/file/d/11ll8OKBQQlqH_g2mjMJWTFYD0cMLxzsa/view?usp=sharing";
+        menuItemsData[8].subItems['Livros digitais'][0].downloadUrl = "https://drive.google.com/file/d/1oPwQ25CAP4IjL01OhWBHVFU5BIefPP5d/view?usp=drive_link";
+        menuItemsData[8].subItems['Resumos'][0].downloadUrl = "https://drive.google.com/file/d/1u0T-DVYEENrlF_MevzyyVtwr3liKRiJV/view?usp=drive_link";
+        menuItemsData[8].subItems['Slides'][0].downloadUrl = "https://drive.google.com/file/d/1l9Cr7xO_ksK6HyWjowUVotBtblMQwhuD/view?usp=drive_link";
+        menuItemsData[8].subItems['Mapas mentais'][0].downloadUrl = "https://drive.google.com/file/d/1NRCMeI-EG3eW2utU7JHAItgFXKqMRIjn/view?usp=drive_link";
+
+
+        // Configuração dos ícones
+        const subItemIcons = {
+            'Videoaulas': 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', // Play
+            'Livros digitais': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', // Livro
+            'Resumos': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', // Documento
+            'Slides': 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', // Apresentação
+            'Mapas mentais': 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M12 12a3 3 0 100-6 3 3 0 000 6z' // Mapa
+        };
+        const subItemOrder = ['Videoaulas', 'Livros digitais', 'Resumos', 'Slides', 'Mapas mentais'];
+
+        // Referências aos elementos do DOM
+        const menuListContainer = document.getElementById('menu-items-list');
+        const detailsTemplate = document.getElementById('subitem-details-template');
+        const contentViewer = document.getElementById('content-viewer');
+        const contentDescription = document.getElementById('content-description');
+        const likeButton = document.getElementById('like-button');
+
+        // --- Funções Auxiliares ---
+        function romanize(num) {
+            if (isNaN(num) || num < 1) return String(num);
+            const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+            let roman = '', i;
+            for ( i in lookup ) { while ( num >= lookup[i] ) { roman += i; num -= lookup[i]; } }
+            return roman;
+        }
+
+        function createSubItemDetail(subItemType, detailData, mainTitle, videoIndex, totalVideos) {
+            if (!detailsTemplate || !detailData) return null;
+            const detailNode = detailsTemplate.content.cloneNode(true);
+            const detailDiv = detailNode.querySelector('.sub-item-details');
+            const itemDetailsContent = detailNode.querySelector('.item-details-content');
+            const titleEl = detailNode.querySelector('.item-title');
+            const subtitleEl = detailNode.querySelector('.item-subtitle');
+            const downloadLink = detailNode.querySelector('.download-link');
+            const iconPathData = subItemIcons[subItemType];
+
+            if (iconPathData) {
+                const iconContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const isVideo = subItemType === 'Videoaulas';
+                const iconSizeClass = isVideo ? 'w-8 h-8 mr-3' : 'w-6 h-6 mr-2';
+                iconContainer.setAttribute('class', `item-icon ${iconSizeClass} text-gray-600 flex-shrink-0`);
+                iconContainer.setAttribute('fill', isVideo ? 'currentColor' : 'none');
+                iconContainer.setAttribute('stroke', isVideo ? 'none' : 'currentColor');
+                iconContainer.setAttribute('viewBox', isVideo ? '0 0 20 20' : '0 0 24 24');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', iconPathData);
+                if (isVideo) {
+                    path.setAttribute('fill-rule', 'evenodd');
+                    path.setAttribute('clip-rule', 'evenodd');
+                } else {
+                    path.setAttribute('stroke-linecap', 'round');
+                    path.setAttribute('stroke-linejoin', 'round');
+                    path.setAttribute('stroke-width', '1.5');
+                }
+                iconContainer.appendChild(path);
+                itemDetailsContent.insertBefore(iconContainer, itemDetailsContent.firstChild);
+            } else {
+                 titleEl.closest('.overflow-hidden').style.marginLeft = '0';
+            }
+
+            if (titleEl) {
+                const hasSpecificTitle = detailData.title &&
+                                       !detailData.title.toLowerCase().includes("placeholder") &&
+                                       !detailData.title.toLowerCase().startsWith("nova videoaula") &&
+                                       !detailData.title.toLowerCase().startsWith("novo livro digital") &&
+                                       !detailData.title.toLowerCase().startsWith("novo resumo") &&
+                                       !detailData.title.toLowerCase().startsWith("novo slide") &&
+                                       !detailData.title.toLowerCase().startsWith("novo mapa mental");
+
+                if (hasSpecificTitle) {
+                    titleEl.textContent = detailData.title;
+                } else {
+                    if (subItemType === 'Videoaulas') {
+                        if (totalVideos === 1) {
+                             titleEl.textContent = mainTitle;
+                        } else {
+                            titleEl.textContent = `${mainTitle} - Parte ${romanize(videoIndex + 1)}`;
+                        }
+                    } else {
+                        const subItemArrayForCount = menuItemsData.find(m => m.title === mainTitle)?.subItems[subItemType] || [];
+                        if (subItemArrayForCount.length === 1) {
+                             titleEl.textContent = `${subItemType.slice(0,-1)} - ${mainTitle}`;
+                        } else {
+                            titleEl.textContent = `${subItemType.slice(0,-1)} ${videoIndex + 1} - ${mainTitle}`;
+                        }
+                    }
+                }
+            }
+
+
+            if (subtitleEl) {
+                subtitleEl.textContent = "Estratégia Educacional";
+            }
+
+            if (downloadLink) {
+                if (detailData.downloadUrl && detailData.downloadUrl !== '#' && !(subItemType === 'Videoaulas' && detailData.downloadUrl === '#')) {
+                    let previewUrl = detailData.downloadUrl;
+                    if (previewUrl.includes("drive.google.com") && (previewUrl.includes("/view?usp=sharing") || previewUrl.includes("/view?usp=drive_link"))) {
+                        previewUrl = previewUrl.replace(/\/view\?usp=(sharing|drive_link)/, "/preview");
+                    }
+
+                    if (!previewUrl.startsWith('#dl-')) {
+                        downloadLink.href = previewUrl;
+                        downloadLink.setAttribute('target', '_blank');
+                        downloadLink.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    } else {
+                        downloadLink.href = previewUrl;
+                        downloadLink.removeAttribute('target');
+                    }
+                    downloadLink.title = `Baixar ${titleEl.textContent}`;
+                }
+                else {
+                    downloadLink.remove();
+                }
+            }
+
+            const itemDisplayTitle = titleEl.textContent;
+            let videoUrl = detailData.driveVideoUrl;
+            if (videoUrl && videoUrl.includes("drive.google.com") && (videoUrl.includes("/view?usp=sharing") || videoUrl.includes("/view?usp=drive_link"))) {
+                videoUrl = videoUrl.replace(/\/view\?usp=(sharing|drive_link)/, "/preview");
+            }
+            let docUrl = detailData.downloadUrl;
+             if (docUrl && docUrl.includes("drive.google.com") && (docUrl.includes("/view?usp=sharing") || docUrl.includes("/view?usp=drive_link"))) {
+                docUrl = docUrl.replace(/\/view\?usp=(sharing|drive_link)/, "/preview");
+            }
+
+            if (subItemType === 'Videoaulas' && videoUrl && videoUrl !== '#') {
+                detailDiv.setAttribute('data-drive-video-url', videoUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            else if (subItemType !== 'Videoaulas' && docUrl && docUrl !== '#' && !docUrl.startsWith('#dl-')) {
+                detailDiv.setAttribute('data-download-url', docUrl);
+                detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                detailDiv.classList.add('cursor-pointer');
+            }
+            else {
+                if (!(subItemType === 'Videoaulas' && (!videoUrl || videoUrl === '#'))) {
+                    detailDiv.classList.remove('cursor-pointer');
+                    detailDiv.style.opacity = '0.7';
+                } else if (subItemType === 'Videoaulas' && (!videoUrl || videoUrl === '#')) {
+                    detailDiv.setAttribute('data-item-title', itemDisplayTitle);
+                    detailDiv.classList.add('cursor-pointer');
+                }
+            }
+            return detailDiv;
+        }
+
+        // --- Geração do Menu ---
+        if (menuListContainer && detailsTemplate && contentViewer && contentDescription && likeButton) {
+            contentDescription.textContent = "Selecione um tópico e clique em uma vídeo aula ou documento no menu ao lado para carregar.";
+            menuListContainer.innerHTML = '';
+
+            menuItemsData.forEach((itemData, mainIndex) => {
+                const title = itemData.title;
+                const description = itemData.description;
+                const subItems = itemData.subItems || {};
+                const mainContentId = `content-${mainIndex}-${title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 30)}`;
+
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.setAttribute('data-completed', 'false');
+                accordionItem.setAttribute('data-main-description', description);
+
+                const headerButton = document.createElement('button');
+                headerButton.className = 'menu-item-header w-full accordion-header';
+                headerButton.setAttribute('aria-expanded', 'false');
+                headerButton.setAttribute('aria-controls', mainContentId);
+
+                const headerContent = document.createElement('div');
+                headerContent.className = 'text-left flex-grow mr-2 overflow-hidden';
+                headerContent.innerHTML = `
+                    <h3 class="text-sm font-medium text-gray-800 truncate">${title}</h3>
+                    <div class="text-xs text-gray-500 mt-1 flex justify-between items-center flex-wrap gap-2">
+                        <span>Estratégia Educacional</span>
+                        <button type="button" class="status-toggle flex-shrink-0" title="Marcar como concluído"> <span class="mr-1">Concluído</span> <svg class="icon-not-completed w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect></svg>
+                            <svg class="icon-completed w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </div>`;
+
+                const chevronIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chevronIcon.setAttribute('class', 'w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon');
+                chevronIcon.setAttribute('fill', 'none');
+                chevronIcon.setAttribute('stroke', 'currentColor');
+                chevronIcon.setAttribute('viewBox', '0 0 24 24');
+                chevronIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>`;
+
+                headerButton.appendChild(headerContent);
+                headerButton.appendChild(chevronIcon);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = mainContentId;
+                contentDiv.className = 'menu-item-content hidden';
+
+                subItemOrder.forEach((subItemType, subIndex) => {
+                    const subItemArray = subItems[subItemType] || [];
+                    const count = subItemArray.length;
+                    const nestedContentId = `nested-content-${mainIndex}-${subIndex}-${subItemType.toLowerCase().replace(/\s+/g, '-')}`;
+
+                    const subAccordionItem = document.createElement('div');
+                    subAccordionItem.className = `sub-accordion-item ${subIndex > 0 ? 'mt-2' : ''}`;
+
+                    const subHeaderButton = document.createElement('button');
+                    subHeaderButton.className = 'sub-accordion-header w-full';
+                    subHeaderButton.setAttribute('aria-expanded', 'false');
+                    subHeaderButton.setAttribute('aria-controls', nestedContentId);
+                    if (count === 0) {
+                        subHeaderButton.disabled = true;
+                    }
+
+                    subHeaderButton.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700">${subItemType} (${count})</span>
+                        <svg class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform chevron-icon-nested ${count === 0 ? 'hidden' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    `;
+
+                    const subContentDiv = document.createElement('div');
+                    subContentDiv.id = nestedContentId;
+                    subContentDiv.className = 'sub-accordion-content hidden';
+
+                    if (count > 0) {
+                        const totalVideosInSubCategory = (subItemType === 'Videoaulas') ? count : 0;
+                        subItemArray.forEach((detailData, detailIndex) => {
+                            const detailElement = createSubItemDetail(subItemType, detailData, title, detailIndex, totalVideosInSubCategory);
+                            if (detailElement) {
+                                subContentDiv.appendChild(detailElement);
+                            }
+                        });
+                    }
+
+                    subAccordionItem.appendChild(subHeaderButton);
+                    subAccordionItem.appendChild(subContentDiv);
+                    contentDiv.appendChild(subAccordionItem);
+                });
+
+                accordionItem.appendChild(headerButton);
+                accordionItem.appendChild(contentDiv);
+                menuListContainer.appendChild(accordionItem);
+            });
+
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', (event) => {
+                    if (event.target.closest('.status-toggle')) return;
+
+                    const content = header.nextElementSibling;
+                    if (!content || !content.classList.contains('menu-item-content')) return;
+
+                    const isExpanded = header.getAttribute('aria-expanded') === 'true';
+                    const chevronIcon = header.querySelector('.chevron-icon');
+
+                    header.setAttribute('aria-expanded', String(!isExpanded));
+                    content.classList.toggle('hidden');
+                    if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                });
+            });
+
+            const subAccordionHeaders = document.querySelectorAll('.sub-accordion-header');
+            subAccordionHeaders.forEach(subHeader => {
+                if (!subHeader.disabled) {
+                    subHeader.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const content = subHeader.nextElementSibling;
+                        if (!content || !content.classList.contains('sub-accordion-content')) return;
+
+                        const isExpanded = subHeader.getAttribute('aria-expanded') === 'true';
+                        const chevronIcon = subHeader.querySelector('.chevron-icon-nested');
+
+                        subHeader.setAttribute('aria-expanded', String(!isExpanded));
+                        content.classList.toggle('hidden');
+                        if (chevronIcon) chevronIcon.classList.toggle('rotate-180');
+                    });
+                }
+            });
+
+            const statusToggles = document.querySelectorAll('.status-toggle');
+            statusToggles.forEach(toggle => {
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const accordionItem = toggle.closest('.accordion-item');
+                    if (!accordionItem) return;
+
+                    const isCompleted = accordionItem.getAttribute('data-completed') === 'true';
+                    const newCompletedState = !isCompleted;
+
+                    accordionItem.setAttribute('data-completed', String(newCompletedState));
+                    toggle.classList.toggle('is-completed', newCompletedState);
+                    toggle.title = newCompletedState ? 'Marcar como não concluído' : 'Marcar como concluído';
+                });
+            });
+
+            menuListContainer.addEventListener('click', (event) => {
+                const detailItem = event.target.closest('.sub-item-details');
+
+                if (event.target.closest('.download-link')) {
+                    return;
+                }
+
+                if (detailItem && contentViewer && contentDescription) {
+                    let driveVideoUrl = detailItem.getAttribute('data-drive-video-url');
+                    let downloadUrl = detailItem.getAttribute('data-download-url');
+                    const itemTitle = detailItem.getAttribute('data-item-title') || 'Conteúdo selecionado';
+
+                    const parentAccordionItem = detailItem.closest('.accordion-item');
+                    const mainTitle = parentAccordionItem?.querySelector('.menu-item-header h3')?.textContent || 'Módulo';
+
+
+                    if (driveVideoUrl && driveVideoUrl !== '#') {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                            activeItem.classList.remove('is-active');
+                        });
+                        detailItem.classList.add('is-active');
+
+                        contentViewer.src = driveVideoUrl;
+                        contentDescription.textContent = `Aula sobre ${mainTitle} - Assistindo: ${itemTitle}`;
+                    } else if (downloadUrl && downloadUrl !== '#') {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                            activeItem.classList.remove('is-active');
+                        });
+                        detailItem.classList.add('is-active');
+                        contentViewer.src = downloadUrl;
+                        contentDescription.textContent = `Aula sobre ${mainTitle} - Visualizando: ${itemTitle}`;
+                    } else if (detailItem.classList.contains('cursor-pointer')) {
+                        document.querySelectorAll('.sub-item-details.is-active').forEach(activeItem => {
+                            activeItem.classList.remove('is-active');
+                        });
+                        detailItem.classList.add('is-active');
+                        contentViewer.src = 'about:blank';
+                        contentDescription.textContent = `Conteúdo para "${itemTitle}" indisponível ou link ausente.`;
+                    }
+                }
+            });
+
+            if(likeButton) {
+                likeButton.addEventListener('click', () => {
+                    likeButton.classList.toggle('is-liked');
+                });
+            }
+
+            const firstClickableDetail = document.querySelector('#menu-items-list .sub-item-details[data-drive-video-url]:not([data-drive-video-url="#"]), #menu-items-list .sub-item-details[data-download-url]:not([data-download-url="#"]):not([data-download-url^="#dl-"])');
+
+            if (firstClickableDetail) {
+                setTimeout(() => {
+                    const parentAccordionItem = firstClickableDetail.closest('.accordion-item');
+                    const parentHeader = parentAccordionItem?.querySelector('.accordion-header');
+
+                    if (parentHeader && parentHeader.getAttribute('aria-expanded') === 'false') {
+                        if(typeof parentHeader.click === 'function') parentHeader.click();
+                    }
+
+                    const parentSubAccordionContent = firstClickableDetail.closest('.sub-accordion-content');
+                    if (parentSubAccordionContent && parentSubAccordionContent.classList.contains('hidden')) {
+                        const parentSubHeader = parentSubAccordionContent.previousElementSibling;
+                        if(parentSubHeader && !parentSubHeader.disabled && typeof parentSubHeader.click === 'function') {
+                             parentSubHeader.click();
+                        }
+                    }
+                   if(typeof firstClickableDetail.click === 'function'){
+                        firstClickableDetail.click();
+                   }
+                }, 100);
+            } else {
+                contentViewer.src = '';
+                contentDescription.textContent = 'Nenhum conteúdo selecionado ou disponível para visualização.';
+            }
+
+        } else {
+            console.error("Erro: Elementos essenciais do DOM não foram encontrados. Verifique os IDs: menu-items-list, subitem-details-template, content-viewer, content-description, like-button.");
+        }
+    </script>
+
+</body>
+</html>
